@@ -30,7 +30,7 @@ boundaryField
     }
     frontAndBack
     {
-        type    zeroGradient;
+        type zeroGradient;
     }
 }
 

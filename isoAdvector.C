@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     Info<< "\nStarting time loop\n" << endl;
-
+	
     while (runTime.run())
     {
 //        #include "readTimeControls.H"
@@ -85,10 +85,17 @@ int main(int argc, char *argv[])
 		volPointInterpolation vpi(mesh);
 		alpha1.correctBoundaryConditions();
 		scalarField alphap = vpi.interpolate(alpha1);
-		
-		const scalar isoValue = 0.5;
+
+		bool findVolConsIsoValue = false;
+		if (findVolConsIsoValue)
+		{
+			#include "findVolConsIsoValue.H" //Not written yet
+		}
+
+		scalar isoValue = 0.5;
 		isoCutter cutter(mesh,alphap,isoValue);
 		cutter.subFaceFractions(alphaf);
+		
 		volScalarField dadt = fvc::surfaceIntegrate(phi*alphaf);
 //		Info << "min(|dV|) = " << min(mag(dadt)).value() << endl;
 //		dimensionedScalar invt("invt",  dimensionSet(0, 0, -1, 0, 0), SMALL);
@@ -96,82 +103,19 @@ int main(int argc, char *argv[])
 //			+ (neg(alpha1-1e-6) + (pos(alpha1-1+1e-6)))/invt); //Does not work because setFields is used to initiate meaning that all cells are either completely full or completely empty.
 //		runTime.setDeltaT(max(dt.value(),1e-3));
 		alpha1 -= (runTime.deltaT()*dadt);
-		//Make list of overfilled cells
-		DynamicList<label> overFilledCells;
-		forAll(alpha1,ci)
+
+		bool boundAlpha = true;
+		if (boundAlpha)
 		{
-			if (alpha1[ci] > 1)
-			{
-				overFilledCells.append(ci);
-			}
-		}
-		overFilledCells.shrink();
-		label nOverFilledCells = overFilledCells.size();		
-		label ci = -1;
-		while (ci < nOverFilledCells-1)
-		{
-			ci++;
-			label cLabel = overFilledCells[ci];
-			Info << "Cell " << cLabel << ":" << endl;
-			labelList faceLabels = mesh.cells()[cLabel];
-			scalar magPhi = 0;
-			DynamicList<label> outFaces;
-			forAll(faceLabels,fi)
-			{
-				label fLabel = faceLabels[fi];
-				if (fLabel<mesh.nInternalFaces()) //face is internal and hence between two cells
-				{
-					if (cLabel == mesh.owner()[fLabel]) //positive flux means out of cell cLabel
-					{
-						if (phi[fLabel] > 0)
-						{
-							magPhi += phi[fLabel];
-							outFaces.append(fLabel);
-						}
-					}
-					else
-					{
-						if (phi[fLabel] < 0)
-						{
-							magPhi -= phi[fLabel];
-						}
-					}
-				}
-			}
-			outFaces.shrink();
-			forAll(outFaces,fi)
-			{
-				label fLabel = outFaces[fi];
-				label otherCellLabel;
-				if (cLabel == mesh.owner()[fLabel])
-				{
-					otherCellLabel = mesh.neighbour()[fLabel];
-				}
-				else
-				{
-					otherCellLabel = mesh.owner()[fLabel];					
-				}
-				scalar alphaOtherOld = alpha1[otherCellLabel];
-				scalar dV = (alpha1[cLabel]-1)*mesh.V()[cLabel]*mag(phi[fLabel])/magPhi;
-				Info << "Transferring " << dV << " m3 of water from cell " << cLabel << "to cell " << otherCellLabel << endl;
-				Info << "Old alpha1[cLabel]: " <<  alpha1[cLabel] << ", old alpha[otherCellLabel] = " << alpha1[otherCellLabel] << endl;
-				alpha1[otherCellLabel] += dV/mesh.V()[otherCellLabel];
-				alpha1[cLabel] -= dV/mesh.V()[cLabel];
-				Info << "New alpha1[cLabel]: " <<  alpha1[cLabel] << ", new alpha[otherCellLabel] = " << alpha1[otherCellLabel] << endl;
-				if (alphaOtherOld<1 && alpha1[otherCellLabel]>1)
-				{
-					overFilledCells.append(otherCellLabel);
-					nOverFilledCells++;
-					Info << "Cell " << otherCellLabel << " got overfilled!!!" << endl;
-				}
-			}
+			#include "boundAlpha.H"
 		}
 		Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value() 
 			 << ", max(alpha1) = " << max(alpha1).value() 
 			 << "\t min(alpha1) = " << min(alpha1).value() << endl;
 //			 << "\t min(dt) = " << dt.value() << endl; 
 
-        runTime.write();
+        alpha1.write();
+        U.write();
 		cutter.write();
 		
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"

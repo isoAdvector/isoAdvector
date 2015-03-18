@@ -29,7 +29,7 @@ endTime         5;
 
 writeControl    timeStep;
 
-writeInterval   10;
+writeInterval   1;
 
 deltaT          0.01;
 

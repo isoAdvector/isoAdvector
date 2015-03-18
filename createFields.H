@@ -71,7 +71,8 @@
     cutter.subCellFractions(alpha1);
 	alpha1.correctBoundaryConditions();
 
-	runTime.write();
+	alpha1.write();
+	U.write();
 	cutter.write();	
 	
 /*
