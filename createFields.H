@@ -63,7 +63,8 @@
 	const scalarField y = mesh.points().component(1);
 	const scalarField z = mesh.points().component(2);
 //	scalar pi = constant::mathematical::pi;
-	const scalarField f = pow(0.2,2) - pow(x-.5,2) - pow(y-.5,2) - pow(z-.5,2);
+//	const scalarField f = pow(0.2,2) - pow(x-.5,2) - pow(y-.5,2) - pow(z-.5,2);
+	const scalarField f = pow(0.2,2) - pow(x-.5,2) - pow(z-.5,2);
 	const scalar f0 = 0;
 
     Foam::isoCutter cutter(mesh,f,f0);

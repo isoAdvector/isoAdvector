@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 	
     while (runTime.run())
     {
-//        #include "readTimeControls.H"
+        #include "readTimeControls.H"
 //        #include "CourantNo.H"
 //        #include "alphaCourantNo.H"
 //        #include "setDeltaT.H"
