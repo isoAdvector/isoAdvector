@@ -82,33 +82,21 @@ int main(int argc, char *argv[])
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
 		//Alpha loop
-		volPointInterpolation vpi(mesh);
-		alpha1.correctBoundaryConditions();
-		scalarField alphap = vpi.interpolate(alpha1);
-
-		bool findVolConsIsoValue = false;
-		if (findVolConsIsoValue)
-		{
-			#include "findVolConsIsoValue.H" //Not written yet
-		}
-
-		scalar isoValue = 0.5;
-		isoCutter cutter(mesh,alphap,isoValue);
-		cutter.subFaceFractions(alphaf);
+		surfaceScalarField dVf = 0*phi*runTime.deltaT()/mesh.V()[0];
+		scalarField& dVtest = dVf;
 		
-		volScalarField dadt = fvc::surfaceIntegrate(phi*alphaf);
-//		Info << "min(|dV|) = " << min(mag(dadt)).value() << endl;
-//		dimensionedScalar invt("invt",  dimensionSet(0, 0, -1, 0, 0), SMALL);
-//		dimensionedScalar dt = min(mag((neg(dadt)*alpha1 + pos(dadt)*(1-alpha1))/(mag(dadt)-invt))
-//			+ (neg(alpha1-1e-6) + (pos(alpha1-1+1e-6)))/invt); //Does not work because setFields is used to initiate meaning that all cells are either completely full or completely empty.
-//		runTime.setDeltaT(max(dt.value(),1e-3));
-		alpha1 -= (runTime.deltaT()*dadt);
-
-		bool boundAlpha = true;
-		if (boundAlpha)
+		volPointInterpolation vpi(mesh);
+		scalarField alphap = vpi.interpolate(alpha1);
+		Foam::isoCutter cutter2(mesh,alphap,0.5); //isoValue not used for anything
+		cutter2.updateAlpha(alpha1, phi, U, runTime.deltaT().value(), dVtest);
+		volScalarField dV = fvc::surfaceIntegrate(dVf);
+		
+		forAll(alpha1,ci)
 		{
-			#include "boundAlpha.H"
+			alpha1[ci] += (dV[ci]/mesh.cellVolumes()[ci]);
 		}
+		alpha1.correctBoundaryConditions();
+
 		Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value() 
 			 << ", max(alpha1) = " << max(alpha1).value() 
 			 << "\t min(alpha1) = " << min(alpha1).value() << endl;

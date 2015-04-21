@@ -69,7 +69,7 @@
 
     Foam::isoCutter cutter(mesh,f,f0);
 
-    cutter.subCellFractions(alpha1);
+    cutter.subCellFractions(f0,alpha1);
 	alpha1.correctBoundaryConditions();
 
 	alpha1.write();
