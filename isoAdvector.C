@@ -89,11 +89,11 @@ int main(int argc, char *argv[])
 		scalarField alphap = vpi.interpolate(alpha1);
 		Foam::isoCutter cutter2(mesh,alphap,0.5); //isoValue not used for anything
 		cutter2.updateAlpha(alpha1, phi, U, runTime.deltaT().value(), dVtest);
-		volScalarField dV = fvc::surfaceIntegrate(dVf);
+		volScalarField dV = fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume
 		
 		forAll(alpha1,ci)
 		{
-			alpha1[ci] += (dV[ci]/mesh.cellVolumes()[ci]);
+			alpha1[ci] += dV[ci];
 		}
 		alpha1.correctBoundaryConditions();
 
