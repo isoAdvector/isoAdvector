@@ -93,7 +93,8 @@ int main(int argc, char *argv[])
 		
 		forAll(alpha1,ci)
 		{
-			alpha1[ci] += dV[ci];
+			alpha1[ci] -= dV[ci];
+			Info << "Cell " << ci << ", alpha = " << alpha1[ci] << endl;
 		}
 		alpha1.correctBoundaryConditions();
 
