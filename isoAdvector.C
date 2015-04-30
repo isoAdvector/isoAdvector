@@ -94,7 +94,10 @@ int main(int argc, char *argv[])
 		forAll(alpha1,ci)
 		{
 			alpha1[ci] -= dV[ci];
-			Info << "Cell " << ci << ", alpha = " << alpha1[ci] << endl;
+			if (alpha1[ci] != 0 && alpha1[ci] != 1)
+			{
+				Info << "Cell " << ci << ", alpha = " << alpha1[ci] << endl;
+			}
 		}
 		alpha1.correctBoundaryConditions();
 
