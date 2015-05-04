@@ -1,4 +1,4 @@
 isoAdvector.C
-../isoCutter/isoCutter.C
+isoCutter/isoCutter.C
 
 EXE = $(FOAM_USER_APPBIN)/isoAdvector

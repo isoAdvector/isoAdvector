@@ -75,7 +75,7 @@ void Foam::isoCutter::vofCutCell
 	scalar aMin(0), aMax(1), alpha0;
 	f0 = (alpha1 - aMin)/(aMax-aMin)*(fMin-fMax) + fMax;
 //	f0 = 0.5*(fMin + fMax);
-	subCellFraction(ci, f0, alpha0);
+	subCellFraction(ci, f0, alpha0, subCellCtr);
 //	Info << "f0 = " << f0 << " gives alpha = " << alpha0 << endl;
 	
 	//Bisection method to find root
