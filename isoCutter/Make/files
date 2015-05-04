@@ -1,0 +1,4 @@
+isoCutTester.C
+isoCutter.C
+
+EXE = $(FOAM_USER_APPBIN)/isoCutTester
