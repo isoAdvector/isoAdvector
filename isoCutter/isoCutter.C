@@ -476,7 +476,7 @@ void Foam::isoCutter::subFaceFractions
 }
 
 
-void Foam::isoCutter::updateAlpha
+void Foam::isoCutter::timeIntegratedFlux
 (
 	const volScalarField& alpha,
 	const surfaceScalarField& phi,
@@ -485,7 +485,6 @@ void Foam::isoCutter::updateAlpha
 	scalarField& dV
 )
 {
-	Info << "Enter updateAlpha" << endl;
 	volPointInterpolation vpi(mesh_);
 	const scalarField alphap = vpi.interpolate(alpha);
     const cellList& cells = mesh_.cells();
@@ -514,6 +513,7 @@ void Foam::isoCutter::updateAlpha
 //		else if ((!allPointsAbove) && ( 0<alpha[ci] && alpha[ci] < 1 )) //Then cell must be cut
 		else if ( aMax > 0.5 ) //Then cell must be cut
 		{
+			Info << " " << endl;
 			Info << "------------ Cell " << ci << " ------------" << endl;
 			Info << "outFluxingFaces: " << outFluxingFaces << endl;
 			//Calculate isovalue f0 reproducing VOF value to given accuracy
@@ -521,12 +521,10 @@ void Foam::isoCutter::updateAlpha
 			label maxIter(100);
 			vector subCellCtr;
 			vofCutCell(ci, alpha[ci], tol, maxIter, f0, subCellCtr);
-			Info << "Isovalue giving proper VOF value: f0 " << f0 << ", subCellCtr: " << subCellCtr << endl;
 
 			//Calculate isoFace0 centre xs0, normal ns0, and velocity U0 = U(xs0)
 			vector x0(vector::zero), n0(vector::zero);
-			isoFaceCentreAndArea(ci,f0,x0,n0);
-			Info << "isoFace0 centre and area are x0 = " << x0 << " and n0 = " << n0 << endl; 
+			isoFaceCentreAndArea(ci,f0,x0,n0); //Stupid to recalculate this here - should be provided by vofCutCell above
 			//Make n0 point out of subCell
 			if (((x0 - subCellCtr) & n0) < 0)
 			{
@@ -546,7 +544,9 @@ void Foam::isoCutter::updateAlpha
 			{
 				Info << "WARNING: n0 has zero length. Probably because isoFace is a point. Skipping division of Un0 by mag(n0)." << endl;
 			}
-			Info << "Velocity interpolated to isoFace0 centre, U0 = " << U0 << " and projected on n0, Un0 = " << Un0 << endl;
+			Info << "Initial values for time step:" << endl;
+			Info << "f0 = " << f0 << ", subCellCentre = " << subCellCtr << ", isoFaceCentre = " << x0 << ", isoFaceNormal = " << n0 << ", isoFaceVelocity = " << U0 << ", isoFaceNormalVelocity = " << Un0 << endl;
+
 			
 			vector x00(x0), n00(n0); //Necessary when more than one outfluxing face
 			//Estimating time integrated water flux through each outfluxing face
@@ -600,14 +600,14 @@ void Foam::isoCutter::updateAlpha
 							a1 = a0;
 							x1 = xFirst;
 							n1 = n0;
-							Info << "Since na = " << na << " and a0 = " << a0 << " we set a1 = a0 and x1 = xFirst = " << xFirst << endl;
+//							Info << "Since na = " << na << " and a0 = " << a0 << " we set a1 = a0 and x1 = xFirst = " << xFirst << endl;
 						}
 						else if (na == av.size()-1) //At the last point the face will either be completely filled or emptied - so isoFace = the vertex point
 						{
 							a1 = pos(f0-f1); //If f0 > f1, face is filling up with water - else it is being emptied
 							x1 = xLast;
 							n1 = n0; //since isoFace1 is a point its normal is undefined and we set it to previous value
-							Info << "Since na = " << na << " = na == av.size()-1 we set a1 = pos(f0-f1) = " << pos(f0-f1) << " and x1 = xLast = " << xLast << endl;
+//							Info << "Since na = " << na << " = na == av.size()-1 we set a1 = pos(f0-f1) = " << pos(f0-f1) << " and x1 = xLast = " << xLast << endl;
 						} 
 						else
 						{
@@ -640,12 +640,11 @@ void Foam::isoCutter::updateAlpha
 */						
 						//Estimating time where the surface will be at x1
 						scalar dtn = ((x1-x0) & (n0/mag(n0)))/Un0; //What about when Un0 = 0?
-						Info << "x0: " << x0 << " x1: " << x1 << " n0: " << n0 << " U0: " << U0 << endl;
+//						Info << "x0: " << x0 << " x1: " << x1 << " n0: " << n0 << " U0: " << U0 << endl;
 						t1 = min(t0 + dtn,dt);
-						Info << "Estimated dtn " << dtn << " and t1 " << t1 << endl;
 
 						a1 = a0 + (t1-t0)/dtn*(a1-a0); //Linear interpolation of alphaf to time t1 from values at time t0 and t0+dtn - only changes a1 if t0+dtn > dt.
-						Info << "Resulting a1: " << a1 << endl;
+						Info << "Estimated dtn = " << dtn << ", t1 = " << t1 << ", a1 = " << a1 << endl;
 						dV[fLabel] += phi[fLabel]*0.5*(a0 + a1)*(t1-t0); //Trapezoidal estimate
 						Info << "dV[fLabel] = " << dV[fLabel] << " after adding " << phi[fLabel]*0.5*(a0 + a1)*(t1-t0) << " m3" << endl;
 						
@@ -664,7 +663,7 @@ void Foam::isoCutter::updateAlpha
 				}
 				else
 				{
-					Info << "No elements in aVert. Face must be uncut and surface moving away from it." << endl;
+//					Info << "No elements in aVert. Face must be uncut and surface moving away from it." << endl;
 					dV[fLabel] += phi[fLabel]*a0*dt;
 				}
 
@@ -725,7 +724,7 @@ void Foam::isoCutter::getVertexAlphas
 			aVert.append(aVerti);
 		}
 	}
-	Info << "aVert = " << aVert << ", xVert = " << xVert << endl;
+//	Info << "aVert = " << aVert << ", xVert = " << xVert << endl;
 	
 	if (aVert.size() > 0) //((face is either completely submerged OR unsubmerged) AND Un is such that surface moves away from face) OR (face is cut and Un = 0).
 	{
@@ -756,7 +755,7 @@ void Foam::isoCutter::getVertexAlphas
 		av.append(aVert[0]);
 		for (label n = 1; n < aVert.size(); n++)
 		{
-			Info << "mag(aVert[n] - aVert[n-1]): " << mag(aVert[n] - aVert[n-1]) << endl;
+//			Info << "mag(aVert[n] - aVert[n-1]): " << mag(aVert[n] - aVert[n-1]) << endl;
 			if (mag(aVert[n] - aVert[n-1]) > 10*SMALL) //SMALL is 1e-15 and I have experienced the difference being 1.2 e-15.
 			{
 				av.append(aVert[n]);
@@ -768,7 +767,7 @@ void Foam::isoCutter::getVertexAlphas
 			reverse(av);
 		}
 	}
-	Info << "Reversed av: " << av << endl;	
+//	Info << "Reversed av: " << av << endl;	
 }
 
 

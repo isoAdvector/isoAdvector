@@ -287,7 +287,7 @@ public:
 			surfaceScalarField&
 		);
 
-		void updateAlpha
+		void timeIntegratedFlux
 		(
 			const volScalarField& alpha,
 			const surfaceScalarField& phi,

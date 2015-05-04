@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 		volPointInterpolation vpi(mesh);
 		scalarField alphap = vpi.interpolate(alpha1);
 		Foam::isoCutter cutter2(mesh,alphap,0.5); //isoValue not used for anything
-		cutter2.updateAlpha(alpha1, phi, U, runTime.deltaT().value(), dVtest);
+		cutter2.timeIntegratedFlux(alpha1, phi, U, runTime.deltaT().value(), dVtest);
 		volScalarField dV = fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume
 		
 		forAll(alpha1,ci)

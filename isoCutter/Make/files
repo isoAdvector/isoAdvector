@@ -1,4 +1,4 @@
-isoCutTester.C
+iso2VOF.C
 isoCutter.C
 
-EXE = $(FOAM_USER_APPBIN)/isoCutTester
+EXE = $(FOAM_USER_APPBIN)/iso2VOF

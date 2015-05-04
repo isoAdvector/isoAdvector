@@ -42,7 +42,7 @@
         mesh
     );
 
-	alpha1 = 0;
+//	alpha1 = 0;
 	
 	surfaceScalarField alphaf
 	(

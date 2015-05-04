@@ -34,7 +34,7 @@ Author
 
 #include "isoCutter.H"
 #include "argList.H"
-#include "volPointInterpolation.H"
+//#include "volPointInterpolation.H"
 
 using namespace Foam;
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
         ),
         mesh
     );
-
+/*
     surfaceScalarField alphaf
     (
         IOobject
@@ -85,23 +85,26 @@ int main(int argc, char *argv[])
     );
 
     runTime++;
+*/
 
     //Define function on mesh points and isovalue
     const scalarField x = mesh.points().component(0);
     const scalarField y = mesh.points().component(1);
     const scalarField z = mesh.points().component(2);
-    scalar pi = constant::mathematical::pi;
-    const scalarField f = .5 + 0.2*sin(2*pi*x)*exp(-pow((y-.5)/.5,2)) - z;
+//    scalar pi = constant::mathematical::pi;
+//    const scalarField f = .5 + 0.2*sin(2*pi*x)*exp(-pow((y-.5)/.5,2)) - z;
 //    const scalarField f = -.26 - .23423*z+.8764*y-.1203*x;
+//	const scalarField f = pow(0.2,2) - pow(x-.5,2) - pow(y-.5,2) - pow(z-.5,2);
+	const scalarField f = pow(0.223434,2) - pow(x-.5,2) - pow(z-.3,2);
+	const scalar f0 = 0;
 
-    const scalar f0(0);
 
 	//Calculating alpha1 volScalarField from f = f0 isosurface
     Foam::isoCutter cutter(mesh,f,f0);
     cutter.subCellFractions(f0,alpha1);
 	alpha1.write(); //Writing volScalarField alpha1
     cutter.write(); //Writing cutCells to ply files
-
+/*
 	//Interpolating alpha1 to vertices
 	volPointInterpolation vpi(mesh);
 	alpha1.correctBoundaryConditions();
@@ -113,6 +116,7 @@ int main(int argc, char *argv[])
 	scalar tol = 1e-6;
 	label maxIter = 500;
 	cutter2.vofCutCells(alpha1, tol, maxIter, isoVals);
+*/
 //    cutter.subFaceFractions(f0,alphaf);
 //    alphaf.write();
 
