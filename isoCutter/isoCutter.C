@@ -26,6 +26,7 @@ License
 #include "isoCutter.H"
 #include "volPointInterpolation.H"
 #include "interpolationCellPoint.H"
+//#include "isoSubCell.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -492,6 +493,7 @@ void Foam::isoCutter::timeIntegratedFlux
 
 	forAll(cells,ci)
 	{	
+//		isoSubCell testCell(mesh_,ci);
 		//Make list of all cell faces out of which fluid is flowing
 		DynamicList<label> outFluxingFaces;
 		getOutFluxFaces(phi, ci, outFluxingFaces);
@@ -501,23 +503,25 @@ void Foam::isoCutter::timeIntegratedFlux
 		subSetExtrema(alphap,mesh_.cellPoints()[ci],aMin,aMax);
 
 		//Set dV on all outfluxing faces in accordance to the status of the cell (if allPointsAbove dV should remain 0 on all outfluxing faces so do nothing)
-//		if ( allPointsBelow || (alpha[ci] <= 0 || alpha[ci] >= 1) )
-		if ( aMin > 0.5 )
+//		if ( aMin > 0.5 )
+		if ( aMin > 0.5 || aMax < 0.5 )
 		{
 			forAll(outFluxingFaces,fi)
 			{
 				label lfi = outFluxingFaces[fi];
-				dV[lfi] = phi[lfi]*dt;
+				if ( lfi < mesh_.nInternalFaces() )
+				{
+					dV[lfi] = alpha[ci]*phi[lfi]*dt;
+				}
 			}
 		}
-//		else if ((!allPointsAbove) && ( 0<alpha[ci] && alpha[ci] < 1 )) //Then cell must be cut
 		else if ( aMax > 0.5 ) //Then cell must be cut
 		{
 			Info << " " << endl;
 			Info << "------------ Cell " << ci << " ------------" << endl;
 			Info << "outFluxingFaces: " << outFluxingFaces << endl;
 			//Calculate isovalue f0 reproducing VOF value to given accuracy
-			scalar f0, tol(1e-3);
+			scalar f0, tol(1e-6);
 			label maxIter(100);
 			vector subCellCtr;
 			vofCutCell(ci, alpha[ci], tol, maxIter, f0, subCellCtr);
@@ -1208,7 +1212,7 @@ void Foam::isoCutter::getFacePoints
 
 void Foam::isoCutter::getFacePoints
 (
-	const label faceLabel,
+	const label& faceLabel,
 	pointField& fp
 )
 {

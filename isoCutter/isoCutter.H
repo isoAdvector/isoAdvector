@@ -229,7 +229,7 @@ class isoCutter
 	//- For a given face label return its pointField representation
 	void getFacePoints
 	(
-		const label,
+		const label&,
 		pointField&
 	);
 	

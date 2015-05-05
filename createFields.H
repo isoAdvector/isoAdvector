@@ -43,7 +43,7 @@
     );
 
 //	alpha1 = 0;
-	
+/*	
 	surfaceScalarField alphaf
 	(
 		IOobject
@@ -58,7 +58,7 @@
 	);
 
 	alphaf = 0;
-
+*/
 	const scalarField x = mesh.points().component(0);
 	const scalarField y = mesh.points().component(1);
 	const scalarField z = mesh.points().component(2);
@@ -75,6 +75,8 @@
 	alpha1.write();
 	U.write();
 	cutter.write();	
+
+
 	
 /*
     Info<< "Reading transportProperties\n" << endl;
@@ -180,4 +182,4 @@
         p_rgh = p - rho*gh;
     }
 */
-    fv::IOoptionList fvOptions(mesh);
+//    fv::IOoptionList fvOptions(mesh);

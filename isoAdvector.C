@@ -38,13 +38,13 @@ Description
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
-#include "MULES.H"
-#include "subCycle.H"
-#include "interfaceProperties.H"
-#include "twoPhaseMixture.H"
-#include "turbulenceModel.H"
+//#include "MULES.H"
+//#include "subCycle.H"
+//#include "interfaceProperties.H"
+//#include "twoPhaseMixture.H"
+//#include "turbulenceModel.H"
 //#include "pimpleControl.H"
-#include "fvIOoptionList.H"
+//#include "fvIOoptionList.H"
 #include "volPointInterpolation.H"
 #include "isoCutter.H"
 
@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 
 //    pimpleControl pimple(mesh);
 
-    #include "initContinuityErrs.H"
+//    #include "initContinuityErrs.H"
     #include "createFields.H"
     #include "readTimeControls.H"
 //    #include "correctPhi.H"
@@ -69,6 +69,12 @@ int main(int argc, char *argv[])
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     Info<< "\nStarting time loop\n" << endl;
+
+	surfaceScalarField dVf = 0*phi*runTime.deltaT()/mesh.V()[0];
+	scalarField& dVtest = dVf;
+	volScalarField dV(alpha1);
+	scalarField alphap;
+	volPointInterpolation vpi(mesh);
 	
     while (runTime.run())
     {
@@ -82,14 +88,11 @@ int main(int argc, char *argv[])
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
 		//Alpha loop
-		surfaceScalarField dVf = 0*phi*runTime.deltaT()/mesh.V()[0];
-		scalarField& dVtest = dVf;
 		
-		volPointInterpolation vpi(mesh);
-		scalarField alphap = vpi.interpolate(alpha1);
+		alphap = vpi.interpolate(alpha1);
 		Foam::isoCutter cutter2(mesh,alphap,0.5); //isoValue not used for anything
 		cutter2.timeIntegratedFlux(alpha1, phi, U, runTime.deltaT().value(), dVtest);
-		volScalarField dV = fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume
+		dV = fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume
 		
 		forAll(alpha1,ci)
 		{
