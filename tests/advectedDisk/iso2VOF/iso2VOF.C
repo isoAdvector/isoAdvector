@@ -95,14 +95,15 @@ int main(int argc, char *argv[])
 //    const scalarField f = .5 + 0.2*sin(2*pi*x)*exp(-pow((y-.5)/.5,2)) - z;
 //    const scalarField f = -.26 - .23423*z+.8764*y-.1203*x;
 //	const scalarField f = pow(0.2,2) - pow(x-.5,2) - pow(y-.5,2) - pow(z-.5,2);
-	const scalarField f = pow(0.223434,2) - pow(x-.5,2) - pow(z-.3,2);
+//	const scalarField f = pow(0.223434,2) - pow(x-.5,2) - pow(z-.3,2);
+	const scalarField f = pow(0.25,2) - pow(x-.5,2) - pow(z-.3,2);
 	const scalar f0 = 0;
 
 
 	//Calculating alpha1 volScalarField from f = f0 isosurface
     Foam::isoCutter cutter(mesh,f,f0);
     cutter.subCellFractions(f0,alpha1);
-	alpha1.write(); //Writing volScalarField alpha1
+    alpha1.write(); //Writing volScalarField alpha1
     cutter.write(); //Writing cutCells to ply files
 /*
 	//Interpolating alpha1 to vertices

@@ -1,5 +1,0 @@
-iso2VOF.C
-isoCutter.C
-isoSubCell.C
-
-EXE = $(FOAM_USER_APPBIN)/iso2VOF

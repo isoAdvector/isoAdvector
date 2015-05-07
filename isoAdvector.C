@@ -90,8 +90,8 @@ int main(int argc, char *argv[])
 		//Alpha loop
 		
 		alphap = vpi.interpolate(alpha1);
-		Foam::isoCutter cutter2(mesh,alphap,0.5); //isoValue not used for anything
-		cutter2.timeIntegratedFlux(alpha1, phi, U, runTime.deltaT().value(), dVtest);
+		Foam::isoCutter cutter(mesh,alphap,0.5); //isoValue not used for anything
+		cutter.timeIntegratedFlux(alpha1, phi, U, runTime.deltaT().value(), dVtest);
 		dV = fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume
 		
 		forAll(alpha1,ci)

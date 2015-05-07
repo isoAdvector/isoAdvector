@@ -2,6 +2,9 @@
 
 ./Allclean
 
+export ISOCUTTER_DIR=../../../isoCutter
+wmake iso2VOF
+
 nProc=$(sed -ne "s/^numberOfSubdomains *\(.*\);/\1/p" system/decomposeParDict)
 application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
 jobStart=$(date +"%Y%m%d%H%M")
@@ -13,7 +16,7 @@ if [ ! -d "logs" ]; then
         blockMesh > logs/blockMesh.log 2>&1
         topoSet -dict constant/polyMesh/topoSetDict > logs/topoSetDict.log 2>&1
         refineMesh -dict constant/polyMesh/refineMeshDict -overwrite > logs/refineMeshDict.log 2>&1
-	iso2VOF > logs/iso2VOF.log 2>&1
+	iso2VOF/iso2VOF > logs/iso2VOF.log 2>&1
 else
         mv logs logs_$jobStart
         mkdir logs
