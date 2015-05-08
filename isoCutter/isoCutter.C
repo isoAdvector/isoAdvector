@@ -55,7 +55,7 @@ void Foam::isoCutter::vofCutCell
 	vector& subCellCtr
 )
 {
-	Info << "Enter vofCutCell for cell " << ci << " which has alpha1 = " << alpha1 << endl;
+////	Info << "Enter vofCutCell for cell " << ci << " which has alpha1 = " << alpha1 << endl;
 	scalar fMin(GREAT), fMax(-GREAT);
     const labelList& pLabels = mesh_.cellPoints(ci);
 	forAll(pLabels,pi)
@@ -100,7 +100,7 @@ void Foam::isoCutter::vofCutCell
 //		Info << nIter << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
 		nIter++;
 	}
-	Info << nIter-1 << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
+////	Info << nIter-1 << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
 }
 
 void Foam::isoCutter::isoCutCell
@@ -504,7 +504,7 @@ void Foam::isoCutter::timeIntegratedFlux
 
 		//Set dV on all outfluxing faces in accordance to the status of the cell (if allPointsAbove dV should remain 0 on all outfluxing faces so do nothing)
 //		if ( aMin > 0.5 )
-		if ( aMin > 0.5 || aMax < 0.5 )
+		if ( aMin > 0.5 || aMax < 0.5 || alpha[ci] >= 1-SMALL || alpha[ci] <= SMALL )
 		{
 			forAll(outFluxingFaces,fi)
 			{
@@ -517,9 +517,9 @@ void Foam::isoCutter::timeIntegratedFlux
 		}
 		else if ( aMax > 0.5 ) //Then cell must be cut
 		{
-			Info << " " << endl;
-			Info << "------------ Cell " << ci << " ------------" << endl;
-			Info << "outFluxingFaces: " << outFluxingFaces << endl;
+////			Info << " " << endl;
+////			Info << "------------ Cell " << ci << " ------------" << endl;
+////			Info << "outFluxingFaces: " << outFluxingFaces << endl;
 			//Calculate isovalue f0 reproducing VOF value to given accuracy
 			scalar f0, tol(1e-6);
 			label maxIter(100);
@@ -533,7 +533,7 @@ void Foam::isoCutter::timeIntegratedFlux
 			if (((x0 - subCellCtr) & n0) < 0)
 			{
 				n0 *= (-1.0);
-				Info << "Changing direction of n0 " << n0 << endl;
+////				Info << "Changing direction of n0 " << n0 << endl;
 			}
 			
 			//Interpolate velocity to isoFace centre
@@ -546,10 +546,11 @@ void Foam::isoCutter::timeIntegratedFlux
 			}
 			else
 			{
-				Info << "WARNING: n0 has zero length. Probably because isoFace is a point. Skipping division of Un0 by mag(n0)." << endl;
+				Info << "WARNING for cell " << ci << ": n0 has zero length. Probably because isoFace is a point. Skipping division of Un0 by mag(n0)." << endl;
+				Info << "alpha = " << alpha[ci] << ", f0 = " << f0 << ", subCellCentre = " << subCellCtr << ", isoFaceCentre = " << x0 << ", isoFaceNormal = " << n0 << ", isoFaceVelocity = " << U0 << ", isoFaceNormalVelocity = " << Un0 << endl;
 			}
-			Info << "Initial values for time step:" << endl;
-			Info << "f0 = " << f0 << ", subCellCentre = " << subCellCtr << ", isoFaceCentre = " << x0 << ", isoFaceNormal = " << n0 << ", isoFaceVelocity = " << U0 << ", isoFaceNormalVelocity = " << Un0 << endl;
+////			Info << "Initial values for time step:" << endl;
+////			Info << "f0 = " << f0 << ", subCellCentre = " << subCellCtr << ", isoFaceCentre = " << x0 << ", isoFaceNormal = " << n0 << ", isoFaceVelocity = " << U0 << ", isoFaceNormalVelocity = " << Un0 << endl;
 
 			
 			vector x00(x0), n00(n0); //Necessary when more than one outfluxing face
@@ -557,7 +558,7 @@ void Foam::isoCutter::timeIntegratedFlux
 			forAll(outFluxingFaces,fi)
 			{
 				label fLabel = outFluxingFaces[fi];
-				Info << "FACE " << fLabel << " ------------" << endl;
+////				Info << "FACE " << fLabel << " ------------" << endl;
 	
 //------------------------Calculate initial alphaf on the face------------------------
 				scalar t0 = 0.0; //Initial time
@@ -577,7 +578,7 @@ void Foam::isoCutter::timeIntegratedFlux
 					makeFaceCentreAndArea(partSubFacePts, fCtr, fArea);
 					a0 = mag(fArea)/mag(Sf[fLabel]);
 				}
-				Info << "a0 on face: " << a0 << endl;
+////				Info << "a0 on face: " << a0 << endl;
 				
 				//Generating list of face vertices approached by isoFace
 				scalarField av; //Unique version of aVert
@@ -592,14 +593,13 @@ void Foam::isoCutter::timeIntegratedFlux
 					scalar t1(0.0); //Next time a vertex is met
 					while (t0 < dt && na < av.size())
 					{
-						Info << "Calculating flux integral contribution for sub time step " << na << " starting at t0 " << t0 << " (dt = " << dt << ")" << endl;
+////						Info << "Calculating flux integral contribution for sub time step " << na << " starting at t0 " << t0 << " (dt = " << dt << ")" << endl;
 						//Calculating new isoFace position and orientation
 						scalar f1(av[na]);
-						Info << "Calculating isoFace1 for f1 = " << f1 << endl;
+////						Info << "Calculating isoFace1 for f1 = " << f1 << endl;
 						vector x1(vector::zero), n1(vector::zero); //IsoFace1 centre and area vectors
-						//scalar a1(0.0); //VOF value on face corresponding to isoFace1
 						
-						if (na == 0 && (a0 == 0 || a0 == 1)) //If face is initially completely full or empty so will it be at its first encounter with surface
+						if (na == 0 && (a0 <= SMALL || a0 >= 1-SMALL)) //If face is initially completely full or empty so will it be at its first encounter with surface
 						{
 							a1 = a0;
 							x1 = xFirst;
@@ -630,7 +630,7 @@ void Foam::isoCutter::timeIntegratedFlux
 								a1 = mag(fArea)/mag(Sf[fLabel]);
 							}
 						}
-						Info << "isoFace1 centre and area are x1 = " << x1 << " and n1 = " << n1 << " has a1 = " << a1 << endl; 
+////						Info << "isoFace1 centre and area are x1 = " << x1 << " and n1 = " << n1 << " has a1 = " << a1 << endl; 
 /*						if ((n1 & n0) < 0)
 						{
 							n1 *= (-1.0);
@@ -648,9 +648,9 @@ void Foam::isoCutter::timeIntegratedFlux
 						t1 = min(t0 + dtn,dt);
 
 						a1 = a0 + (t1-t0)/dtn*(a1-a0); //Linear interpolation of alphaf to time t1 from values at time t0 and t0+dtn - only changes a1 if t0+dtn > dt.
-						Info << "Estimated dtn = " << dtn << ", t1 = " << t1 << ", a1 = " << a1 << endl;
+////					Info << "Estimated dtn = " << dtn << ", t1 = " << t1 << ", a1 = " << a1 << endl;
 						dV[fLabel] += phi[fLabel]*0.5*(a0 + a1)*(t1-t0); //Trapezoidal estimate
-						Info << "dV[fLabel] = " << dV[fLabel] << " after adding " << phi[fLabel]*0.5*(a0 + a1)*(t1-t0) << " m3" << endl;
+////						Info << "dV[fLabel] = " << dV[fLabel] << " after adding " << phi[fLabel]*0.5*(a0 + a1)*(t1-t0) << " m3" << endl;
 						
 						t0 = t1;
 						x0 = x1;
@@ -672,6 +672,10 @@ void Foam::isoCutter::timeIntegratedFlux
 				}
 
 			}
+		}
+		else
+		{
+			Info << "WARNING: Face not treated!!!" << endl;
 		}
 	}
 }
@@ -821,7 +825,7 @@ void Foam::isoCutter::isoFaceCentreAndArea
 	}
 	else
 	{
-		Info << "Warning: isoPoints.size() <= 0" << endl;
+		Info << "Warning: isoPoints.size() <= 0 for cell " << ci << endl;
 	}	
 }
 

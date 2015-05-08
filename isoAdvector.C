@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
     Info<< "\nStarting time loop\n" << endl;
 
 	surfaceScalarField dVf = 0*phi*runTime.deltaT()/mesh.V()[0];
-	scalarField& dVtest = dVf;
+	scalarField& dVfi = dVf;
 	volScalarField dV(alpha1);
 	scalarField alphap;
 	volPointInterpolation vpi(mesh);
@@ -91,17 +91,20 @@ int main(int argc, char *argv[])
 		
 		alphap = vpi.interpolate(alpha1);
 		Foam::isoCutter cutter(mesh,alphap,0.5); //isoValue not used for anything
-		cutter.timeIntegratedFlux(alpha1, phi, U, runTime.deltaT().value(), dVtest);
+		cutter.timeIntegratedFlux(alpha1, phi, U, runTime.deltaT().value(), dVfi);
 		dV = fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume
 		
-		forAll(alpha1,ci)
-		{
-			alpha1[ci] -= dV[ci];
+		alpha1 -= dV;
+//		forAll(alpha1,ci)
+//		{
+//			alpha1[ci] -= dV[ci];
+/*
 			if (alpha1[ci] != 0 && alpha1[ci] != 1)
 			{
 				Info << "Cell " << ci << ", alpha = " << alpha1[ci] << endl;
 			}
-		}
+*/
+//		}
 		alpha1.correctBoundaryConditions();
 
 		Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value() 

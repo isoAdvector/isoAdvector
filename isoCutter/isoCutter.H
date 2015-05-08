@@ -329,7 +329,7 @@ public:
 			vector& faceCentre,
 			vector& faceArea
 		);
-		
+				
 		//- Writes cut cell faces to ply files and to screen
         void write();
 };
