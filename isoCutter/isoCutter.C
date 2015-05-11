@@ -517,30 +517,35 @@ void Foam::isoCutter::timeIntegratedFlux
 		}
 		else if ( aMax > 0.5 ) //Then cell must be cut
 		{
-////			Info << " " << endl;
-////			Info << "------------ Cell " << ci << " ------------" << endl;
-////			Info << "outFluxingFaces: " << outFluxingFaces << endl;
+			Info << " " << endl;
+			Info << "------------ Cell " << ci << " ------------" << endl;
+			Info << "outFluxingFaces: " << outFluxingFaces << endl;
 			//Calculate isovalue f0 reproducing VOF value to given accuracy
 			scalar f0, tol(1e-6);
 			label maxIter(100);
 			vector subCellCtr;
+			Info << "vofCutCell(ci, alpha[ci], tol, maxIter, f0, subCellCtr);" << endl;
 			vofCutCell(ci, alpha[ci], tol, maxIter, f0, subCellCtr);
 
 			//Calculate isoFace0 centre xs0, normal ns0, and velocity U0 = U(xs0)
+			Info << "isoFaceCentreAndArea(ci,f0,x0,n0);" << endl;
 			vector x0(vector::zero), n0(vector::zero);
 			isoFaceCentreAndArea(ci,f0,x0,n0); //Stupid to recalculate this here - should be provided by vofCutCell above
 			//Make n0 point out of subCell
-			if (((x0 - subCellCtr) & n0) < 0)
+			Info << "x0: " << x0 << ", n0: " << n0 << ", subCellCtr: " << subCellCtr << endl;
+			if (((x0 - subCellCtr) & n0) < -10*SMALL)
 			{
 				n0 *= (-1.0);
-////				Info << "Changing direction of n0 " << n0 << endl;
+				Info << "Changing direction of n0 " << n0 << endl;
 			}
 			
 			//Interpolate velocity to isoFace centre
 			interpolationCellPoint<vector> UInterp(U);
 			vector U0 = UInterp.interpolate(x0,ci);
+			Info << "U0 = " << U0 << endl;
 			scalar Un0 = (U0 & n0);
-			if (mag(n0) > 0)
+			Info << "Un0 = " << Un0 << endl;
+			if (mag(n0) > SMALL)
 			{
 				Un0 /= mag(n0);
 			}
@@ -549,8 +554,8 @@ void Foam::isoCutter::timeIntegratedFlux
 				Info << "WARNING for cell " << ci << ": n0 has zero length. Probably because isoFace is a point. Skipping division of Un0 by mag(n0)." << endl;
 				Info << "alpha = " << alpha[ci] << ", f0 = " << f0 << ", subCellCentre = " << subCellCtr << ", isoFaceCentre = " << x0 << ", isoFaceNormal = " << n0 << ", isoFaceVelocity = " << U0 << ", isoFaceNormalVelocity = " << Un0 << endl;
 			}
-////			Info << "Initial values for time step:" << endl;
-////			Info << "f0 = " << f0 << ", subCellCentre = " << subCellCtr << ", isoFaceCentre = " << x0 << ", isoFaceNormal = " << n0 << ", isoFaceVelocity = " << U0 << ", isoFaceNormalVelocity = " << Un0 << endl;
+			Info << "Initial values for time step:" << endl;
+			Info << "f0 = " << f0 << ", subCellCentre = " << subCellCtr << ", isoFaceCentre = " << x0 << ", isoFaceNormal = " << n0 << ", isoFaceVelocity = " << U0 << ", isoFaceNormalVelocity = " << Un0 << endl;
 
 			
 			vector x00(x0), n00(n0); //Necessary when more than one outfluxing face
@@ -558,7 +563,7 @@ void Foam::isoCutter::timeIntegratedFlux
 			forAll(outFluxingFaces,fi)
 			{
 				label fLabel = outFluxingFaces[fi];
-////				Info << "FACE " << fLabel << " ------------" << endl;
+				Info << "FACE " << fLabel << " with phi = " << phi[fLabel] << endl;
 	
 //------------------------Calculate initial alphaf on the face------------------------
 				scalar t0 = 0.0; //Initial time
@@ -578,7 +583,7 @@ void Foam::isoCutter::timeIntegratedFlux
 					makeFaceCentreAndArea(partSubFacePts, fCtr, fArea);
 					a0 = mag(fArea)/mag(Sf[fLabel]);
 				}
-////				Info << "a0 on face: " << a0 << endl;
+				Info << "a0 on face: " << a0 << endl;
 				
 				//Generating list of face vertices approached by isoFace
 				scalarField av; //Unique version of aVert
@@ -593,10 +598,10 @@ void Foam::isoCutter::timeIntegratedFlux
 					scalar t1(0.0); //Next time a vertex is met
 					while (t0 < dt && na < av.size())
 					{
-////						Info << "Calculating flux integral contribution for sub time step " << na << " starting at t0 " << t0 << " (dt = " << dt << ")" << endl;
+						Info << "Calculating flux integral contribution for sub time step " << na << " starting at t0 " << t0 << " (dt = " << dt << ")" << endl;
 						//Calculating new isoFace position and orientation
 						scalar f1(av[na]);
-////						Info << "Calculating isoFace1 for f1 = " << f1 << endl;
+						Info << "Calculating isoFace1 for f1 = " << f1 << endl;
 						vector x1(vector::zero), n1(vector::zero); //IsoFace1 centre and area vectors
 						
 						if (na == 0 && (a0 <= SMALL || a0 >= 1-SMALL)) //If face is initially completely full or empty so will it be at its first encounter with surface
@@ -630,7 +635,7 @@ void Foam::isoCutter::timeIntegratedFlux
 								a1 = mag(fArea)/mag(Sf[fLabel]);
 							}
 						}
-////						Info << "isoFace1 centre and area are x1 = " << x1 << " and n1 = " << n1 << " has a1 = " << a1 << endl; 
+						Info << "isoFace1 centre and area are x1 = " << x1 << " and n1 = " << n1 << " has a1 = " << a1 << endl; 
 /*						if ((n1 & n0) < 0)
 						{
 							n1 *= (-1.0);
@@ -648,9 +653,9 @@ void Foam::isoCutter::timeIntegratedFlux
 						t1 = min(t0 + dtn,dt);
 
 						a1 = a0 + (t1-t0)/dtn*(a1-a0); //Linear interpolation of alphaf to time t1 from values at time t0 and t0+dtn - only changes a1 if t0+dtn > dt.
-////					Info << "Estimated dtn = " << dtn << ", t1 = " << t1 << ", a1 = " << a1 << endl;
+						Info << "Estimated dtn = " << dtn << ", t1 = " << t1 << ", a1 = " << a1 << endl;
 						dV[fLabel] += phi[fLabel]*0.5*(a0 + a1)*(t1-t0); //Trapezoidal estimate
-////						Info << "dV[fLabel] = " << dV[fLabel] << " after adding " << phi[fLabel]*0.5*(a0 + a1)*(t1-t0) << " m3" << endl;
+						Info << "dV[fLabel] = " << dV[fLabel] << " after adding " << phi[fLabel]*0.5*(a0 + a1)*(t1-t0) << " m3" << endl;
 						
 						t0 = t1;
 						x0 = x1;
@@ -691,15 +696,18 @@ void Foam::isoCutter::getOutFluxFaces
 	forAll(cells[ci],fi)
 	{
 		label fLabel = cells[ci][fi];
-		if (mesh_.owner()[fLabel] == ci && phi[fLabel] > 0)
+		if (fLabel < mesh_.nInternalFaces())
 		{
-			outFluxingFaces.append(fLabel);
-		}
-		else if (ci < mesh_.nInternalFaces())
-		{
-			if (mesh_.neighbour()[fLabel] == ci && phi[fLabel] < 0)
+			if (mesh_.owner()[fLabel] == ci && phi[fLabel] > 10*SMALL) //HARDCODED LIMIT
 			{
-				outFluxingFaces.append(fLabel);					
+				outFluxingFaces.append(fLabel);
+			}
+			else if (ci < mesh_.nInternalFaces())
+			{
+				if (mesh_.neighbour()[fLabel] == ci && phi[fLabel] < -10*SMALL) //HARDCODED LIMIT
+				{
+					outFluxingFaces.append(fLabel);					
+				}
 			}
 		}
 	}

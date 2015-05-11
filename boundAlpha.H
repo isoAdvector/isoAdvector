@@ -1,4 +1,4 @@
-	{
+/*	{
 		DynamicList<label> overFilledCells;
 		forAll(alpha1,ci)
 		{
@@ -16,7 +16,7 @@
 			label cLabel = overFilledCells[ci];
 			Info << "Cell " << cLabel << ":" << endl;
 			labelList faceLabels = mesh.cells()[cLabel];
-			scalar magPhi = 0;
+			scalar magdV = 0;
 			DynamicList<label> outFaces;
 			forAll(faceLabels,fi)
 			{
@@ -25,52 +25,57 @@
 				{
 					if (cLabel == mesh.owner()[fLabel]) //positive flux means out of cell cLabel
 					{
-						if (phi[fLabel] > 0)
+						if (phi[fLabel] > 0 &&  mag(dVf[fLabel]) < mag(phi[fLabel])*runTime.deltaT().value() )
 						{
-							magPhi += phi[fLabel];
+							magdV += mag(dVf[fLabel]);
 							outFaces.append(fLabel);
 						}
 					}
-					else
+					else //cLabel must be neighbour and negative phi means positive outflow 
 					{
-						if (phi[fLabel] < 0)
+						if (phi[fLabel] < 0 && mag(dVf[fLabel]) < mag(phi[fLabel])*runTime.deltaT().value() )
 						{
-							magPhi -= phi[fLabel];
+							magdV += mag(dVf[fLabel]);
+							outFaces.append(fLabel);
 						}
 					}
 				}
 			}
 			outFaces.shrink();
-			forAll(outFaces,fi)
+			if (magdV > SMALL)
 			{
-				label fLabel = outFaces[fi];
-				label otherCellLabel;
-				if (cLabel == mesh.owner()[fLabel])
+				forAll(outFaces,fi)
 				{
-					otherCellLabel = mesh.neighbour()[fLabel];
-				}
-				else
-				{
-					otherCellLabel = mesh.owner()[fLabel];					
-				}
-				scalar alphaOtherOld = alpha1[otherCellLabel];
-				scalar dV = (alpha1[cLabel]-1)*mesh.V()[cLabel]*mag(phi[fLabel])/magPhi;
-				Info << "Transferring " << dV << " m3 of water from cell " << cLabel << " to cell " << otherCellLabel << endl;
-				Info << "Old alpha1[cLabel]: " <<  alpha1[cLabel] << ", old alpha[otherCellLabel] = " << alpha1[otherCellLabel] << endl;
-				alpha1[otherCellLabel] += dV/mesh.V()[otherCellLabel];
-				alpha1[cLabel] -= dV/mesh.V()[cLabel];
-				Info << "New alpha1[cLabel]: " <<  alpha1[cLabel] << ", new alpha[otherCellLabel] = " << alpha1[otherCellLabel] << endl;
-				if (alphaOtherOld<1 && alpha1[otherCellLabel]>1)
-				{
-					overFilledCells.append(otherCellLabel);
-					nOverFilledCells++;
-					Info << "Cell " << otherCellLabel << " got overfilled!!!" << endl;
+					label fLabel = outFaces[fi];
+					label otherCellLabel;
+					if (cLabel == mesh.owner()[fLabel])
+					{
+						otherCellLabel = mesh.neighbour()[fLabel];
+					}
+					else
+					{
+						otherCellLabel = mesh.owner()[fLabel];					
+					}
+					scalar alphaOtherOld = alpha1[otherCellLabel];
+					scalar dVi = (alpha1[cLabel]-1)*mesh.V()[cLabel]*mag(dVf[fLabel])/magdV;
+					Info << "Transferring " << dVi << " m3 of water from cell " << cLabel << " to cell " << otherCellLabel << endl;
+					Info << "Old alpha1[cLabel]: " <<  alpha1[cLabel] << ", old alpha[otherCellLabel] = " << alpha1[otherCellLabel] << endl;
+					alpha1[otherCellLabel] += dVi/mesh.V()[otherCellLabel];
+					alpha1[cLabel] -= dVi/mesh.V()[cLabel];
+					Info << "New alpha1[cLabel]: " <<  alpha1[cLabel] << ", new alpha[otherCellLabel] = " << alpha1[otherCellLabel] << endl;
+					if (alphaOtherOld<1 && alpha1[otherCellLabel]>1)
+					{
+						overFilledCells.append(otherCellLabel);
+						nOverFilledCells++;
+						Info << "Cell " << otherCellLabel << " got overfilled!!!" << endl;
+					}
 				}
 			}
 		}
 	}
-	
+*/	
 /////////////////////////////////////////
+
 	Info << "-------------------------------" << endl;
 	{
 		DynamicList<label> overEmptiedCells;
@@ -90,7 +95,7 @@
 			label cLabel = overEmptiedCells[ci];
 			Info << "Cell " << cLabel << ":" << endl;
 			labelList faceLabels = mesh.cells()[cLabel];
-			scalar magPhi = 0;
+			scalar magdV = 0;
 			DynamicList<label> outFaces;
 			forAll(faceLabels,fi)
 			{
@@ -101,7 +106,7 @@
 					{
 						if (phi[fLabel] > 0)
 						{
-							magPhi += phi[fLabel];
+							magdV += mag(dVf[fLabel]);
 							outFaces.append(fLabel);
 						}
 					}
@@ -109,36 +114,41 @@
 					{
 						if (phi[fLabel] < 0)
 						{
-							magPhi -= phi[fLabel];
+							magdV += mag(dVf[fLabel]);
+							outFaces.append(fLabel);
 						}
 					}
 				}
 			}
 			outFaces.shrink();
-			forAll(outFaces,fi)
+			
+			if(magdV > SMALL)
 			{
-				label fLabel = outFaces[fi];
-				label otherCellLabel;
-				if (cLabel == mesh.owner()[fLabel])
+				forAll(outFaces,fi)
 				{
-					otherCellLabel = mesh.neighbour()[fLabel];
-				}
-				else
-				{
-					otherCellLabel = mesh.owner()[fLabel];					
-				}
-				scalar alphaOtherOld = alpha1[otherCellLabel];
-				scalar dV = (-alpha1[cLabel])*mesh.V()[cLabel]*mag(phi[fLabel])/magPhi;
-				Info << "Transferring " << dV << " m3 of water from cell " << otherCellLabel << " to cell " << cLabel << endl;
-				Info << "Old alpha1[cLabel]: " <<  alpha1[cLabel] << ", old alpha[otherCellLabel] = " << alpha1[otherCellLabel] << endl;
-				alpha1[otherCellLabel] -= dV/mesh.V()[otherCellLabel];
-				alpha1[cLabel] += dV/mesh.V()[cLabel];
-				Info << "New alpha1[cLabel]: " <<  alpha1[cLabel] << ", new alpha[otherCellLabel] = " << alpha1[otherCellLabel] << endl;
-				if (alphaOtherOld>0 && alpha1[otherCellLabel]<0)
-				{
-					overEmptiedCells.append(otherCellLabel);
-					nOverEmptiedCells++;
-					Info << "Cell " << otherCellLabel << " got overemptied!!!" << endl;
+					label fLabel = outFaces[fi];
+					label otherCellLabel;
+					if (cLabel == mesh.owner()[fLabel])
+					{
+						otherCellLabel = mesh.neighbour()[fLabel];
+					}
+					else
+					{
+						otherCellLabel = mesh.owner()[fLabel];					
+					}
+					scalar alphaOtherOld = alpha1[otherCellLabel];
+					scalar dVi = (-alpha1[cLabel])*mesh.V()[cLabel]*mag(dVf[fLabel])/magdV;
+					Info << "Transferring " << dVi << " m3 of water from cell " << otherCellLabel << " to cell " << cLabel << endl;
+					Info << "Old alpha1[cLabel]: " <<  alpha1[cLabel] << ", old alpha[otherCellLabel] = " << alpha1[otherCellLabel] << endl;
+					alpha1[otherCellLabel] -= dVi/mesh.V()[otherCellLabel];
+					alpha1[cLabel] += dVi/mesh.V()[cLabel];
+					Info << "New alpha1[cLabel]: " <<  alpha1[cLabel] << ", new alpha[otherCellLabel] = " << alpha1[otherCellLabel] << endl;
+					if (alphaOtherOld>0 && alpha1[otherCellLabel]<0)
+					{
+						overEmptiedCells.append(otherCellLabel);
+						nOverEmptiedCells++;
+						Info << "Cell " << otherCellLabel << " got overemptied!!!" << endl;
+					}
 				}
 			}
 		}

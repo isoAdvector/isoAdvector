@@ -88,13 +88,28 @@ int main(int argc, char *argv[])
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
 		//Alpha loop
-		
+		Info << "alphap = vpi.interpolate(alpha1);" << endl;
 		alphap = vpi.interpolate(alpha1);
+		Info << "Foam::isoCutter cutter(mesh,alphap,0.5);" << endl;
 		Foam::isoCutter cutter(mesh,alphap,0.5); //isoValue not used for anything
+		Info << "cutter.timeIntegratedFlux(alpha1, phi, U, runTime.deltaT().value(), dVfi)" << endl;
 		cutter.timeIntegratedFlux(alpha1, phi, U, runTime.deltaT().value(), dVfi);
-		dV = fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume
+		Info << "dV = fvc::surfaceIntegrate(dVf);" << endl;
+		dV = fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume		
 		
+		forAll(dV,ci)
+		{
+			if (dV[ci] > mesh.V()[ci]*alpha1[ci])
+			{
+				Info << "Cell " << ci << " is overemptied by " << dV[ci] - mesh.V()[ci]*alpha1[ci] << " m3." << endl;
+			}
+			else if (dV[ci] < mesh.V()[ci]*(alpha1[ci]-1))
+			{
+				Info << "Cell " << ci << " is overfilled by " << mesh.V()[ci]*(alpha1[ci]-1) - dV[ci] << " m3." << endl;				
+			}
+		}
 		alpha1 -= dV;
+//		#include "boundAlpha.H"
 //		forAll(alpha1,ci)
 //		{
 //			alpha1[ci] -= dV[ci];
@@ -108,7 +123,7 @@ int main(int argc, char *argv[])
 		alpha1.correctBoundaryConditions();
 
 		Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value() 
-			 << ", max(alpha1) = " << max(alpha1).value() 
+			 << ", max(alpha1)-1 = " << max(alpha1).value()-1
 			 << "\t min(alpha1) = " << min(alpha1).value() << endl;
 //			 << "\t min(dt) = " << dt.value() << endl; 
 
