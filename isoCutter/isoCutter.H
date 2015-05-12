@@ -329,7 +329,14 @@ public:
 			vector& faceCentre,
 			vector& faceArea
 		);
-				
+		
+		void boundAlpha
+		(
+			const volScalarField& alpha,
+			const surfaceScalarField& phi,
+			surfaceScalarField& dVf
+		);
+		
 		//- Writes cut cell faces to ply files and to screen
         void write();
 };

@@ -95,8 +95,12 @@ int main(int argc, char *argv[])
 		Info << "cutter.timeIntegratedFlux(alpha1, phi, U, runTime.deltaT().value(), dVfi)" << endl;
 		cutter.timeIntegratedFlux(alpha1, phi, U, runTime.deltaT().value(), dVfi);
 		Info << "dV = fvc::surfaceIntegrate(dVf);" << endl;
+		cutter.boundAlpha(alpha1,phi,dVf);
+		cutter.boundAlpha(alpha1,phi,dVf);
+		cutter.boundAlpha(alpha1,phi,dVf);
+		cutter.boundAlpha(alpha1,phi,dVf);
 		dV = fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume		
-		
+/*		
 		forAll(dV,ci)
 		{
 			if (dV[ci] > mesh.V()[ci]*alpha1[ci])
@@ -108,6 +112,7 @@ int main(int argc, char *argv[])
 				Info << "Cell " << ci << " is overfilled by " << mesh.V()[ci]*(alpha1[ci]-1) - dV[ci] << " m3." << endl;				
 			}
 		}
+*/
 		alpha1 -= dV;
 //		#include "boundAlpha.H"
 //		forAll(alpha1,ci)

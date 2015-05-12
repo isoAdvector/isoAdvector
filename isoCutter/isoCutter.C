@@ -26,6 +26,7 @@ License
 #include "isoCutter.H"
 #include "volPointInterpolation.H"
 #include "interpolationCellPoint.H"
+#include "fvc.H"
 //#include "isoSubCell.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
@@ -696,8 +697,8 @@ void Foam::isoCutter::getOutFluxFaces
 	forAll(cells[ci],fi)
 	{
 		label fLabel = cells[ci][fi];
-		if (fLabel < mesh_.nInternalFaces())
-		{
+//		if (fLabel < mesh_.nInternalFaces())
+//		{
 			if (mesh_.owner()[fLabel] == ci && phi[fLabel] > 10*SMALL) //HARDCODED LIMIT
 			{
 				outFluxingFaces.append(fLabel);
@@ -709,7 +710,7 @@ void Foam::isoCutter::getOutFluxFaces
 					outFluxingFaces.append(fLabel);					
 				}
 			}
-		}
+//		}
 	}
 	outFluxingFaces.shrink();
 }
@@ -947,6 +948,129 @@ void Foam::isoCutter::subCellFraction
 		alpha1 = 1;
 		cellCtr = mesh_.C()[ci];
 	}
+}
+
+void Foam::isoCutter::boundAlpha
+(
+	const volScalarField& alpha,
+	const surfaceScalarField& phi,
+	surfaceScalarField& dVf
+)
+{
+	const scalarField& V = mesh_.V();
+	const cellList& cells = mesh_.cells(); //It is important for the efficiency of the code to verify that this call does not generate the cell faces for all cells each time it is called but only the first time!
+	const labelUList& owner = mesh_.owner();
+	scalarField dV(alpha.size());
+
+	dV = 0.0;
+	DynamicList<label> overFilledCells;
+	forAll(alpha,ci)
+	{
+//		if (SMALL < alpha[ci] && alpha[ci] < 1-SMALL)
+		{
+			const labelList& fLabels = cells[ci];
+			forAll(fLabels,fi)
+			{
+				if (fLabels[fi] < mesh_.nInternalFaces())
+				{
+					if (owner[fLabels[fi]] == ci)
+					{
+						dV[ci] += dVf[fLabels[fi]];
+					}
+					else
+					{
+						dV[ci] -= dVf[fLabels[fi]];				
+					}
+				}
+			}
+			
+//			if ( dV[ci] < V[ci]*(alpha[ci]-1.0) )
+			if ( dV[ci] < 0.0 && mag(dV[ci]) > V[ci]*(1.0-alpha[ci]) )
+			{
+				Info << "Cell " << ci << " is overfilled: -dV = " << -dV[ci] << " < V*(1-alpha) = " << V[ci]*(1.0-alpha[ci]) << endl;
+				overFilledCells.append(ci);			
+			}
+		}
+	}
+	overFilledCells.shrink();
+	
+	forAll(overFilledCells,ci)
+	{
+		const label cLabel = overFilledCells[ci];
+		DynamicList<label> outFluxingFaces;
+		getOutFluxFaces(phi, cLabel, outFluxingFaces);
+		scalar sumdVOut = 0.0;
+		forAll(outFluxingFaces,fi) //If some outfluxing faces e.g. those fluxing pure air or water are to be left out, this is the place to do it.
+		{
+			const label fLabel = outFluxingFaces[fi];
+			sumdVOut += mag(dVf[fLabel]);
+		}
+//		scalar surplusWater = V[cLabel]*(alpha[cLabel]-1.0) - dV[cLabel];
+		scalar surplusWater = mag(dV[cLabel])-V[cLabel]*(1.0-alpha[cLabel]);
+		Info << "Cell " << cLabel << " has sumdVOut = " << sumdVOut << " and surplusWater = " << surplusWater << endl;
+		forAll(outFluxingFaces,fi)
+		{
+			const label fLabel = outFluxingFaces[fi];
+			dVf[fLabel] += surplusWater*dVf[fLabel]/sumdVOut; //Whatever sign dVf has, it corresponds to out of cLabel. We must make it smaller, thus adding a little if it is negative and subtracting a little if it is positive
+		}
+	}	
+
+////////////////////	
+
+	dV = 0.0;
+	DynamicList<label> overEmptiedCells;
+	forAll(alpha,ci)
+	{
+//		if (SMALL < alpha[ci] && alpha[ci] < 1-SMALL)
+		{
+			const labelList& fLabels = cells[ci];
+			forAll(fLabels,fi)
+			{
+				if (fLabels[fi] < mesh_.nInternalFaces())
+				{
+					if (owner[fLabels[fi]] == ci)
+					{
+						dV[ci] += dVf[fLabels[fi]];
+					}
+					else
+					{
+						dV[ci] -= dVf[fLabels[fi]];				
+					}
+				}
+			}
+			
+			if ( dV[ci] > V[ci]*alpha[ci] )
+			{
+				Info << "Cell " << ci << " is overemptied: dV = " << dV[ci] << " > V*alpha = " << V[ci]*alpha[ci] << endl;
+				overEmptiedCells.append(ci);
+			} 
+		}
+	}
+	overEmptiedCells.shrink();
+	
+	forAll(overEmptiedCells,ci)
+	{
+		const label cLabel = overEmptiedCells[ci];
+		DynamicList<label> outFluxingFaces;
+		getOutFluxFaces(phi, cLabel, outFluxingFaces);
+		scalar sumdVOut = 0.0;
+		forAll(outFluxingFaces,fi) //If some outfluxing faces e.g. those fluxing pure air or water are to be left out, this is the place to do it.
+		{
+			const label fLabel = outFluxingFaces[fi];
+			sumdVOut += mag(dVf[fLabel]);
+		}
+		scalar missingWater = dV[cLabel] - V[cLabel]*alpha[cLabel];
+		Info << "Cell " << cLabel << " has sumdVOut = " << sumdVOut << " and missingWater = " << missingWater << endl;
+		forAll(outFluxingFaces,fi)
+		{
+			const label fLabel = outFluxingFaces[fi];
+			dVf[fLabel] -= missingWater*dVf[fLabel]/sumdVOut; //Whatever sign dVf has, it corresponds to out of cLabel. We must make it smaller, thus adding a little if it is negative and subtracting a little if it is positive
+		}
+	}
+	
+//////////////////////////
+
+
 }
 
 
