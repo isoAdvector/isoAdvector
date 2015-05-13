@@ -337,6 +337,13 @@ public:
 			surfaceScalarField& dVf
 		);
 		
+		scalar netFlux
+		(
+			const surfaceScalarField& dVf,
+			const label& cLabel
+		);
+		
+		
 		//- Writes cut cell faces to ply files and to screen
         void write();
 };

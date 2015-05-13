@@ -96,9 +96,6 @@ int main(int argc, char *argv[])
 		cutter.timeIntegratedFlux(alpha1, phi, U, runTime.deltaT().value(), dVfi);
 		Info << "dV = fvc::surfaceIntegrate(dVf);" << endl;
 		cutter.boundAlpha(alpha1,phi,dVf);
-		cutter.boundAlpha(alpha1,phi,dVf);
-		cutter.boundAlpha(alpha1,phi,dVf);
-		cutter.boundAlpha(alpha1,phi,dVf);
 		dV = fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume		
 /*		
 		forAll(dV,ci)

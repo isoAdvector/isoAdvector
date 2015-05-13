@@ -960,41 +960,37 @@ void Foam::isoCutter::boundAlpha
 	const scalarField& V = mesh_.V();
 	const cellList& cells = mesh_.cells(); //It is important for the efficiency of the code to verify that this call does not generate the cell faces for all cells each time it is called but only the first time!
 	const labelUList& owner = mesh_.owner();
-	scalarField dV(alpha.size());
+	scalarField dV(alpha.size(),0.0);
 
-	dV = 0.0;
-	DynamicList<label> overFilledCells;
+	const scalar tol = SMALL;
+	Info << "Bounding transport (tolerance = " << tol << ")" << endl;
+	
+	DynamicList<label> overFilledCells, overEmptiedCells;
 	forAll(alpha,ci)
 	{
-//		if (SMALL < alpha[ci] && alpha[ci] < 1-SMALL)
+		dV[ci] = netFlux(dVf,ci);
+		bool cellIsOverFilled = dV[ci] < -tol && mag(dV[ci]) > V[ci]*(1.0-alpha[ci]) + tol;
+		if ( cellIsOverFilled )
 		{
-			const labelList& fLabels = cells[ci];
-			forAll(fLabels,fi)
-			{
-				if (fLabels[fi] < mesh_.nInternalFaces())
-				{
-					if (owner[fLabels[fi]] == ci)
-					{
-						dV[ci] += dVf[fLabels[fi]];
-					}
-					else
-					{
-						dV[ci] -= dVf[fLabels[fi]];				
-					}
-				}
-			}
-			
-//			if ( dV[ci] < V[ci]*(alpha[ci]-1.0) )
-			if ( dV[ci] < 0.0 && mag(dV[ci]) > V[ci]*(1.0-alpha[ci]) )
-			{
-				Info << "Cell " << ci << " is overfilled: -dV = " << -dV[ci] << " < V*(1-alpha) = " << V[ci]*(1.0-alpha[ci]) << endl;
-				overFilledCells.append(ci);			
-			}
+//			Info << "Cell " << ci << " is overfilled: -dV = " << -dV[ci] << " < V*(1-alpha) = " << V[ci]*(1.0-alpha[ci]) << endl;
+			overFilledCells.append(ci);			
 		}
+		else 
+		{
+			bool cellIsOverEmptied = dV[ci] > V[ci]*alpha[ci] + tol;
+			if ( cellIsOverEmptied )
+			{
+//				Info << "Cell " << ci << " is overemptied: dV = " << dV[ci] << " > V*alpha = " << V[ci]*alpha[ci] << endl;
+				overEmptiedCells.append(ci);
+			}
+		} 
 	}
 	overFilledCells.shrink();
+	overEmptiedCells.shrink();
 	
-	forAll(overFilledCells,ci)
+	label nOverFilledCells = overFilledCells.size();
+	label ci = 0;
+	while(ci < nOverFilledCells)
 	{
 		const label cLabel = overFilledCells[ci];
 		DynamicList<label> outFluxingFaces;
@@ -1007,18 +1003,45 @@ void Foam::isoCutter::boundAlpha
 		}
 //		scalar surplusWater = V[cLabel]*(alpha[cLabel]-1.0) - dV[cLabel];
 		scalar surplusWater = mag(dV[cLabel])-V[cLabel]*(1.0-alpha[cLabel]);
-		Info << "Cell " << cLabel << " has sumdVOut = " << sumdVOut << " and surplusWater = " << surplusWater << endl;
+		Info << "\nCell " << cLabel << " has surplusWater = " << surplusWater << " m3." << endl;
 		forAll(outFluxingFaces,fi)
 		{
 			const label fLabel = outFluxingFaces[fi];
-			dVf[fLabel] += surplusWater*dVf[fLabel]/sumdVOut; //Whatever sign dVf has, it corresponds to out of cLabel. We must make it smaller, thus adding a little if it is negative and subtracting a little if it is positive
+			scalar waterAdded = surplusWater*dVf[fLabel]/sumdVOut;
+			dVf[fLabel] += waterAdded; //Whatever sign dVf has, it corresponds to out of cLabel. We must make it smaller, thus adding a little if it is negative and subtracting a little if it is positive
+			//Checking if receiving cell becomes overfilled by the additional water it received
+			label otherCellLabel;
+			if (cLabel == mesh_.owner()[fLabel])
+			{
+				otherCellLabel = mesh_.neighbour()[fLabel];
+			}
+			else
+			{
+				otherCellLabel = mesh_.owner()[fLabel];	
+			}
+			scalar newdVOther = dV[otherCellLabel] - mag(waterAdded);
+			bool otherCellIsOverfilled = newdVOther < -tol && mag(newdVOther) > V[otherCellLabel]*(1.0-alpha[otherCellLabel]) + tol;
+			
+			if ( otherCellIsOverfilled )
+			{
+				bool otherCellWasAlreadyOverfilled = dV[otherCellLabel] < -tol && (mag(dV[otherCellLabel]) > V[otherCellLabel]*(1.0-alpha[otherCellLabel]) + tol);
+				if ( !otherCellWasAlreadyOverfilled )
+				{
+					Info << "Cell " << otherCellLabel << " was overfilled. Appending to overFilledCells list." << endl;
+					overFilledCells.append(otherCellLabel);
+					nOverFilledCells++;
+				}
+			}
+			dV[otherCellLabel] = newdVOther; //Updating dV for neighbour cell - Do not move this in front of the above if loop
+			Info << "Moving " << waterAdded << "  m3 to its neighbour cell " << otherCellLabel << "." << endl;
 		}
+		dV[cLabel] += surplusWater; //Updating dV for overfilled cell
+		ci++;
 	}	
 
 ////////////////////	
 
-	dV = 0.0;
-	DynamicList<label> overEmptiedCells;
+/*
 	forAll(alpha,ci)
 	{
 //		if (SMALL < alpha[ci] && alpha[ci] < 1-SMALL)
@@ -1046,7 +1069,6 @@ void Foam::isoCutter::boundAlpha
 			} 
 		}
 	}
-	overEmptiedCells.shrink();
 	
 	forAll(overEmptiedCells,ci)
 	{
@@ -1067,10 +1089,32 @@ void Foam::isoCutter::boundAlpha
 			dVf[fLabel] -= missingWater*dVf[fLabel]/sumdVOut; //Whatever sign dVf has, it corresponds to out of cLabel. We must make it smaller, thus adding a little if it is negative and subtracting a little if it is positive
 		}
 	}
-	
-//////////////////////////
+*/
+}
 
-
+Foam::scalar Foam::isoCutter::netFlux
+(
+	const surfaceScalarField& dVf,
+	const label& cLabel
+)
+{
+	scalar dV = 0.0;
+	const labelList& fLabels = mesh_.cells()[cLabel];
+	forAll(fLabels,fi)
+	{
+		if (fLabels[fi] < mesh_.nInternalFaces())  //Error when this is removed - should be removed when boundary face treatment is implemented
+		{
+			if (mesh_.owner()[fLabels[fi]] == cLabel)
+			{
+				dV += dVf[fLabels[fi]];
+			}
+			else
+			{
+				dV -= dVf[fLabels[fi]];				
+			}
+		}
+	}	
+	return dV;
 }
 
 
