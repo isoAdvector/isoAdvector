@@ -987,59 +987,113 @@ void Foam::isoCutter::boundAlpha
 	}
 	overFilledCells.shrink();
 	overEmptiedCells.shrink();
-	
-	label nOverFilledCells = overFilledCells.size();
-	label ci = 0;
-	while(ci < nOverFilledCells)
-	{
-		const label cLabel = overFilledCells[ci];
-		DynamicList<label> outFluxingFaces;
-		getOutFluxFaces(phi, cLabel, outFluxingFaces);
-		scalar sumdVOut = 0.0;
-		forAll(outFluxingFaces,fi) //If some outfluxing faces e.g. those fluxing pure air or water are to be left out, this is the place to do it.
-		{
-			const label fLabel = outFluxingFaces[fi];
-			sumdVOut += mag(dVf[fLabel]);
-		}
-//		scalar surplusWater = V[cLabel]*(alpha[cLabel]-1.0) - dV[cLabel];
-		scalar surplusWater = mag(dV[cLabel])-V[cLabel]*(1.0-alpha[cLabel]);
-		Info << "\nCell " << cLabel << " has surplusWater = " << surplusWater << " m3." << endl;
-		forAll(outFluxingFaces,fi)
-		{
-			const label fLabel = outFluxingFaces[fi];
-			scalar waterAdded = surplusWater*dVf[fLabel]/sumdVOut;
-			dVf[fLabel] += waterAdded; //Whatever sign dVf has, it corresponds to out of cLabel. We must make it smaller, thus adding a little if it is negative and subtracting a little if it is positive
-			//Checking if receiving cell becomes overfilled by the additional water it received
-			label otherCellLabel;
-			if (cLabel == mesh_.owner()[fLabel])
-			{
-				otherCellLabel = mesh_.neighbour()[fLabel];
-			}
-			else
-			{
-				otherCellLabel = mesh_.owner()[fLabel];	
-			}
-			scalar newdVOther = dV[otherCellLabel] - mag(waterAdded);
-			bool otherCellIsOverfilled = newdVOther < -tol && mag(newdVOther) > V[otherCellLabel]*(1.0-alpha[otherCellLabel]) + tol;
-			
-			if ( otherCellIsOverfilled )
-			{
-				bool otherCellWasAlreadyOverfilled = dV[otherCellLabel] < -tol && (mag(dV[otherCellLabel]) > V[otherCellLabel]*(1.0-alpha[otherCellLabel]) + tol);
-				if ( !otherCellWasAlreadyOverfilled )
-				{
-					Info << "Cell " << otherCellLabel << " was overfilled. Appending to overFilledCells list." << endl;
-					overFilledCells.append(otherCellLabel);
-					nOverFilledCells++;
-				}
-			}
-			dV[otherCellLabel] = newdVOther; //Updating dV for neighbour cell - Do not move this in front of the above if loop
-			Info << "Moving " << waterAdded << "  m3 to its neighbour cell " << otherCellLabel << "." << endl;
-		}
-		dV[cLabel] += surplusWater; //Updating dV for overfilled cell
-		ci++;
-	}	
 
+	//Correcting overfilling fluxes
+	{
+		label nOverFilledCells = overFilledCells.size();
+		label ci = 0;
+		while(ci < nOverFilledCells)
+		{
+			const label cLabel = overFilledCells[ci];
+			DynamicList<label> outFluxingFaces;
+			getOutFluxFaces(phi, cLabel, outFluxingFaces);
+			scalar sumdVOut = 0.0;
+			forAll(outFluxingFaces,fi) //If some outfluxing faces e.g. those fluxing pure air or water are to be left out, this is the place to do it.
+			{
+				const label fLabel = outFluxingFaces[fi];
+				sumdVOut += mag(dVf[fLabel]);
+			}
+	//		scalar surplusWater = V[cLabel]*(alpha[cLabel]-1.0) - dV[cLabel];
+			scalar surplusWater = mag(dV[cLabel])-V[cLabel]*(1.0-alpha[cLabel]);
+			Info << "\nCell " << cLabel << " has surplusWater = " << surplusWater << " m3." << endl;
+			forAll(outFluxingFaces,fi)
+			{
+				const label fLabel = outFluxingFaces[fi];
+				scalar waterAdded = surplusWater*dVf[fLabel]/sumdVOut;
+				dVf[fLabel] += waterAdded; //Whatever sign dVf has, it corresponds to out of cLabel. We must make it smaller, thus adding a little if it is negative and subtracting a little if it is positive
+				//Checking if receiving cell becomes overfilled by the additional water it received
+				label otherCellLabel;
+				if (cLabel == mesh_.owner()[fLabel])
+				{
+					otherCellLabel = mesh_.neighbour()[fLabel];
+				}
+				else
+				{
+					otherCellLabel = mesh_.owner()[fLabel];	
+				}
+				scalar newdVOther = dV[otherCellLabel] - mag(waterAdded);
+				bool otherCellIsOverfilled = newdVOther < -tol && mag(newdVOther) > V[otherCellLabel]*(1.0-alpha[otherCellLabel]) + tol;
+				
+				if ( otherCellIsOverfilled )
+				{
+					bool otherCellWasAlreadyOverfilled = dV[otherCellLabel] < -tol && (mag(dV[otherCellLabel]) > V[otherCellLabel]*(1.0-alpha[otherCellLabel]) + tol);
+					if ( !otherCellWasAlreadyOverfilled )
+					{
+						Info << "Cell " << otherCellLabel << " was overfilled. Appending to overFilledCells list." << endl;
+						overFilledCells.append(otherCellLabel);
+						nOverFilledCells++;
+					}
+				}
+				dV[otherCellLabel] = newdVOther; //Updating dV for neighbour cell - Do not move this in front of the above if loop
+				Info << "Moving " << waterAdded << "  m3 to its neighbour cell " << otherCellLabel << "." << endl;
+			}
+			dV[cLabel] += surplusWater; //Updating dV for overfilled cell
+			ci++;
+		}	
+	}
 ////////////////////	
+	//Correcting overemptying fluxes
+	{
+		label nOverEmptiedCells = overEmptiedCells.size();
+		label ci = 0;
+		while(ci < nOverEmptiedCells)
+		{
+			const label cLabel = overEmptiedCells[ci];
+			DynamicList<label> outFluxingFaces;
+			getOutFluxFaces(phi, cLabel, outFluxingFaces);
+			scalar sumdVOut = 0.0;
+			forAll(outFluxingFaces,fi) //If some outfluxing faces e.g. those fluxing pure air or water are to be left out, this is the place to do it.
+			{
+				const label fLabel = outFluxingFaces[fi];
+				sumdVOut += mag(dVf[fLabel]);
+			}
+			scalar missingWater = dV[cLabel] - V[cLabel]*alpha[cLabel];
+			Info << "\nCell " << cLabel << " has missingWater = " << missingWater << " m3." << endl;
+			forAll(outFluxingFaces,fi)
+			{
+				const label fLabel = outFluxingFaces[fi];
+				scalar waterSubtracted = missingWater*dVf[fLabel]/sumdVOut;
+				dVf[fLabel] -= waterSubtracted; //Whatever sign dVf has, it corresponds to out of cLabel. We must make it smaller, thus adding a little if it is negative and subtracting a little if it is positive
+				//Checking if receiving cell becomes overemptied by the decrease in water it receives
+				label otherCellLabel;
+				if (cLabel == mesh_.owner()[fLabel])
+				{
+					otherCellLabel = mesh_.neighbour()[fLabel];
+				}
+				else
+				{
+					otherCellLabel = mesh_.owner()[fLabel];	
+				}
+				scalar newdVOther = dV[otherCellLabel] + mag(waterSubtracted);
+				bool otherCellIsOverEmptied = newdVOther > V[otherCellLabel]*alpha[otherCellLabel] + tol;
+				if ( otherCellIsOverEmptied )
+				{
+					bool otherCellWasAlreadyOverEmptied = dV[otherCellLabel] > V[otherCellLabel]*alpha[otherCellLabel] + tol;
+					if ( !otherCellWasAlreadyOverEmptied )
+					{
+						Info << "Cell " << otherCellLabel << " was overemptied. Appending to overEmptiedCells list." << endl;
+						overEmptiedCells.append(otherCellLabel);
+						nOverEmptiedCells++;
+					}
+				}
+				dV[otherCellLabel] = newdVOther; //Updating dV for neighbour cell - Do not move this in front of the above if loop
+				Info << "Moving " << waterSubtracted << "  m3 from its neighbour cell " << otherCellLabel << "." << endl;
+			}
+			dV[cLabel] -= missingWater; //Updating dV for overemptied cell
+			ci++;
+		}	
+	}
+
 
 /*
 	forAll(alpha,ci)
