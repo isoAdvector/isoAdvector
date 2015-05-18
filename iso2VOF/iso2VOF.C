@@ -22,19 +22,18 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    isoCutTester
+    iso2Vof
 
 Description
-    Testing isoCutter class
+    Calculates VOF field from the cell cuttings of an isosurface.
 
 Author
-    Johan Roenby, DHI
+	Johan Roenby, DHI, all rights reserved.
 
 \*---------------------------------------------------------------------------*/
 
 #include "isoCutter.H"
 #include "argList.H"
-//#include "volPointInterpolation.H"
 
 using namespace Foam;
 
@@ -70,57 +69,14 @@ int main(int argc, char *argv[])
         ),
         mesh
     );
-/*
-    surfaceScalarField alphaf
-    (
-        IOobject
-        (
-            "alphaf",
-            runTime.timeName(),
-            mesh,
-            IOobject::READ_IF_PRESENT,
-            IOobject::AUTO_WRITE
-        ),
-        0*mag(mesh.Sf())/mag(mesh.Sf())
-    );
 
-    runTime++;
-*/
-
-    //Define function on mesh points and isovalue
-    const scalarField x = mesh.points().component(0);
-    const scalarField y = mesh.points().component(1);
-    const scalarField z = mesh.points().component(2);
-//    scalar pi = constant::mathematical::pi;
-//    const scalarField f = .5 + 0.2*sin(2*pi*x)*exp(-pow((y-.5)/.5,2)) - z;
-//    const scalarField f = -.26 - .23423*z+.8764*y-.1203*x;
-//	const scalarField f = pow(0.2,2) - pow(x-.5,2) - pow(y-.5,2) - pow(z-.5,2);
-//	const scalarField f = pow(0.223434,2) - pow(x-.5,2) - pow(z-.3,2);
-	const scalarField f = pow(0.25,2) - pow(x-.5,2) - pow(z-.3,2);
-	const scalar f0 = 0;
-
+	#include "isoFun.H"
 
 	//Calculating alpha1 volScalarField from f = f0 isosurface
-    Foam::isoCutter cutter(mesh,f,f0);
+    Foam::isoCutter cutter(mesh,f);
     cutter.subCellFractions(f0,alpha1);
     alpha1.write(); //Writing volScalarField alpha1
-    cutter.write(); //Writing cutCells to ply files
-/*
-	//Interpolating alpha1 to vertices
-	volPointInterpolation vpi(mesh);
-	alpha1.correctBoundaryConditions();
-	scalarField alphap = vpi.interpolate(alpha1);
-
-	//Finding for each cell the isoValue that cuts the cell to the right volume fraction
-    Foam::isoCutter cutter2(mesh,alphap,f0);
-	volScalarField isoVals = 0*alpha1;
-	scalar tol = 1e-6;
-	label maxIter = 500;
-	cutter2.vofCutCells(alpha1, tol, maxIter, isoVals);
-*/
-//    cutter.subFaceFractions(f0,alphaf);
-//    alphaf.write();
-
+//    cutter.write(); //Writing cutCells to ply files
 
     return 0;
 }

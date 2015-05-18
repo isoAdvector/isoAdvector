@@ -36,7 +36,7 @@ Description
     can be returned in a surfaceScalarField.
 
 Author
-    Johan Roenby, DHI
+	Johan Roenby, DHI, all rights reserved.
 
 SourceFiles
     isoCutter.C
@@ -72,21 +72,10 @@ class isoCutter
 		const scalarField& f_;
 		
 		//- Isovalue
-		const scalar& f0_;
+//		const scalar& f0_;
 
     // Private Member Functions
-	
-	//- 
-    void vofCutCell
-    (
-        const label& cellI,
-		const scalar& vof,
-		const scalar& tol,
-		const label& maxIter,
-		scalar& vofout,
-		vector& subCellCtr
-    );
-	
+		
 	//- Cut a cell and represent cut by the cut face labels, and for each of these, 
 	//  the cut edges and the point along the edge at which it is cut.
 	//  If cell is not cut these lists will be empty.
@@ -139,14 +128,6 @@ class isoCutter
         pointField& isoPoints
     );
 
-	//- Cuts a face at intersection with isosurface and returns lower subface
-    bool getSubFace
-    (
-        const label& faceLabel,
-		const scalar& f0,
-        pointField& partSubFacePts
-    );
-
 	//- Return labels of all cell faces with all points strictly below isosurface
     void fullySubmergedFaces
     (
@@ -174,14 +155,6 @@ class isoCutter
         vectorField& fAreas
     );
 
-	//- Calculate face centre and area from pointField assumed to represent an oriented face
-	//  Taken from primitiveMesh
-	void makeFaceCentreAndArea
-    (
-        const pointField& p,
-        vector& fCtr,
-        vector& fArea
-    );
 
 	//- Read face centres and face area vectors from mesh
 	void getFaceCentresAndAreas
@@ -244,8 +217,8 @@ public:
         isoCutter
         (
             const fvMesh&,
-            const scalarField&,
-            const scalar&
+            const scalarField&//,
+//            const scalar&
         );
 
 		//Member functions
@@ -287,41 +260,35 @@ public:
 			surfaceScalarField&
 		);
 
-		void timeIntegratedFlux
+		//- Cuts a face at intersection with isosurface and returns lower subface
+		bool getSubFace
 		(
-			const volScalarField& alpha,
-			const surfaceScalarField& phi,
-			const volVectorField& U,
-			const scalar& dt,
-			scalarField& dV
-		);
-		
-		void getOutFluxFaces
-		(
-			const surfaceScalarField& phi,
-			const label& ci,
-			DynamicList<label>& outFluxingFaces
-		);
-		
-		void getVertexAlphas
-		(
-			const scalarField& alphap,
-			const label& fLabel,
+			const label& faceLabel,
 			const scalar& f0,
-			const scalar& Un0,
-			scalarField& av,
-			vector& xFirst,
-			vector& xLast
+			pointField& partSubFacePts
 		);
 
-		void subSetExtrema
+		//- Calculate face centre and area from pointField assumed to represent an oriented face
+		//  Taken from primitiveMesh
+		void makeFaceCentreAndArea
 		(
-			const scalarField& f,
-			const labelList& labels,
-			scalar& fMin,
-			scalar& fMax
+			const pointField& p,
+			vector& fCtr,
+			vector& fArea
 		);
 		
+		//- 
+		void vofCutCell
+		(
+			const label& cellI,
+			const scalar& vof,
+			const scalar& tol,
+			const label& maxIter,
+			scalar& vofout,
+			vector& subCellCtr
+		);
+
+
 		void isoFaceCentreAndArea
 		(
 			const label& cLabel,
@@ -329,23 +296,11 @@ public:
 			vector& faceCentre,
 			vector& faceArea
 		);
-		
-		void boundAlpha
-		(
-			const volScalarField& alpha,
-			const surfaceScalarField& phi,
-			surfaceScalarField& dVf
-		);
-		
-		scalar netFlux
-		(
-			const surfaceScalarField& dVf,
-			const label& cLabel
-		);
-		
-		
+
+/*		
 		//- Writes cut cell faces to ply files and to screen
         void write();
+*/
 };
 
 

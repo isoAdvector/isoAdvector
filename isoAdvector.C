@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
-    This file is part of OpenFOAM.
+    This file is not part of OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
@@ -22,31 +22,20 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    interFoam
+    isoAdvector
 
 Description
-    Solver for 2 incompressible, isothermal immiscible fluids using a VOF
-    (volume of fluid) phase-fraction based interface capturing approach.
-
-    The momentum and other fluid properties are of the "mixture" and a single
-    momentum equation is solved.
-
-    Turbulence modelling is generic, i.e. laminar, RAS or LES may be selected.
-
-    For a two-fluid approach see twoPhaseEulerFoam.
+	Advects a volume of fluid across an FVM mesh by fluxing fluid through its 
+	faces. Fluid transport across faces during a time step is estimated from 
+	the cell cutting of isosurfaces of the VOF field.
+	
+Author
+	Johan Roenby, DHI, all rights reserved.
 
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
-//#include "MULES.H"
-//#include "subCycle.H"
-//#include "interfaceProperties.H"
-//#include "twoPhaseMixture.H"
-//#include "turbulenceModel.H"
-//#include "pimpleControl.H"
-//#include "fvIOoptionList.H"
-#include "volPointInterpolation.H"
-#include "isoCutter.H"
+#include "isoAdvection.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -56,12 +45,8 @@ int main(int argc, char *argv[])
     #include "createTime.H"
     #include "createMesh.H"
 
-//    pimpleControl pimple(mesh);
-
-//    #include "initContinuityErrs.H"
     #include "createFields.H"
     #include "readTimeControls.H"
-//    #include "correctPhi.H"
     #include "CourantNo.H"
     #include "setInitialDeltaT.H"
 
@@ -69,69 +54,25 @@ int main(int argc, char *argv[])
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     Info<< "\nStarting time loop\n" << endl;
-
-	surfaceScalarField dVf = 0*phi*runTime.deltaT()/mesh.V()[0];
-	scalarField& dVfi = dVf;
-	volScalarField dV(alpha1);
-	scalarField alphap;
-	volPointInterpolation vpi(mesh);
 	
     while (runTime.run())
     {
         #include "readTimeControls.H"
-//        #include "CourantNo.H"
-//        #include "alphaCourantNo.H"
-//        #include "setDeltaT.H"
 
         runTime++;
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
-		//Alpha loop
-		Info << "alphap = vpi.interpolate(alpha1);" << endl;
-		alphap = vpi.interpolate(alpha1);
-		Info << "Foam::isoCutter cutter(mesh,alphap,0.5);" << endl;
-		Foam::isoCutter cutter(mesh,alphap,0.5); //isoValue not used for anything
-		Info << "cutter.timeIntegratedFlux(alpha1, phi, U, runTime.deltaT().value(), dVfi)" << endl;
-		cutter.timeIntegratedFlux(alpha1, phi, U, runTime.deltaT().value(), dVfi);
-		Info << "dV = fvc::surfaceIntegrate(dVf);" << endl;
-		cutter.boundAlpha(alpha1,phi,dVf);
-		dV = fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume		
-/*		
-		forAll(dV,ci)
-		{
-			if (dV[ci] > mesh.V()[ci]*alpha1[ci])
-			{
-				Info << "Cell " << ci << " is overemptied by " << dV[ci] - mesh.V()[ci]*alpha1[ci] << " m3." << endl;
-			}
-			else if (dV[ci] < mesh.V()[ci]*(alpha1[ci]-1))
-			{
-				Info << "Cell " << ci << " is overfilled by " << mesh.V()[ci]*(alpha1[ci]-1) - dV[ci] << " m3." << endl;				
-			}
-		}
-*/
-		alpha1 -= dV;
-//		#include "boundAlpha.H"
-//		forAll(alpha1,ci)
-//		{
-//			alpha1[ci] -= dV[ci];
-/*
-			if (alpha1[ci] != 0 && alpha1[ci] != 1)
-			{
-				Info << "Cell " << ci << ", alpha = " << alpha1[ci] << endl;
-			}
-*/
-//		}
-		alpha1.correctBoundaryConditions();
+		scalar dt = runTime.deltaT().value();
+		isoAdvection advector;
+		advector.advect(alpha1,phi,U,dt);		
 
 		Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value() 
 			 << ", max(alpha1)-1 = " << max(alpha1).value()-1
 			 << "\t min(alpha1) = " << min(alpha1).value() << endl;
-//			 << "\t min(dt) = " << dt.value() << endl; 
 
         alpha1.write();
         U.write();
-		cutter.write();
 		
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"

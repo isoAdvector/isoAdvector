@@ -1,0 +1,4 @@
+iso2VOF.C
+../isoCutter/isoCutter.C
+
+EXE = $(FOAM_CASE_DIR)/iso2VOF/iso2VOF

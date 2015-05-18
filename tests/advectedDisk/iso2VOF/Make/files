@@ -1,4 +1,0 @@
-iso2VOF.C
-$(ISOCUTTER_DIR)/isoCutter.C
-
-EXE = $(PWD)/iso2VOF
