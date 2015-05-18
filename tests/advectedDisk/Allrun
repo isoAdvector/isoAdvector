@@ -3,9 +3,11 @@
 ./Allclean
 
 export FOAM_CASE_DIR=$PWD
-rm ../../isoCutter/isoCutter.dep
+cd ../../isoCutter
+export ISOCUTTER_DIR=$PWD
+cd -
 wmake ../../iso2VOF
-unset FOAM_CASE_DIR
+unset FOAM_CASE_DIR ISOCUTTER_DIR
 
 nProc=$(sed -ne "s/^numberOfSubdomains *\(.*\);/\1/p" system/decomposeParDict)
 application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
