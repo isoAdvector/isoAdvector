@@ -88,6 +88,15 @@ class isoAdvection
 		vector& xLast
 	);
 
+	scalar integratedArea
+	(
+		const scalarField& alphap,
+		const volScalarField& alpha1,
+		const label& fLabel,
+		const scalar& a0,
+		const scalar& a1
+	);
+	
 	void subSetExtrema
 	(
 		const scalarField& f,

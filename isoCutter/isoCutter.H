@@ -127,7 +127,7 @@ class isoCutter
         const DynamicList<scalar>& cutPoints,
         pointField& isoPoints
     );
-
+	
 	//- Return labels of all cell faces with all points strictly below isosurface
     void fullySubmergedFaces
     (
@@ -268,6 +268,15 @@ public:
 			pointField& partSubFacePts
 		);
 
+		//- Return cutPoints for a given face - will typically contain 0 or 2 points. May be 1 point if face just touched by surface. May in rare cases be > 2 points if f-f0 changes sign more than twice along face
+		void getFaceCutPoints
+		(
+			const label& fLabel,
+			const scalar& f0,
+			pointField& cutPoints
+		);
+
+		
 		//- Calculate face centre and area from pointField assumed to represent an oriented face
 		//  Taken from primitiveMesh
 		void makeFaceCentreAndArea

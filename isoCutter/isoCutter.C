@@ -371,6 +371,36 @@ bool Foam::isoCutter::getSubFace
     return fullySubmerged;
 }
 
+void Foam::isoCutter::getFaceCutPoints
+(
+    const label& fLabel,
+	const scalar& f0,
+    pointField& cutPoints
+)
+{
+    const faceList& faces = mesh_.faces();
+    const pointField& points = mesh_.points();
+
+    const labelList pLabels = faces[fLabel];
+    const label nPoints = pLabels.size();
+	label pl1 = pLabels[0];
+    forAll(pLabels,pi)
+    {
+        label pl2 = pLabels[(pi+1)%nPoints];
+        scalar f1(f_[pl1]), f2(f_[pl2]);
+//		bool edgeIsCut = ( (f1 >= f0) && (f2 < f0 && f1 > f0) ) || ( (f1 < f0) && (f2 > f0) );
+		bool edgeIsCut = ( f1 <= f0 && f0 < f2 ) || ( f2 < f0 && f0 <= f1 );
+        if ( edgeIsCut )
+        {
+			scalar s = (f0-f1)/(f2-f1);
+			point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
+			cutPoints.append(pCut);
+        }
+		pl1 = pl2;
+    }
+}
+
+
 void Foam::isoCutter::fullySubmergedFaces
 (
     const label& cellI,
