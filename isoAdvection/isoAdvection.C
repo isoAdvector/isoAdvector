@@ -116,6 +116,7 @@ void Foam::isoAdvection::timeIntegratedFlux
 			
 			//Estimating time integrated water flux through each outfluxing face
 			vector x00(x0), n00(n0); //Necessary when more than one outfluxing face
+			scalar f00(f0);
 			forAll(outFluxingFaces,fi)
 			{
 				label fLabel = outFluxingFaces[fi];
@@ -125,6 +126,7 @@ void Foam::isoAdvection::timeIntegratedFlux
 				scalar a0 = 0.0; //Initial alphaf
 				x0 = x00; //Necessary when more than one outfluxing face
 				n0 = n00; //Necessary when more than one outfluxing face
+				f0 = f00;
 				const vectorField& Sf = mesh_.Sf();
 				pointField partSubFacePts;
 				bool fullySubmerged = cutter.getSubFace(fLabel,f0,partSubFacePts);
@@ -138,40 +140,40 @@ void Foam::isoAdvection::timeIntegratedFlux
 					cutter.makeFaceCentreAndArea(partSubFacePts, fCtr, fArea);
 					a0 = mag(fArea)/mag(Sf[fLabel]);
 				}
-				Info << "\nFACE " << fLabel << " with phi = " << phi[fLabel] << " and af0 = " << a0 << endl;
+				Info << "\nFACE " << fLabel << " with phi = " << phi[fLabel] << " and af0 = " << a0 << "." << endl;
 				
 				//Generating list of face vertices approached by isoFace
-				scalarField av; //List in ascending/descending order of unique face vertex alpha values larger/smaller than a0 for Un0 smaller/larger than zero (corresponding to backwards/forward motion of water surface)
+				scalarField fv; //List in ascending/descending order of unique face vertex alphap values larger/smaller than a0 for Un0 smaller/larger than zero (corresponding to backwards/forward motion of water surface)
 				vector xFirst(vector::zero), xLast(vector::zero); //First and last vertex met by surface
-				getVertexAlphas(alphap,mesh_,fLabel,f0,Un0,av,xFirst,xLast);
+				getVertexAlphas(alphap,mesh_,fLabel,f0,Un0,fv,xFirst,xLast);
 //----------------------------------------------------------------------
 				
-				if (av.size() > 0) //((face is either completely submerged OR unsubmerged) AND Un is such that surface moves away from face) OR (face is cut and Un = 0).
+				if (fv.size() > 0) //((face is either completely submerged OR unsubmerged) AND Un is such that surface moves away from face) OR (face is cut and Un = 0).
 				{
-					label na = 0;
+					label nv = 0;
 					scalar a1(0.0); //VOF value on face corresponding to isoFace1
 					scalar t1(0.0); //Next time a vertex is met
-					while (t0 < dt && na < av.size())
+					while (t0 < dt && nv < fv.size())
 					{
-						Info << "Calculating flux integral contribution for sub time step " << na << " starting at t0 " << t0 << " (dt = " << dt << ")" << endl;
+						Info << "Calculating flux integral contribution for sub time step #" << nv << " starting at t0 = " << t0 << " (dt = " << dt << ")." << endl;
 						//Calculating new isoFace position and orientation
-						scalar f1(av[na]);
-						Info << "Calculating isoFace1 for the next met vertex alpha value, af1 = " << f1 << endl;
+						scalar f1(fv[nv]);
+						Info << "Calculating isoFace1 for the next met vertex alpha value, af1 = " << f1 << "." << endl;
 						vector x1(vector::zero), n1(vector::zero); //IsoFace1 centre and area vectors
 						
-						if (na == 0 && (a0 <= SMALL || a0 >= 1-SMALL)) //If face is initially completely full or empty so will it be at its first encounter with surface
+						if (nv == 0 && (a0 <= SMALL || a0 >= 1-SMALL)) //If face is initially completely full or empty so will it be at its first encounter with surface
 						{
 							a1 = a0;
 							x1 = xFirst;
 							n1 = n0;
-//							Info << "Since na = " << na << " and a0 = " << a0 << " we set a1 = a0 and x1 = xFirst = " << xFirst << endl;
+//							Info << "Since nv = " << nv << " and a0 = " << a0 << " we set a1 = a0 and x1 = xFirst = " << xFirst << endl;
 						}
-						else if (na == av.size()-1) //At the last point the face will either be completely filled or emptied - so isoFace = the vertex point
+						else if (nv == fv.size()-1) //At the last point the face will either be completely filled or emptied - so isoFace = the vertex point
 						{
 							a1 = pos(f0-f1); //If f0 > f1, face is filling up with water - else it is being emptied
 							x1 = xLast;
 							n1 = n0; //since isoFace1 is a point its normal is undefined and we set it to previous value
-//							Info << "Since na = " << na << " = na == av.size()-1 we set a1 = pos(f0-f1) = " << pos(f0-f1) << " and x1 = xLast = " << xLast << endl;
+//							Info << "Since nv = " << nv << " = nv == fv.size()-1 we set a1 = pos(f0-f1) = " << pos(f0-f1) << " and x1 = xLast = " << xLast << endl;
 						} 
 						else
 						{
@@ -190,7 +192,7 @@ void Foam::isoAdvection::timeIntegratedFlux
 								a1 = mag(fArea)/mag(Sf[fLabel]);
 							}
 						}
-						Info << "isoFace1 centre and area are x1 = " << x1 << " and n1 = " << n1 << " has a1 = " << a1 << endl; 
+						Info << "New isoFace1 centre and area are x1 = " << x1 << " and n1 = " << n1 << " and results in af1 = " << a1 << " on face." << endl; 
 /*						if ((n1 & n0) < 0)
 						{
 							n1 *= (-1.0);
@@ -207,17 +209,19 @@ void Foam::isoAdvection::timeIntegratedFlux
 //						Info << "x0: " << x0 << " x1: " << x1 << " n0: " << n0 << " U0: " << U0 << endl;
 						t1 = min(t0 + dtn,dt); //Next time
 						a1 = a0 + (t1-t0)/dtn*(a1-a0); //Linear interpolation of alphaf to time t1 from values at time t0 and t0+dtn - only changes a1 if t0+dtn > dt.
+						f1 = f0 + (t1-t0)/dtn*(f1-f0);
 						Info << "Estimated dtn = " << dtn << ", t1 = " << t1 << ", a1 = " << a1 << endl;
 						dVf[fLabel] += phi[fLabel]*0.5*(a0 + a1)*(t1-t0); //Trapezoidal estimate
 						Info << "dVf[fLabel] = " << dVf[fLabel] << " after adding " << phi[fLabel]*0.5*(a0 + a1)*(t1-t0) << " m3" << endl;
-						Info << "New dVf estimate: " << phi[fLabel]/mag(mesh_.Sf()[fLabel])*(t1-t0)*(a0*mag(mesh_.Sf()[fLabel]) + integratedArea(alphap,alpha,fLabel,a0,a1)) << " m3" << endl;
+						Info << "New dVf estimate: " << phi[fLabel]/mag(mesh_.Sf()[fLabel])*(t1-t0)*(a0*mag(mesh_.Sf()[fLabel]) + sign(Un0)*integratedArea(alphap,alpha,fLabel,f0,f1)) << " m3" << endl;
 						t0 = t1;
 						x0 = x1;
 //						n0 = n1;
 						a0 = a1;
+						f0 = f1;
 //						U0 = U1;
 //						Un0 = Un1;
-						na++;
+						nv++;
 					}
 					if (t1 < dt)
 					{
@@ -226,7 +230,7 @@ void Foam::isoAdvection::timeIntegratedFlux
 				}
 				else
 				{
-//					Info << "No elements in aVert. Face must be uncut and surface moving away from it." << endl;
+//					Info << "No elements in fVert. Face must be uncut and surface moving away from it." << endl;
 					dVf[fLabel] += phi[fLabel]*a0*dt;
 				}
 
@@ -273,7 +277,7 @@ void Foam::isoAdvection::getVertexAlphas
 	const label& fLabel,
 	const scalar& f0,
 	const scalar& Un0,
-	scalarField& av,
+	scalarField& fv,
 	vector& xFirst,
 	vector& xLast
 )
@@ -282,33 +286,33 @@ void Foam::isoAdvection::getVertexAlphas
 //	Info << "pLabels: " << pLabels << endl;
 
 	vectorField xVert; //Approached face vertex points
-	scalarField aVert; //Corresponding alpha
+	scalarField fVert; //Corresponding alpha
 	forAll(pLabels,pi)
 	{
-		scalar aVerti = alphap[pLabels[pi]];
-//	Info << "aVerti for pi = " << pi << " equals " << aVerti << endl;
-		if ( neg( Un0*(aVerti - f0) ) ) //Neg if Un0 and (aVerti-f0) have opposite signs i.e. if ( Un0 > 0 and (aVerti<f0) ) or ( Un0 < 0 and (aVerti>f0) )
+		scalar fVerti = alphap[pLabels[pi]];
+//	Info << "fVerti for pi = " << pi << " equals " << fVerti << endl;
+		if ( neg( Un0*(fVerti - f0) ) ) //Neg if Un0 and (fVerti-f0) have opposite signs i.e. if ( Un0 > 0 and (fVerti<f0) ) or ( Un0 < 0 and (fVerti>f0) )
 		{
 			xVert.append(mesh_.points()[pLabels[pi]]);
-			aVert.append(aVerti);
+			fVert.append(fVerti);
 		}
 	}
-//	Info << "aVert = " << aVert << ", xVert = " << xVert << endl;
+//	Info << "fVert = " << fVert << ", xVert = " << xVert << endl;
 	
-	if (aVert.size() > 0) //((face is either completely submerged OR unsubmerged) AND Un is such that surface moves away from face) OR (face is cut and Un = 0).
+	if (fVert.size() > 0) //((face is either completely submerged OR unsubmerged) AND Un is such that surface moves away from face) OR (face is cut and Un = 0).
 	{
 		scalar aMin(GREAT), aMax(-GREAT);
 		label iaMin(-1), iaMax(-1);
-		forAll(aVert,ai)
+		forAll(fVert,ai)
 		{
-			if (aVert[ai] < aMin)
+			if (fVert[ai] < aMin)
 			{
-				aMin = aVert[ai];
+				aMin = fVert[ai];
 				iaMin = ai;
 			}
-			if (aVert[ai] > aMax)
+			if (fVert[ai] > aMax)
 			{
-				aMax = aVert[ai];
+				aMax = fVert[ai];
 				iaMax = ai;
 			}
 		}
@@ -318,25 +322,25 @@ void Foam::isoAdvection::getVertexAlphas
 		{
 			Swap(xFirst,xLast);
 		}
-		sort(aVert);
+		sort(fVert);
 		
-//					Info << "Sorted aVert: " << aVert << endl;
-		av.append(aVert[0]);
-		for (label n = 1; n < aVert.size(); n++)
+//					Info << "Sorted fVert: " << fVert << endl;
+		fv.append(fVert[0]);
+		for (label n = 1; n < fVert.size(); n++)
 		{
-//			Info << "mag(aVert[n] - aVert[n-1]): " << mag(aVert[n] - aVert[n-1]) << endl;
-			if (mag(aVert[n] - aVert[n-1]) > 10*SMALL) //SMALL is 1e-15 and I have experienced the difference being 1.2 e-15.
+//			Info << "mag(fVert[n] - fVert[n-1]): " << mag(fVert[n] - fVert[n-1]) << endl;
+			if (mag(fVert[n] - fVert[n-1]) > 10*SMALL) //SMALL is 1e-15 and I have experienced the difference being 1.2 e-15.
 			{
-				av.append(aVert[n]);
+				fv.append(fVert[n]);
 			}
 		}
-//					Info << "Unique values of aVert in av: " << av << endl;
+//					Info << "Unique values of fVert in fv: " << fv << endl;
 		if (Un0 > 0) //Water moves "forward", so nearest vertices are those with highest alphaf value
 		{
-			reverse(av);
+			reverse(fv);
 		}
 	}
-//	Info << "Reversed av: " << av << endl;	
+//	Info << "Reversed fv: " << fv << endl;	
 }
 
 Foam::scalar Foam::isoAdvection::integratedArea
@@ -402,7 +406,9 @@ Foam::scalar Foam::isoAdvection::integratedArea
 	
 	Info << "Bx = " << Bx << ", Cx = " << Cx << ", Cy = " << Cy << ", Dx = " << Dx << ", Dy = " << Dy << endl; 
 	
-	return ((Cx*Dy-Dx*Cy)/6.0 + 0.25*Bx*Cy);
+//	return ((Cx*Dy-Dx*Cy)/6.0 + 0.25*Bx*Cy);
+	scalar result = ((Cx-Bx)*Dy-Dx*Cy)/6.0 + 0.25*Bx*(Dy+Cy);	
+	return result;
 }
 
 void Foam::isoAdvection::subSetExtrema
