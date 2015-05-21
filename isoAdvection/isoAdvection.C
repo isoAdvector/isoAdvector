@@ -74,8 +74,7 @@ void Foam::isoAdvection::timeIntegratedFlux
 		}
 		else if ( aMax > 0.5 ) //Then cell must be cut
 		{
-			Info << " " << endl;
-			Info << "------------ Cell " << ci << " ------------" << endl;
+			Info << "\n------------ Cell " << ci << " ------------" << endl;
 			Info << "outFluxingFaces: " << outFluxingFaces << endl;
 			
 			//Calculate isovalue f0 reproducing VOF value to given accuracy
@@ -140,12 +139,13 @@ void Foam::isoAdvection::timeIntegratedFlux
 					cutter.makeFaceCentreAndArea(partSubFacePts, fCtr, fArea);
 					a0 = mag(fArea)/mag(Sf[fLabel]);
 				}
-				Info << "\nFACE " << fLabel << " with phi = " << phi[fLabel] << " and af0 = " << a0 << "." << endl;
+				Info << "\nFACE " << fLabel << " with phi = " << phi[fLabel] << " and a0 = " << a0 << "." << endl;
 				
 				//Generating list of face vertices approached by isoFace
 				scalarField fv; //List in ascending/descending order of unique face vertex alphap values larger/smaller than a0 for Un0 smaller/larger than zero (corresponding to backwards/forward motion of water surface)
 				vector xFirst(vector::zero), xLast(vector::zero); //First and last vertex met by surface
 				getVertexAlphas(alphap,mesh_,fLabel,f0,Un0,fv,xFirst,xLast);
+				Info << "fv = " << fv << ", xFirst = " << xFirst << ", xLast = " << xLast << endl;
 //----------------------------------------------------------------------
 				
 				if (fv.size() > 0) //((face is either completely submerged OR unsubmerged) AND Un is such that surface moves away from face) OR (face is cut and Un = 0).
@@ -158,7 +158,7 @@ void Foam::isoAdvection::timeIntegratedFlux
 						Info << "Calculating flux integral contribution for sub time step #" << nv << " starting at t0 = " << t0 << " (dt = " << dt << ")." << endl;
 						//Calculating new isoFace position and orientation
 						scalar f1(fv[nv]);
-						Info << "Calculating isoFace1 for the next met vertex alpha value, af1 = " << f1 << "." << endl;
+						Info << "Calculating isoFace1 for the next met vertex alpha value, f1 = " << f1 << "." << endl;
 						vector x1(vector::zero), n1(vector::zero); //IsoFace1 centre and area vectors
 						
 						if (nv == 0 && (a0 <= SMALL || a0 >= 1-SMALL)) //If face is initially completely full or empty so will it be at its first encounter with surface
@@ -166,14 +166,14 @@ void Foam::isoAdvection::timeIntegratedFlux
 							a1 = a0;
 							x1 = xFirst;
 							n1 = n0;
-//							Info << "Since nv = " << nv << " and a0 = " << a0 << " we set a1 = a0 and x1 = xFirst = " << xFirst << endl;
+							Info << "Since nv = " << nv << " and a0 = " << a0 << " we set a1 = a0 and x1 = xFirst = " << xFirst << endl;
 						}
 						else if (nv == fv.size()-1) //At the last point the face will either be completely filled or emptied - so isoFace = the vertex point
 						{
 							a1 = pos(f0-f1); //If f0 > f1, face is filling up with water - else it is being emptied
 							x1 = xLast;
 							n1 = n0; //since isoFace1 is a point its normal is undefined and we set it to previous value
-//							Info << "Since nv = " << nv << " = nv == fv.size()-1 we set a1 = pos(f0-f1) = " << pos(f0-f1) << " and x1 = xLast = " << xLast << endl;
+							Info << "Since nv = " << nv << " = fv.size()-1 we set a1 = pos(f0-f1) = " << pos(f0-f1) << " and x1 = xLast = " << xLast << endl;
 						} 
 						else
 						{
@@ -192,7 +192,7 @@ void Foam::isoAdvection::timeIntegratedFlux
 								a1 = mag(fArea)/mag(Sf[fLabel]);
 							}
 						}
-						Info << "New isoFace1 centre and area are x1 = " << x1 << " and n1 = " << n1 << " and results in af1 = " << a1 << " on face." << endl; 
+						Info << "New isoFace1 centre and area are x1 = " << x1 << " and n1 = " << n1 << " and results in a1 = " << a1 << " on face." << endl; 
 /*						if ((n1 & n0) < 0)
 						{
 							n1 *= (-1.0);
@@ -213,7 +213,12 @@ void Foam::isoAdvection::timeIntegratedFlux
 						Info << "Estimated dtn = " << dtn << ", t1 = " << t1 << ", a1 = " << a1 << endl;
 						dVf[fLabel] += phi[fLabel]*0.5*(a0 + a1)*(t1-t0); //Trapezoidal estimate
 						Info << "dVf[fLabel] = " << dVf[fLabel] << " after adding " << phi[fLabel]*0.5*(a0 + a1)*(t1-t0) << " m3" << endl;
-						Info << "New dVf estimate: " << phi[fLabel]/mag(mesh_.Sf()[fLabel])*(t1-t0)*(a0*mag(mesh_.Sf()[fLabel]) + sign(Un0)*integratedArea(alphap,alpha,fLabel,f0,f1)) << " m3" << endl;
+						scalar olddVf = phi[fLabel]*0.5*(a0 + a1)*(t1-t0);
+						scalar newdVf = phi[fLabel]/mag(mesh_.Sf()[fLabel])*(t1-t0)*(a0*mag(mesh_.Sf()[fLabel]) + sign(Un0)*integratedArea(alphap,alpha,fLabel,f0,f1));
+						if (mag(olddVf-newdVf) > 1e-10)
+						{
+							Info << "olddVf-newdVf: " << olddVf-newdVf << " m3" << endl;
+						}
 						t0 = t1;
 						x0 = x1;
 //						n0 = n1;
@@ -348,67 +353,72 @@ Foam::scalar Foam::isoAdvection::integratedArea
 	const scalarField& alphap,
 	const volScalarField& alpha1,
 	const label& fLabel,
-	const scalar& a0,
-	const scalar& a1
+	const scalar& f0,
+	const scalar& f1
 )
 {
 	const fvMesh& mesh = alpha1.mesh();
 	isoCutter cutter(mesh,alphap);
 	pointField pf0, pf1;
-	cutter.getFaceCutPoints(fLabel,a0,pf0);
-	cutter.getFaceCutPoints(fLabel,a1,pf1);
+	cutter.getFaceCutPoints(fLabel,f0,pf0);
+	cutter.getFaceCutPoints(fLabel,f1,pf1);
 	label np0(pf0.size()), np1(pf1.size());
-	Info << "Face " << fLabel << " was cut " << np0 << " times by a0 = " << a0 << " and " << np1 << " times by " << " a1 = " << a1 << endl;
+	Info << "Face " << fLabel << " was cut " << np0 << " times by f0 = " << f0 << " and " << np1 << " times by " << " f1 = " << f1 << endl;
 
-	//Defining local coordinates for area integral calculation
-	vector xhat(vector::zero), yhat, zhat;
-	zhat = mesh.Sf()[fLabel]/mag(mesh.Sf()[fLabel]);
-	if (np0 == 2)
-	{
-		xhat = pf0[1]-pf0[0];
-		xhat -= (xhat & zhat)*zhat;
-		xhat /= mag(xhat);
-	}
-	else if (np1 == 2)
-	{
-		xhat = pf1[1]-pf1[0];
-		xhat -= (xhat & zhat)*zhat;
-		xhat /= mag(xhat);
-	}
-	yhat = zhat ^ xhat;
-	yhat /= mag(yhat); //Should not be necessary
+	scalar area(0.0);
 	
-	Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << endl;//". x.x = " << xhat & xhat << ", y.y = " << yhat & yhat <<", z.z = " << zhat & zhat << ", x.y = " << xhat & yhat << ", x.z = " << xhat & zhat << ", y.z = " << yhat & zhat << endl;
+	if ( np0 > 0 && np1 > 0)
+	{
+		//Defining local coordinates for area integral calculation
+		vector xhat(vector::zero), yhat, zhat;
+		zhat = mesh.Sf()[fLabel]/mag(mesh.Sf()[fLabel]);
+		if (np0 == 2)
+		{
+			xhat = pf0[1]-pf0[0];
+			xhat -= (xhat & zhat)*zhat;
+			xhat /= mag(xhat);
+		}
+		else if (np1 == 2)
+		{
+			xhat = pf1[1]-pf1[0];
+			xhat -= (xhat & zhat)*zhat;
+			xhat /= mag(xhat);
+		}
+		yhat = zhat ^ xhat;
+		yhat /= mag(yhat); //Should not be necessary
+		
+		Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << endl;//". x.x = " << xhat & xhat << ", y.y = " << yhat & yhat <<", z.z = " << zhat & zhat << ", x.y = " << xhat & yhat << ", x.z = " << xhat & zhat << ", y.z = " << yhat & zhat << endl;
 
-	//Triangle cases
-	if (np0 == 1)
-	{
-		pf0.append(pf0[0]);
+		//Triangle cases
+		if (np0 == 1)
+		{
+			pf0.append(pf0[0]);
+		}
+		else if (np1 == 1)
+		{
+			pf1.append(pf1[0]);		
+		}
+				
+		//Swapping pf1 points if pf0 and pf1 point in same general direction (because we want a quadrilateral ABCD where pf0 = AB and pf1 = CD)
+		if ( ((pf0[1]-pf0[0]) & (pf1[1]-pf1[0])) > 0 )
+		{
+			vector tmp = pf1[0];
+			pf1[0] = pf1[1];
+			pf1[1] = tmp;
+		}
+		
+		scalar Bx = mag(pf0[1]-pf0[0]);
+		scalar Cx = (pf1[0]-pf0[0]) & xhat;
+		scalar Cy = mag((pf1[0]-pf0[0]) & yhat);
+		scalar Dx = (pf1[1]-pf0[0]) & xhat;
+		scalar Dy = mag((pf1[1]-pf0[0]) & yhat);
+		
+//		Info << "Bx = " << Bx << ", Cx = " << Cx << ", Cy = " << Cy << ", Dx = " << Dx << ", Dy = " << Dy << endl; 
+		
+		area = ((Cx-Bx)*Dy-Dx*Cy)/6.0 + 0.25*Bx*(Dy+Cy);
 	}
-	else if (np1 == 1)
-	{
-		pf1.append(pf1[0]);		
-	}
-	
-	//Swapping pf1 points if pf0 and pf1 point in same general direction (because we want a quadrilateral ABCD where pf0 = AB and pf1 = CD)
-	if ( ((pf0[1]-pf0[0]) & (pf1[1]-pf1[0])) > 0 )
-	{
-		vector tmp = pf1[0];
-		pf1[0] = pf1[1];
-		pf1[1] = tmp;
-	}
-	
-	scalar Bx = mag(pf0[1]-pf0[0]);
-	scalar Cx = (pf1[0]-pf0[0]) & xhat;
-	scalar Cy = mag((pf1[0]-pf0[0]) & yhat);
-	scalar Dx = (pf1[1]-pf0[0]) & xhat;
-	scalar Dy = mag((pf1[1]-pf0[0]) & yhat);
-	
-	Info << "Bx = " << Bx << ", Cx = " << Cx << ", Cy = " << Cy << ", Dx = " << Dx << ", Dy = " << Dy << endl; 
-	
-//	return ((Cx*Dy-Dx*Cy)/6.0 + 0.25*Bx*Cy);
-	scalar result = ((Cx-Bx)*Dy-Dx*Cy)/6.0 + 0.25*Bx*(Dy+Cy);	
-	return result;
+
+	return area;
 }
 
 void Foam::isoAdvection::subSetExtrema

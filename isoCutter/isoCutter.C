@@ -380,24 +380,43 @@ void Foam::isoCutter::getFaceCutPoints
 {
     const faceList& faces = mesh_.faces();
     const pointField& points = mesh_.points();
-
+	
     const labelList pLabels = faces[fLabel];
     const label nPoints = pLabels.size();
 	label pl1 = pLabels[0];
+	scalar f1(f_[pl1]);
+	if (mag(f1-f0) < 1e-10)
+	{
+		f1 = f0;
+	}
+	Info << "face values differences from f0: ";
     forAll(pLabels,pi)
     {
         label pl2 = pLabels[(pi+1)%nPoints];
-        scalar f1(f_[pl1]), f2(f_[pl2]);
+//        scalar f1(f_[pl1]), f2(f_[pl2]);
+        scalar f2(f_[pl2]);
+		if (mag(f2-f0) < 1e-10)
+		{
+			f2 = f0;
+		}
+		Info << " " << f1-f0;
 //		bool edgeIsCut = ( (f1 >= f0) && (f2 < f0 && f1 > f0) ) || ( (f1 < f0) && (f2 > f0) );
-		bool edgeIsCut = ( f1 <= f0 && f0 < f2 ) || ( f2 < f0 && f0 <= f1 );
+//		bool edgeIsCut = ( f1 <= f0 && f0 < f2 ) || ( f2 < f0 && f0 <= f1 );
+		bool edgeIsCut = min(f1,f2) < f0 && max(f1,f2) > f0;
         if ( edgeIsCut )
         {
 			scalar s = (f0-f1)/(f2-f1);
 			point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
 			cutPoints.append(pCut);
         }
+		else if ( f1 == f0 )
+	 	{
+			cutPoints.append(points[pl1]);			
+		}
 		pl1 = pl2;
+		f1 = f2;
     }
+	Info << "." << endl;
 }
 
 
