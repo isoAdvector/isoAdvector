@@ -73,6 +73,9 @@ class isoAdvection
 	//- Velocity field
 	const volVectorField& U_;
 	
+	//- 
+	boolList isSurfaceCell_;
+
 	// Private Member Functions
 
 	void timeIntegratedFlux
@@ -121,6 +124,31 @@ class isoAdvection
 	(
 		const scalarField& dVf,
 		const label& cLabel
+	);
+	
+	void findSurfaceCells
+	(
+		DynamicList<label>& surfaceCells
+	);
+	
+	void calcInitialIsoFace
+	(
+		const label& ci,
+		vector& x0,
+		vector& n0,
+		scalar& f0,
+		scalar& Un0
+	);
+	
+	void getApproachedPoints
+	(
+		const label& ci,
+		const vector& x0,
+		const vector& n0,
+		const scalar& f0,
+		const scalar& Un0,
+		DynamicList<label>& appPtLabels,
+		DynamicList<scalar>& times
 	);
 	
 public:

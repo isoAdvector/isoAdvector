@@ -259,6 +259,14 @@ public:
 			const scalar& f0,
 			surfaceScalarField&
 		);
+		
+		void subFaceFraction
+		(
+			const label& fi,
+			const scalar& f0,
+			scalar& alphaf
+		);
+
 
 		//- Cuts a face at intersection with isosurface and returns lower subface
 		bool getSubFace

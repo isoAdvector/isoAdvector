@@ -40,9 +40,10 @@ Foam::isoAdvection::isoAdvection
 :
     mesh_(alpha1.mesh()),
     alpha1_(alpha1),
-    ap_(0.0,mesh_.nPoints()),
+    ap_(mesh_.nPoints(),0.0),
 	phi_(phi),
-	U_(U)
+	U_(U),
+	isSurfaceCell_(mesh_.nCells(),false)
 {
 }
 
@@ -64,231 +65,325 @@ void Foam::isoAdvection::timeIntegratedFlux
 	//Construction of isosurface calculator to get access to its functionality
 	isoCutter cutter(mesh_,ap_);
 	
-	forAll(alpha1_,ci)
-	{	
+	//Find surface cells
+	DynamicList<label> surfaceCells;
+	Info << "findSurfaceCells(surfaceCells);" << endl;
+	findSurfaceCells(surfaceCells);
+	
+	forAll(surfaceCells,cellI)
+	{
+		Info << "forAll(surfaceCells,cellI)" << endl;
+		
+		const label ci = surfaceCells[cellI];
 //		isoSubCell testCell(mesh_,ci);
 		//Make list of all cell faces out of which fluid is flowing
 		DynamicList<label> outFluxingFaces;
 		getOutFluxFaces(ci, outFluxingFaces);
 
 		//Determine whether cell is fully above or fully below surface (if neither, it must be cut)
-		scalar aMin, aMax;
-		subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
+//		scalar aMin, aMax;
+//		subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
 
 		//Set dVf on all outfluxing faces in accordance to the status of the cell (if allPointsAbove dVf should remain 0 on all outfluxing faces so do nothing)
 //		if ( aMin > 0.5 )
-		if ( aMin > 0.5 || aMax < 0.5 || alpha1_[ci] >= 1-1e-10 || alpha1_[ci] <= 1e-10 )
+//		if ( aMin > 0.5 || aMax < 0.5 || alpha1_[ci] >= 1-1e-10 || alpha1_[ci] <= 1e-10 )
+//		{
+//			forAll(outFluxingFaces,fi)
+//			{
+//				label lfi = outFluxingFaces[fi];
+//				if ( lfi < mesh_.nInternalFaces() )
+//				{
+//					dVf[lfi] = alpha1_[ci]*phi_[lfi]*dt; //Upwinding
+//				}
+//			}
+//		}
+//		else if ( aMax > 0.5 ) //Then cell must be cut
+//		{
+		Info << "\n------------ Cell " << ci << " with alpha1_ = " << alpha1_[ci] << " ------------" << endl;
+		Info << "outFluxingFaces: " << outFluxingFaces << endl;
+
+		//Calculate isoFace0 centre xs0, normal ns0, and velocity U0 = U(xs0)
+		scalar f0(0.0), Un0(0.0);
+		vector x0(vector::zero), n0(vector::zero);
+		calcInitialIsoFace(ci,x0,n0,f0,Un0); //This one really also should give us a0 on all faces since it is calculated anyway. Do this with a cutCell structure
+		
+		//Calculate list of times approached points are reached
+//		DynamicList<label> appPtLabels;
+//		DynamicList<scalar> times;
+//		getApproachedPoints(ci,x0,n0,f0,Un0,appPtLabels,times);
+
+		//Estimating time integrated water flux through each outfluxing face
+		vector x00(x0), n00(n0); //Necessary when more than one outfluxing face
+		scalar f00(f0);
+		forAll(outFluxingFaces,fi)
 		{
-			forAll(outFluxingFaces,fi)
-			{
-				label lfi = outFluxingFaces[fi];
-				if ( lfi < mesh_.nInternalFaces() )
-				{
-					dVf[lfi] = alpha1_[ci]*phi_[lfi]*dt; //Upwinding
-				}
-			}
-		}
-		else if ( aMax > 0.5 ) //Then cell must be cut
-		{
-			Info << "\n------------ Cell " << ci << " with alpha1_ = " << alpha1_[ci] << " ------------" << endl;
-			Info << "outFluxingFaces: " << outFluxingFaces << endl;
+			label fLabel = outFluxingFaces[fi];	
+			scalar t0 = 0.0; //Initial time
+			scalar a0 = 0.0; //Initial alphaf
+			x0 = x00; //Necessary when more than one outfluxing face
+			n0 = n00; //Necessary when more than one outfluxing face
+			f0 = f00;
 			
-			//Calculate isovalue f0 reproducing VOF value to given accuracy
-			scalar f0, tol(1e-6);
-			label maxIter(100);
-			vector subCellCtr;
-			cutter.vofCutCell(ci, alpha1_[ci], tol, maxIter, f0, subCellCtr);
+			cutter.subFaceFraction(fLabel, f0, a0);
 
-			//Calculate isoFace0 centre xs0, normal ns0, and velocity U0 = U(xs0)
-			vector x0(vector::zero), n0(vector::zero);
-
-			bool cellAlmostEmpty = mag(f0-aMax) < 1e-6*(aMax-aMin);
-			bool cellAlmostFull = mag(f0-aMin) < 1e-6*(aMax-aMin);
-			if ( !cellAlmostFull & !cellAlmostEmpty)
+/*			pointField partSubFacePts;
+			bool fullySubmerged = cutter.getSubFace(fLabel,f0,partSubFacePts);
+			if (fullySubmerged)
 			{
-				cutter.isoFaceCentreAndArea(ci,f0,x0,n0); //Stupid to recalculate this here - should be provided by vofCutCell above				
-				//Make n0 point out of subCell
-				Info << "x0: " << x0 << ", n0: " << n0 << ", subCellCtr: " << subCellCtr << endl;
-				if (((x0 - subCellCtr) & n0) < 0) //n0 should point out of water surface, i.e. in the direction from subCell centre to isoFace centre
-				{
-					n0 *= (-1.0);
-					Info << "Changing direction of n0 " << n0 << endl;
-				}				
+				a0 = 1;
 			}
-			else if (cellAlmostEmpty) //We need to get the isoFace normal from an isoFace which is just inside the cell
+			else if (partSubFacePts.size() != 0)
 			{
-				vector x0Inside(vector::zero);
-				scalar f0Inside =  f0 - 1e-6*(aMax-aMin);
-				cutter.isoFaceCentreAndArea(ci,f0Inside,x0Inside,n0);
-				if (((mesh_.C()[ci] - x0Inside) & n0) < 0.0) //n0 should point from isoFace centre towards cell centre for an almost empty cell
+				vector fCtr, fArea;
+				cutter.makeFaceCentreAndArea(partSubFacePts, fCtr, fArea);
+				a0 = mag(fArea)/mag(mesh_.Sf()[fLabel]);
+			}
+*/
+			Info << "\nFACE " << fLabel << " with phi = " << phi_[fLabel] << " and a0 = " << a0 << "." << endl;
+			
+			//Here treat a0 = 0 and a0 = 1 specially
+			//Replace getVertexAlphas with getApproachedPoints(pLabels,times) using distances instead of ap_.
+			
+			//Generating list of face vertices approached by isoFace
+			scalarField fv; //List in ascending/descending order of unique face vertex ap_ values larger/smaller than a0 for Un0 smaller/larger than zero (corresponding to backwards/forward motion of water surface)
+			vector xFirst(vector::zero), xLast(vector::zero); //First and last vertex met by surface
+			getVertexAlphas(fLabel,f0,Un0,fv,xFirst,xLast);
+			Info << "fv = " << fv << ", xFirst = " << xFirst << ", xLast = " << xLast << endl;
+//----------------------------------------------------------------------
+			
+			if (fv.size() > 0) //((face is either completely submerged OR unsubmerged) AND Un is such that surface moves away from face) OR (face is cut and Un = 0).
+			{
+				label nv = 0;
+				scalar a1(0.0); //VOF value on face corresponding to isoFace1
+				scalar t1(0.0); //Next time a vertex is met
+				while (t0 < dt && nv < fv.size())
 				{
-					n0 *= (-1.0);
-					Info << "Changing direction of n0 " << n0 << endl;					
+					Info << "Calculating flux integral contribution for sub time step #" << nv << " starting at t0 = " << t0 << " (dt = " << dt << ")." << endl;
+					//Calculating new isoFace position and orientation
+					scalar f1(fv[nv]);
+					Info << "Calculating isoFace1 for the next met vertex alpha value, f1 = " << f1 << "." << endl;
+					vector x1(vector::zero), n1(vector::zero); //IsoFace1 centre and area vectors
+					
+					if (nv == 0 && (a0 <= 1e-10 || a0 >= 1-1e-10)) //If face is initially completely full or empty so will it be at its first encounter with surface
+					{
+						a1 = a0;
+						x1 = xFirst;
+						n1 = n0;
+						Info << "Since nv = " << nv << " and a0 = " << a0 << " we set a1 = a0 and x1 = xFirst = " << xFirst << endl;
+					}
+					else if (nv == fv.size()-1) //At the last point the face will either be completely filled or emptied - so isoFace = the vertex point
+					{
+						a1 = pos(f0-f1); //If f0 > f1, face is filling up with water - else it is being emptied
+						x1 = xLast;
+						n1 = n0; //since isoFace1 is a point its normal is undefined and we set it to previous value
+						Info << "Since nv = " << nv << " = fv.size()-1 we set a1 = pos(f0-f1) = " << pos(f0-f1) << " and x1 = xLast = " << xLast << endl;
+					} 
+					else
+					{
+						Info << "TESTING TESTING" << endl;
+						cutter.isoFaceCentreAndArea(ci,f1,x1,n1);
+						
+						cutter.subFaceFraction(fLabel, f1, a1);
+/*
+						//Finding alphaf on face for new time
+						fullySubmerged = cutter.getSubFace(fLabel,f0,partSubFacePts); //fLabel was previously fi - possible big bug!
+						if (fullySubmerged)
+						{
+							a1 = 1;
+						}
+						else if (partSubFacePts.size() != 0)
+						{
+							vector fCtr, fArea;
+							cutter.makeFaceCentreAndArea(partSubFacePts, fCtr, fArea);
+							a1 = mag(fArea)/mag(mesh_.Sf()[fLabel]);
+						}
+*/
+					}
+					Info << "New isoFace1 centre and area are x1 = " << x1 << " and n1 = " << n1 << " and results in a1 = " << a1 << " on face." << endl; 
+/*						if ((n1 & n0) < 0)
+					{
+						n1 *= (-1.0);
+						Info << "Changing direction of n1: " << n1 << endl;
+					}
+					
+					//Interpolate velocity to isoFace centre - currently not used
+					vector U1 = UInterp.interpolate(x1,ci);
+					scalar Un1 = (U1 & n1)/mag(n1);
+					Info << "Velocity interpolated to isoFace1 centre, U1 = " << U1 << " and projected on n1, Un1 = " << Un1 << endl;
+*/						
+					//Estimating time where the surface will be at x1
+					scalar dtn = ((x1-x0) & n0)/Un0; //What about when Un0 = 0?
+					Info << "x0: " << x0 << " x1: " << x1 << " n0: " << n0 << " Un0: " << Un0 << endl;
+					t1 = min(t0 + dtn,dt); //Next time
+					a1 = a0 + (t1-t0)/dtn*(a1-a0); //Linear interpolation of alphaf to time t1 from values at time t0 and t0+dtn - only changes a1 if t0+dtn > dt.
+					f1 = f0 + (t1-t0)/dtn*(f1-f0);
+					Info << "Estimated dtn = " << dtn << ", t1 = " << t1 << ", a1 = " << a1 << endl;
+					dVf[fLabel] += phi_[fLabel]*0.5*(a0 + a1)*(t1-t0); //Trapezoidal estimate
+					Info << "dVf[fLabel] = " << dVf[fLabel] << " after adding " << phi_[fLabel]*0.5*(a0 + a1)*(t1-t0) << " m3" << endl;
+					scalar olddVf = phi_[fLabel]*0.5*(a0 + a1)*(t1-t0);
+					scalar newdVf = phi_[fLabel]/mag(mesh_.Sf()[fLabel])*(t1-t0)*(a0*mag(mesh_.Sf()[fLabel]) + sign(Un0)*integratedArea(fLabel,f0,f1));
+					if (mag(olddVf-newdVf) > 1e-10)
+					{
+						Info << "olddVf-newdVf: " << olddVf-newdVf << " m3" << endl;
+					}
+					t0 = t1;
+					x0 = x1;
+//						n0 = n1;
+					a0 = a1;
+					f0 = f1;
+//						U0 = U1;
+//						Un0 = Un1;
+					nv++;
 				}
-				x0 = x0Inside;
-			}
-			else //cellAlmostFull
-			{
-				vector x0Inside(vector::zero);
-				scalar f0Inside = f0 + 1e-6*(aMax-aMin);					
-				cutter.isoFaceCentreAndArea(ci,f0Inside,x0Inside,n0);
-				if (((x0Inside - mesh_.C()[ci]) & n0) < 0.0) //n0 should point from cell centre towards isoFace centre for an almost full cell
+				if (t1 < dt)
 				{
-					n0 *= (-1.0);
-					Info << "Changing direction of n0 " << n0 << endl;					
+					dVf[fLabel] += phi_[fLabel]*a1*(dt-t1);
 				}
-				x0 = x0Inside;
-			}
-			if (mag(n0) > 1e-10)
-			{
-				n0 /= mag(n0);
 			}
 			else
 			{
-				Info << "Warning: mag(n0) = " << mag(n0) << ". Cannot normalise it." << endl;
-			}					
-			
-			//Interpolate velocity to isoFace centre
-			interpolationCellPoint<vector> UInterp(U_);
-			vector U0 = UInterp.interpolate(x0,ci);
-			Info << "U0 = " << U0 << endl;
-			scalar Un0 = (U0 & n0);
-			Info << "Un0 = " << Un0 << endl;
-			Info << "Initial values for time step:" << endl;
-			Info << "f0 = " << f0 << ", subCellCentre = " << subCellCtr << ", isoFaceCentre = " << x0 << ", isoFaceNormal = " << n0 << ", isoFaceVelocity = " << U0 << ", isoFaceNormalVelocity = " << Un0 << endl;
-			
-			//Estimating time integrated water flux through each outfluxing face
-			vector x00(x0), n00(n0); //Necessary when more than one outfluxing face
-			scalar f00(f0);
-			forAll(outFluxingFaces,fi)
-			{
-				label fLabel = outFluxingFaces[fi];	
-				scalar t0 = 0.0; //Initial time
-				scalar a0 = 0.0; //Initial alphaf
-				x0 = x00; //Necessary when more than one outfluxing face
-				n0 = n00; //Necessary when more than one outfluxing face
-				f0 = f00;
-				const vectorField& Sf = mesh_.Sf();
-				pointField partSubFacePts;
-				bool fullySubmerged = cutter.getSubFace(fLabel,f0,partSubFacePts);
-				if (fullySubmerged)
-				{
-					a0 = 1;
-				}
-				else if (partSubFacePts.size() != 0)
-				{
-					vector fCtr, fArea;
-					cutter.makeFaceCentreAndArea(partSubFacePts, fCtr, fArea);
-					a0 = mag(fArea)/mag(Sf[fLabel]);
-				}
-				Info << "\nFACE " << fLabel << " with phi = " << phi_[fLabel] << " and a0 = " << a0 << "." << endl;
-				
-				//Generating list of face vertices approached by isoFace
-				scalarField fv; //List in ascending/descending order of unique face vertex ap_ values larger/smaller than a0 for Un0 smaller/larger than zero (corresponding to backwards/forward motion of water surface)
-				vector xFirst(vector::zero), xLast(vector::zero); //First and last vertex met by surface
-				getVertexAlphas(fLabel,f0,Un0,fv,xFirst,xLast);
-				Info << "fv = " << fv << ", xFirst = " << xFirst << ", xLast = " << xLast << endl;
-//----------------------------------------------------------------------
-				
-				if (fv.size() > 0) //((face is either completely submerged OR unsubmerged) AND Un is such that surface moves away from face) OR (face is cut and Un = 0).
-				{
-					label nv = 0;
-					scalar a1(0.0); //VOF value on face corresponding to isoFace1
-					scalar t1(0.0); //Next time a vertex is met
-					while (t0 < dt && nv < fv.size())
-					{
-						Info << "Calculating flux integral contribution for sub time step #" << nv << " starting at t0 = " << t0 << " (dt = " << dt << ")." << endl;
-						//Calculating new isoFace position and orientation
-						scalar f1(fv[nv]);
-						Info << "Calculating isoFace1 for the next met vertex alpha value, f1 = " << f1 << "." << endl;
-						vector x1(vector::zero), n1(vector::zero); //IsoFace1 centre and area vectors
-						
-						if (nv == 0 && (a0 <= 1e-10 || a0 >= 1-1e-10)) //If face is initially completely full or empty so will it be at its first encounter with surface
-						{
-							a1 = a0;
-							x1 = xFirst;
-							n1 = n0;
-							Info << "Since nv = " << nv << " and a0 = " << a0 << " we set a1 = a0 and x1 = xFirst = " << xFirst << endl;
-						}
-						else if (nv == fv.size()-1) //At the last point the face will either be completely filled or emptied - so isoFace = the vertex point
-						{
-							a1 = pos(f0-f1); //If f0 > f1, face is filling up with water - else it is being emptied
-							x1 = xLast;
-							n1 = n0; //since isoFace1 is a point its normal is undefined and we set it to previous value
-							Info << "Since nv = " << nv << " = fv.size()-1 we set a1 = pos(f0-f1) = " << pos(f0-f1) << " and x1 = xLast = " << xLast << endl;
-						} 
-						else
-						{
-							cutter.isoFaceCentreAndArea(ci,f1,x1,n1);
-	
-							//Finding alphaf on face for new time
-							fullySubmerged = cutter.getSubFace(fLabel,f0,partSubFacePts); //fLabel was previously fi - possible big bug!
-							if (fullySubmerged)
-							{
-								a1 = 1;
-							}
-							else if (partSubFacePts.size() != 0)
-							{
-								vector fCtr, fArea;
-								cutter.makeFaceCentreAndArea(partSubFacePts, fCtr, fArea);
-								a1 = mag(fArea)/mag(Sf[fLabel]);
-							}
-						}
-						Info << "New isoFace1 centre and area are x1 = " << x1 << " and n1 = " << n1 << " and results in a1 = " << a1 << " on face." << endl; 
-/*						if ((n1 & n0) < 0)
-						{
-							n1 *= (-1.0);
-							Info << "Changing direction of n1: " << n1 << endl;
-						}
-						
-						//Interpolate velocity to isoFace centre - currently not used
-						vector U1 = UInterp.interpolate(x1,ci);
-						scalar Un1 = (U1 & n1)/mag(n1);
-						Info << "Velocity interpolated to isoFace1 centre, U1 = " << U1 << " and projected on n1, Un1 = " << Un1 << endl;
-*/						
-						//Estimating time where the surface will be at x1
-						scalar dtn = ((x1-x0) & n0)/Un0; //What about when Un0 = 0?
-						Info << "x0: " << x0 << " x1: " << x1 << " n0: " << n0 << " U0: " << U0 << endl;
-						t1 = min(t0 + dtn,dt); //Next time
-						a1 = a0 + (t1-t0)/dtn*(a1-a0); //Linear interpolation of alphaf to time t1 from values at time t0 and t0+dtn - only changes a1 if t0+dtn > dt.
-						f1 = f0 + (t1-t0)/dtn*(f1-f0);
-						Info << "Estimated dtn = " << dtn << ", t1 = " << t1 << ", a1 = " << a1 << endl;
-						dVf[fLabel] += phi_[fLabel]*0.5*(a0 + a1)*(t1-t0); //Trapezoidal estimate
-						Info << "dVf[fLabel] = " << dVf[fLabel] << " after adding " << phi_[fLabel]*0.5*(a0 + a1)*(t1-t0) << " m3" << endl;
-						scalar olddVf = phi_[fLabel]*0.5*(a0 + a1)*(t1-t0);
-						scalar newdVf = phi_[fLabel]/mag(mesh_.Sf()[fLabel])*(t1-t0)*(a0*mag(mesh_.Sf()[fLabel]) + sign(Un0)*integratedArea(fLabel,f0,f1));
-						if (mag(olddVf-newdVf) > 1e-10)
-						{
-							Info << "olddVf-newdVf: " << olddVf-newdVf << " m3" << endl;
-						}
-						t0 = t1;
-						x0 = x1;
-//						n0 = n1;
-						a0 = a1;
-						f0 = f1;
-//						U0 = U1;
-//						Un0 = Un1;
-						nv++;
-					}
-					if (t1 < dt)
-					{
-						dVf[fLabel] += phi_[fLabel]*a1*(dt-t1);
-					}
-				}
-				else
-				{
 //					Info << "No elements in fVert. Face must be uncut and surface moving away from it." << endl;
-					dVf[fLabel] += phi_[fLabel]*a0*dt;
-				}
-
+				dVf[fLabel] += phi_[fLabel]*a0*dt;
 			}
 		}
-		else
-		{
-			Info << "WARNING: Face not treated!!!" << endl;
-		}
+//		}
+//		else
+//		{
+//			Info << "WARNING: Face not treated!!!" << endl;
+//		}
 	}
 }
+
+void Foam::isoAdvection::findSurfaceCells
+(
+	DynamicList<label>& surfaceCells
+)
+{
+	isSurfaceCell_ = false;
+//	Info << "1" << endl;
+	forAll(alpha1_,ci)
+	{
+//		Info << "2" << endl;
+		scalar aMin, aMax;
+		subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
+//		Info << "3" << endl;
+		if ( (aMin < 0.5 && aMax > 0.5) && ( 1e-10 < alpha1_[ci] && alpha1_[ci] < 1-1e-10 ) )
+		{
+			isSurfaceCell_[ci] = true;
+			Info << "4" << endl;
+			surfaceCells.append(ci);
+		}
+	}
+	Info << "5" << endl;
+	surfaceCells.shrink();
+}
+
+void Foam::isoAdvection::calcInitialIsoFace
+(
+	const label& ci,
+	vector& x0,
+	vector& n0,
+	scalar& f0,
+	scalar& Un0
+)
+{
+	//Construction of isosurface calculator to get access to its functionality
+	isoCutter cutter(mesh_,ap_);
+	scalar tol(1e-6);
+	label maxIter(100);
+	vector subCellCtr;
+	cutter.vofCutCell(ci, alpha1_[ci], tol, maxIter, f0, subCellCtr);
+
+//	bool cellAlmostEmpty = mag(f0-aMax) < 1e-6*(aMax-aMin);
+//	bool cellAlmostFull = mag(f0-aMin) < 1e-6*(aMax-aMin);
+	bool cellAlmostEmpty = mag(alpha1_[ci]) < tol;
+	bool cellAlmostFull = mag(alpha1_[ci]) > 1.0-tol;
+	if ( !cellAlmostFull & !cellAlmostEmpty)
+	{
+		cutter.isoFaceCentreAndArea(ci,f0,x0,n0); //Stupid to recalculate this here - should be provided by vofCutCell above				
+		//Make n0 point out of subCell
+		Info << "x0: " << x0 << ", n0: " << n0 << ", subCellCtr: " << subCellCtr << endl;
+		if (((x0 - subCellCtr) & n0) < 0) //n0 should point out of water surface, i.e. in the direction from subCell centre to isoFace centre
+		{
+			n0 *= (-1.0);
+			Info << "Changing direction of n0 " << n0 << endl;
+		}				
+	}
+	else if (cellAlmostEmpty) //We need to get the isoFace normal from an isoFace which is just inside the cell
+	{
+		scalar f0Inside =  f0 - tol;
+		cutter.isoFaceCentreAndArea(ci,f0Inside,x0,n0);
+		if (((mesh_.C()[ci] - x0) & n0) < 0.0) //n0 should point from isoFace centre towards cell centre for an almost empty cell
+		{
+			n0 *= (-1.0);
+			Info << "Changing direction of n0 " << n0 << endl;					
+		}
+	}
+	else //cellAlmostFull
+	{
+		scalar f0Inside = f0 + tol;					
+		cutter.isoFaceCentreAndArea(ci,f0Inside,x0,n0);
+		if (((x0 - mesh_.C()[ci]) & n0) < 0.0) //n0 should point from cell centre towards isoFace centre for an almost full cell
+		{
+			n0 *= (-1.0);
+			Info << "Changing direction of n0 " << n0 << endl;					
+		}
+	}
+	if (mag(n0) > 1e-10)
+	{
+		n0 /= mag(n0);
+	}
+	else
+	{
+		Info << "Warning: mag(n0) = " << mag(n0) << ". Cannot normalise it." << endl;
+	}					
+	
+	//Interpolate velocity to isoFace centre
+	interpolationCellPoint<vector> UInterp(U_);
+	vector U0 = UInterp.interpolate(x0,ci);
+	Info << "U0 = " << U0 << endl;
+	Un0 = (U0 & n0);
+	Info << "Un0 = " << Un0 << endl;
+	Info << "Initial values for time step:" << endl;
+	Info << "f0 = " << f0 << ", subCellCentre = " << subCellCtr << ", isoFaceCentre = " << x0 << ", isoFaceNormal = " << n0 << ", isoFaceVelocity = " << U0 << ", isoFaceNormalVelocity = " << Un0 << endl;
+	
+}
+
+
+void Foam::isoAdvection::getApproachedPoints
+(
+	const label& ci,
+	const vector& x0,
+	const vector& n0,
+	const scalar& f0,
+	const scalar& Un0,
+	DynamicList<label>& appPtLabels,
+	DynamicList<scalar>& times
+)
+{
+	const labelList& pLabels = mesh_.cellPoints()[ci];
+	DynamicList<scalar> posTimes;
+	DynamicList<label> posTimeLabels;
+	forAll(pLabels,pi)
+	{
+		scalar time = ((mesh_.points()[pLabels[pi]] - x0) & n0)/Un0;
+		if ( time > 0.0 )
+		{
+			posTimes.append(time);
+			posTimeLabels.append(pLabels[pi]);
+		}
+	}
+	labelList order(posTimes.size());
+	sortedOrder(posTimes,order);
+	appPtLabels.clear();
+	times.clear();
+	forAll(order,oi)
+	{
+		appPtLabels.append(posTimeLabels[order[oi]]);
+		times.append(posTimes[order[oi]]);
+	}
+}
+
 
 void Foam::isoAdvection::getOutFluxFaces
 (
