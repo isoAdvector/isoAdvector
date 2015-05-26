@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     Info<< "\nStarting time loop\n" << endl;
+	isoAdvection advector(alpha1,phi,U);
 	
     while (runTime.run())
     {
@@ -64,8 +65,7 @@ int main(int argc, char *argv[])
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
 		scalar dt = runTime.deltaT().value();
-		isoAdvection advector;
-		advector.advect(alpha1,phi,U,dt);		
+		advector.advect(dt);		
 
 		Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value() 
 			 << ", max(alpha1)-1 = " << max(alpha1).value()-1

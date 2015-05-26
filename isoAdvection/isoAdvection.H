@@ -57,29 +57,38 @@ class isoAdvection
 {
 
     // Private data
+	
+	//- fvMesh
+	const fvMesh& mesh_;
+	
+	//- VOF field
+	volScalarField& alpha1_;
+	
+	//- VOF field interpolated to mesh points
+	scalarField ap_;
 
+	//- Face fluxes
+	const surfaceScalarField& phi_;
+	
+	//- Velocity field
+	const volVectorField& U_;
+	
 	// Private Member Functions
 
 	void timeIntegratedFlux
 	(
-		const volScalarField& alpha,
-		const surfaceScalarField& phi,
-		const volVectorField& U,
 		const scalar& dt,
 		scalarField& dVf
 	);
 
 	void getOutFluxFaces
 	(
-		const surfaceScalarField& phi,
 		const label& ci,
 		DynamicList<label>& outFluxingFaces
 	);
 
 	void getVertexAlphas
 	(
-		const scalarField& alphap,
-		const fvMesh& mesh_,
 		const label& fLabel,
 		const scalar& f0,
 		const scalar& Un0,
@@ -90,8 +99,6 @@ class isoAdvection
 
 	scalar integratedArea
 	(
-		const scalarField& alphap,
-		const volScalarField& alpha1,
 		const label& fLabel,
 		const scalar& a0,
 		const scalar& a1
@@ -107,25 +114,26 @@ class isoAdvection
 
 	void boundAlpha
 	(
-		const volScalarField& alpha,
-		const surfaceScalarField& phi,
 		scalarField& dVf
 	);
 
 	scalar netFlux
 	(
 		const scalarField& dVf,
-		const fvMesh& mesh_,
 		const label& cLabel
 	);
 	
 public:
 
-	void advect
+	isoAdvection
 	(
 		volScalarField& alpha1,
 		const surfaceScalarField& phi,
-		const volVectorField& U,
+		const volVectorField& U
+	);
+
+	void advect
+	(
 		const scalar& dt
 	);
 
