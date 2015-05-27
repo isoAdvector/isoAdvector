@@ -25,12 +25,12 @@ Application
     isoAdvector
 
 Description
-	Advects a volume of fluid across an FVM mesh by fluxing fluid through its 
-	faces. Fluid transport across faces during a time step is estimated from 
-	the cell cutting of isosurfaces of the VOF field.
-	
+    Advects a volume of fluid across an FVM mesh by fluxing fluid through its
+    faces. Fluid transport across faces during a time step is estimated from
+    the cell cutting of isosurfaces of the VOF field.
+
 Author
-	Johan Roenby, DHI, all rights reserved.
+    Johan Roenby, DHI, all rights reserved.
 
 \*---------------------------------------------------------------------------*/
 
@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     Info<< "\nStarting time loop\n" << endl;
-	isoAdvection advector(alpha1,phi,U);
-	
+    isoAdvection advector(alpha1,phi,U);
+
     while (runTime.run())
     {
         #include "readTimeControls.H"
@@ -64,16 +64,16 @@ int main(int argc, char *argv[])
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
-		scalar dt = runTime.deltaT().value();
-		advector.advect(dt);		
+        scalar dt = runTime.deltaT().value();
+        advector.advect(dt);
 
-		Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value() 
-			 << ", max(alpha1)-1 = " << max(alpha1).value()-1
-			 << "\t min(alpha1) = " << min(alpha1).value() << endl;
+        Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value()
+             << ", max(alpha1)-1 = " << max(alpha1).value()-1
+             << "\t min(alpha1) = " << min(alpha1).value() << endl;
 
         alpha1.write();
         U.write();
-		
+
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
             << nl << endl;

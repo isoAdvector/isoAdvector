@@ -25,15 +25,15 @@ Class
     Foam::isoAdvection
 
 Description
-	Calculates the new VOF (alpha) field after time step dt given the initial
-	VOF field and a velocityField U and face fluxes phi. The fluid transport
-	calculation is based on an idea of using isosurfaces to estimate the 
-	internal distribution of fluid in cells and advecting such isosurfaces
-	across the mesh faces with the velocity field interpolated to the 
-	isosurfaces.
+    Calculates the new VOF (alpha) field after time step dt given the initial
+    VOF field and a velocityField U and face fluxes phi. The fluid transport
+    calculation is based on an idea of using isosurfaces to estimate the
+    internal distribution of fluid in cells and advecting such isosurfaces
+    across the mesh faces with the velocity field interpolated to the
+    isosurfaces.
 
 Author
-	Johan Roenby, DHI, all rights reserved.
+    Johan Roenby, DHI, all rights reserved.
 
 SourceFiles
     isoAdvection.C
@@ -57,113 +57,112 @@ class isoAdvection
 {
 
     // Private data
-	
-	//- fvMesh
-	const fvMesh& mesh_;
-	
-	//- VOF field
-	volScalarField& alpha1_;
-	
-	//- VOF field interpolated to mesh points
-	scalarField ap_;
 
-	//- Face fluxes
-	const surfaceScalarField& phi_;
-	
-	//- Velocity field
-	const volVectorField& U_;
-	
-	//- 
-	boolList isSurfaceCell_;
+    //- fvMesh
+    const fvMesh& mesh_;
 
-	// Private Member Functions
+    //- VOF field
+    volScalarField& alpha1_;
 
-	void timeIntegratedFlux
-	(
-		const scalar& dt,
-		scalarField& dVf
-	);
+    //- VOF field interpolated to mesh points
+    scalarField ap_;
 
-	void getOutFluxFaces
-	(
-		const label& ci,
-		DynamicList<label>& outFluxingFaces
-	);
+    //- Face fluxes
+    const surfaceScalarField& phi_;
 
-	void getVertexAlphas
-	(
-		const label& fLabel,
-		const scalar& f0,
-		const scalar& Un0,
-		scalarField& av,
-		vector& xFirst,
-		vector& xLast
-	);
+    //- Velocity field
+    const volVectorField& U_;
 
-	scalar integratedArea
-	(
-		const label& fLabel,
-		const scalar& a0,
-		const scalar& a1
-	);
-	
-	void subSetExtrema
-	(
-		const scalarField& f,
-		const labelList& labels,
-		scalar& fMin,
-		scalar& fMax
-	);
+    //-
+    boolList isSurfaceCell_;
 
-	void boundAlpha
-	(
-		scalarField& dVf
-	);
+    // Private Member Functions
 
-	scalar netFlux
-	(
-		const scalarField& dVf,
-		const label& cLabel
-	);
-	
-	void findSurfaceCells
-	(
-		DynamicList<label>& surfaceCells
-	);
-	
-	void calcInitialIsoFace
-	(
-		const label& ci,
-		vector& x0,
-		vector& n0,
-		scalar& f0,
-		scalar& Un0
-	);
-	
-	void getApproachedPoints
-	(
-		const label& ci,
-		const vector& x0,
-		const vector& n0,
-		const scalar& f0,
-		const scalar& Un0,
-		DynamicList<label>& appPtLabels,
-		DynamicList<scalar>& times
-	);
-	
+    void timeIntegratedFlux
+    (
+        const scalar& dt,
+        scalarField& dVf
+    );
+
+    void getOutFluxFaces
+    (
+        const label& ci,
+        DynamicList<label>& outFluxingFaces
+    );
+
+    scalar integratedArea
+    (
+        const label& fLabel,
+        const scalar& a0,
+        const scalar& a1
+    );
+
+    void quadAreaCoeffs
+    (
+        const label& fLabel,
+        const scalarField& f,
+        const scalar& f0,
+        const scalar& f1,
+        scalar& A,
+        scalar& B
+    );
+
+    void subSetExtrema
+    (
+        const scalarField& f,
+        const labelList& labels,
+        scalar& fMin,
+        scalar& fMax
+    );
+
+    void boundAlpha
+    (
+        scalarField& dVf
+    );
+
+    scalar netFlux
+    (
+        const scalarField& dVf,
+        const label& cLabel
+    );
+
+    void findSurfaceCells
+    (
+        DynamicList<label>& surfaceCells
+    );
+
+    void calcIsoFace
+    (
+        const label& ci,
+        vector& x0,
+        vector& n0,
+        scalar& f0,
+        scalar& Un0
+    );
+
+    scalar timeIntegratedFlux
+    (
+        const label& fLabel,
+        const vector& x0,
+        const vector& n0,
+        const scalar& Un0,
+        const scalar& f0,
+        const scalar& dt
+    );
+
 public:
 
-	isoAdvection
-	(
-		volScalarField& alpha1,
-		const surfaceScalarField& phi,
-		const volVectorField& U
-	);
+    isoAdvection
+    (
+        volScalarField& alpha1,
+        const surfaceScalarField& phi,
+        const volVectorField& U
+    );
 
-	void advect
-	(
-		const scalar& dt
-	);
+    void advect
+    (
+        const scalar& dt
+    );
 
 };
 

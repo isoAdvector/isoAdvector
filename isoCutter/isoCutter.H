@@ -36,7 +36,7 @@ Description
     can be returned in a surfaceScalarField.
 
 Author
-	Johan Roenby, DHI, all rights reserved.
+    Johan Roenby, DHI, all rights reserved.
 
 SourceFiles
     isoCutter.C
@@ -64,26 +64,26 @@ class isoCutter
 {
 
     // Private data
-	
-		//- Mesh whose cells and faces to cut at their intersection with an isoface
-		const fvMesh& mesh_;
-		
-		//- Function to take isosurface from. f_.size() should be equal to mesh_.nPoints().
-		const scalarField& f_;
-		
-		//- Isovalue
-//		const scalar& f0_;
+
+        //- Mesh whose cells and faces to cut at their intersection with an isoface
+        const fvMesh& mesh_;
+
+        //- Function to take isosurface from. f_.size() should be equal to mesh_.nPoints().
+        const scalarField& f_;
+
+        //- Isovalue
+//      const scalar& f0_;
 
     // Private Member Functions
-		
-	//- Cut a cell and represent cut by the cut face labels, and for each of these, 
-	//  the cut edges and the point along the edge at which it is cut.
-	//  If cell is not cut these lists will be empty.
-	//	If cell is strictly below isosurface (i.e. all vertex function values are strictly above f0_) fullySubmerged will be true.
+
+    //- Cut a cell and represent cut by the cut face labels, and for each of these,
+    //  the cut edges and the point along the edge at which it is cut.
+    //  If cell is not cut these lists will be empty.
+    //  If cell is strictly below isosurface (i.e. all vertex function values are strictly above f0_) fullySubmerged will be true.
     void isoCutCell
     (
         const label&,
-		const scalar&,
+        const scalar&,
         DynamicList<label>&,
         DynamicList<label>&,
         DynamicList<scalar>&,
@@ -94,24 +94,24 @@ class isoCutter
     void findACutFaceEdgePair
     (
         const label& cellI,
-		const scalar&,
+        const scalar&,
         label& cutFace,
         label& cutEdge,
         scalar& cutPoint,
         bool& fullySubmerged
     );
 
-	//- Starting from a specified cell face-edge pair find next cut face-edge pair
+    //- Starting from a specified cell face-edge pair find next cut face-edge pair
     void findNextCut
     (
         const label& cellI,
-		const scalar&,
+        const scalar&,
         label& cellFace,
         label& edge,
         scalar& cutPoint
     );
 
-	//- For a given cell face-edge pair find the other cell face-edge of the same cell edge
+    //- For a given cell face-edge pair find the other cell face-edge of the same cell edge
     void otherEdgeFace
     (
         const label& cellI,
@@ -119,7 +119,7 @@ class isoCutter
         label& edge
     );
 
-	//- Construct "isoFace" point list representing the union of a cell with the isosurface
+    //- Construct "isoFace" point list representing the union of a cell with the isosurface
     void getIsoFace
     (
         const DynamicList<label>& cutFaces,
@@ -127,18 +127,18 @@ class isoCutter
         const DynamicList<scalar>& cutPoints,
         pointField& isoPoints
     );
-	
-	//- Return labels of all cell faces with all points strictly below isosurface
+
+    //- Return labels of all cell faces with all points strictly below isosurface
     void fullySubmergedFaces
     (
         const label& cellI,
-		const scalar& f0,
+        const scalar& f0,
         DynamicList<label>& fullSubFaces
     );
 
-	
-	//- Write face points to .ply file e.g. for visualisation in Paraview.
-	//	No attempt is made to sort out non-unique points 
+
+    //- Write face points to .ply file e.g. for visualisation in Paraview.
+    //  No attempt is made to sort out non-unique points
     void writeFacesToPlyFile
     (
         const List<pointField>& pfl,
@@ -146,8 +146,8 @@ class isoCutter
         const word& fileDir
     );
 
-	
-	//- Calculate face centres and areas from pointFields assumed to represent oriented faces
+
+    //- Calculate face centres and areas from pointFields assumed to represent oriented faces
     void makeFaceCentresAndAreas
     (
         const List<pointField>& pfList,
@@ -156,17 +156,17 @@ class isoCutter
     );
 
 
-	//- Read face centres and face area vectors from mesh
-	void getFaceCentresAndAreas
+    //- Read face centres and face area vectors from mesh
+    void getFaceCentresAndAreas
     (
         const labelList& faceLabels,
         vectorField& fCtrs,
         vectorField& fAreas
     );
 
-	
-	//- Calculate cell centre and volume from cell face centres and area vectors.
-	//  Taken from primitiveMesh
+
+    //- Calculate cell centre and volume from cell face centres and area vectors.
+    //  Taken from primitiveMesh
     void makeCellCentreAndVol
     (
         const vectorField& fCtrs,
@@ -175,37 +175,37 @@ class isoCutter
         scalar& cellVol
     );
 
-	//- Print a pointField to terminal/log file
-	//  Used to visually inspect cut cell faces in matlab
+    //- Print a pointField to terminal/log file
+    //  Used to visually inspect cut cell faces in matlab
     void printPoints
     (
         const pointField& pf
     );
 
-	
-	//- Print a list of pointFields to terminal/log file
-	//  Used to visually inspect cut cell faces in matlab
+
+    //- Print a list of pointFields to terminal/log file
+    //  Used to visually inspect cut cell faces in matlab
     void printPoints
     (
         const List<pointField>& pfl
     );
 
 
-	//- For a list of face labels return their pointField representations
-	void getFacePoints
-	(
-		const labelList& faceLabels,
-		DynamicList<pointField>&
-	);
+    //- For a list of face labels return their pointField representations
+    void getFacePoints
+    (
+        const labelList& faceLabels,
+        DynamicList<pointField>&
+    );
 
-	
-	//- For a given face label return its pointField representation
-	void getFacePoints
-	(
-		const label&,
-		pointField&
-	);
-	
+
+    //- For a given face label return its pointField representation
+    void getFacePoints
+    (
+        const label&,
+        pointField&
+    );
+
 
 public:
 
@@ -221,101 +221,110 @@ public:
 //            const scalar&
         );
 
-		//Member functions
+        //Member functions
 
         //- Cell volume fractions beneath isosurface
         void subCellFractions
-		(
-			const scalar&,
-			volScalarField&
-		);
-		
-		void subCellFraction
-		(
-			const label&,
-			const scalar&,
-			scalar&
-		);
+        (
+            const scalar&,
+            volScalarField&
+        );
 
-		void subCellFraction
-		(
-			const label&,
-			const scalar&,
-			scalar&,
-			vector&
-		);
+        void subCellFraction
+        (
+            const label&,
+            const scalar&,
+            scalar&
+        );
 
-		void vofCutCells
-		(
-			const volScalarField& alpha1,
-			const scalar& tol,
-			const label& maxIter,
-			volScalarField& f0
-		);
+        void subCellFraction
+        (
+            const label&,
+            const scalar&,
+            scalar&,
+            vector&
+        );
+
+        void vofCutCells
+        (
+            const volScalarField& alpha1,
+            const scalar& tol,
+            const label& maxIter,
+            volScalarField& f0
+        );
 
         //- Faces area fractions beneath isosurface
         void subFaceFractions
-		(
-			const scalar& f0,
-			surfaceScalarField&
-		);
-		
-		void subFaceFraction
-		(
-			const label& fi,
-			const scalar& f0,
-			scalar& alphaf
-		);
+        (
+            const scalar& f0,
+            surfaceScalarField&
+        );
+
+        void subFaceFraction
+        (
+            const label& fi,
+            const scalar& f0,
+            scalar& alphaf
+        );
 
 
-		//- Cuts a face at intersection with isosurface and returns lower subface
-		bool getSubFace
-		(
-			const label& faceLabel,
-			const scalar& f0,
-			pointField& partSubFacePts
-		);
+        //- Cuts a face at intersection with isosurface and returns lower subface
+        bool getSubFace
+        (
+            const label& faceLabel,
+            const scalar& f0,
+            pointField& partSubFacePts
+        );
 
-		//- Return cutPoints for a given face - will typically contain 0 or 2 points. May be 1 point if face just touched by surface. May in rare cases be > 2 points if f-f0 changes sign more than twice along face
-		void getFaceCutPoints
-		(
-			const label& fLabel,
-			const scalar& f0,
-			pointField& cutPoints
-		);
+        //- Return cutPoints for a given face - will typically contain 0 or 2 points. May be 1 point if face just touched by surface. May in rare cases be > 2 points if f-f0 changes sign more than twice along face
+        void getFaceCutPoints
+        (
+            const label& fLabel,
+            const scalar& f0,
+            pointField& cutPoints
+        );
 
-		
-		//- Calculate face centre and area from pointField assumed to represent an oriented face
-		//  Taken from primitiveMesh
-		void makeFaceCentreAndArea
-		(
-			const pointField& p,
-			vector& fCtr,
-			vector& fArea
-		);
-		
-		//- 
-		void vofCutCell
-		(
-			const label& cellI,
-			const scalar& vof,
-			const scalar& tol,
-			const label& maxIter,
-			scalar& vofout,
-			vector& subCellCtr
-		);
+        //- Return cutPoints for a given face as above but with field values in points specified by input scalarField f.
+        void getFaceCutPoints
+        (
+            const label& fLabel,
+            const scalarField& f,
+            const scalar& f0,
+            pointField& cutPoints
+        );
 
 
-		void isoFaceCentreAndArea
-		(
-			const label& cLabel,
-			const scalar& f0,
-			vector& faceCentre,
-			vector& faceArea
-		);
+        //- Calculate face centre and area from pointField assumed to represent an oriented face
+        //  Taken from primitiveMesh
+        void makeFaceCentreAndArea
+        (
+            const pointField& p,
+            vector& fCtr,
+            vector& fArea
+        );
 
-/*		
-		//- Writes cut cell faces to ply files and to screen
+        //-
+        void vofCutCell
+        (
+            const label& cellI,
+            const scalar& vof,
+            const scalar& tol,
+            const label& maxIter,
+            scalar& vofout,
+            vector& subCellCtr
+        );
+
+
+        void isoFaceCentreAndArea
+        (
+            const label& cLabel,
+            const scalar& f0,
+            vector& faceCentre,
+            vector& faceArea
+        );
+
+/*
+        //- Writes cut cell faces to ply files and to screen
         void write();
 */
 };

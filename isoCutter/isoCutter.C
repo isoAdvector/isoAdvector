@@ -46,66 +46,66 @@ Foam::isoCutter::isoCutter
 
 void Foam::isoCutter::vofCutCell
 (
-	const label& ci,
-	const scalar& alpha1,
-	const scalar& tol,
-	const label& maxIter,
-	scalar& f0,
-	vector& subCellCtr
+    const label& ci,
+    const scalar& alpha1,
+    const scalar& tol,
+    const label& maxIter,
+    scalar& f0,
+    vector& subCellCtr
 )
 {
-////	Info << "Enter vofCutCell for cell " << ci << " which has alpha1 = " << alpha1 << endl;
-	scalar fMin(GREAT), fMax(-GREAT);
+////    Info << "Enter vofCutCell for cell " << ci << " which has alpha1 = " << alpha1 << endl;
+    scalar fMin(GREAT), fMax(-GREAT);
     const labelList& pLabels = mesh_.cellPoints(ci);
-	forAll(pLabels,pi)
-	{
-		scalar fp = f_[pLabels[pi]];
-		if (fp > fMax) 
-		{
-			fMax = fp;
-		}
-		if (fp < fMin) 
-		{
-			fMin = fp;
-		}
-	}
-//	Info << "fMin = " << fMin << " fMax = " << fMax << endl;
-	
-	//Initial guess of isovalue
-	scalar aMin(0), aMax(1), alpha0;
-	f0 = (alpha1 - aMin)/(aMax-aMin)*(fMin-fMax) + fMax;
-//	f0 = 0.5*(fMin + fMax);
-	subCellFraction(ci, f0, alpha0, subCellCtr);
-//	Info << "f0 = " << f0 << " gives alpha = " << alpha0 << endl;
-	
-	//Bisection method to find root
-	//Since function is monotonically increasing and only piecewise smooth derivative based root finding algorithms should not be used here. 
-	label nIter = 0;
-	while ( mag(alpha1-alpha0) > tol && nIter < maxIter )
-	{
-		if ( alpha0 > alpha1 )
-		{
-			aMax = alpha0;
-			fMin = f0;
-		}
-		else
-		{
-			aMin = alpha0;
-			fMax = f0;
-		}
-		f0 = 0.5*(fMin + fMax);
-//		f0 = (alpha1 - aMin)/(aMax-aMin)*(fMin-fMax) + fMax; //This does an extremely poor job in narrowing in the interval - especially for almost filled cells
-		subCellFraction(ci, f0, alpha0, subCellCtr);
-//		Info << nIter << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
-		nIter++;
-	}
-////	Info << nIter-1 << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
+    forAll(pLabels,pi)
+    {
+        scalar fp = f_[pLabels[pi]];
+        if (fp > fMax)
+        {
+            fMax = fp;
+        }
+        if (fp < fMin)
+        {
+            fMin = fp;
+        }
+    }
+//  Info << "fMin = " << fMin << " fMax = " << fMax << endl;
+
+    //Initial guess of isovalue
+    scalar aMin(0), aMax(1), alpha0;
+    f0 = (alpha1 - aMin)/(aMax-aMin)*(fMin-fMax) + fMax;
+//  f0 = 0.5*(fMin + fMax);
+    subCellFraction(ci, f0, alpha0, subCellCtr);
+//  Info << "f0 = " << f0 << " gives alpha = " << alpha0 << endl;
+
+    //Bisection method to find root
+    //Since function is monotonically increasing and only piecewise smooth derivative based root finding algorithms should not be used here.
+    label nIter = 0;
+    while ( mag(alpha1-alpha0) > tol && nIter < maxIter )
+    {
+        if ( alpha0 > alpha1 )
+        {
+            aMax = alpha0;
+            fMin = f0;
+        }
+        else
+        {
+            aMin = alpha0;
+            fMax = f0;
+        }
+        f0 = 0.5*(fMin + fMax);
+//      f0 = (alpha1 - aMin)/(aMax-aMin)*(fMin-fMax) + fMax; //This does an extremely poor job in narrowing in the interval - especially for almost filled cells
+        subCellFraction(ci, f0, alpha0, subCellCtr);
+//      Info << nIter << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
+        nIter++;
+    }
+////    Info << nIter-1 << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
 }
 
 void Foam::isoCutter::isoCutCell
 (
     const label& cellI,
-	const scalar& f0,
+    const scalar& f0,
     DynamicList<label>& cutFaces,
     DynamicList<label>& cutEdges,
     DynamicList<scalar>& cutPoints,
@@ -143,7 +143,7 @@ void Foam::isoCutter::isoCutCell
 void Foam::isoCutter::findACutFaceEdgePair
 (
     const label& cellI,
-	const scalar& f0,
+    const scalar& f0,
     label& cutFace,
     label& cutEdge,
     scalar& cutPoint,
@@ -155,10 +155,10 @@ void Foam::isoCutter::findACutFaceEdgePair
     cutPoint = -1;
     fullySubmerged = true;
 
-	const faceList& faces = mesh_.faces();
+    const faceList& faces = mesh_.faces();
     const labelList& cellFaces = mesh_.cells()[cellI];
-	
-	labelList pLabels;
+
+    labelList pLabels;
     forAll(cellFaces,fi)
     {
         pLabels = faces[cellFaces[fi]];
@@ -192,7 +192,7 @@ void Foam::isoCutter::findACutFaceEdgePair
 void Foam::isoCutter::findNextCut
 (
     const label& cellI,
-	const scalar& f0,
+    const scalar& f0,
     label& cellFace,
     label& edge,
     scalar& cutPoint
@@ -201,8 +201,8 @@ void Foam::isoCutter::findNextCut
 
     const label oldEdge = edge;
     cutPoint = -1;
-	const faceList& faces = mesh_.faces();
-	const labelList& cellFaces = mesh_.cells()[cellI];
+    const faceList& faces = mesh_.faces();
+    const labelList& cellFaces = mesh_.cells()[cellI];
 
     labelList pLabels = faces[cellFaces[cellFace]];
     label nPoints = pLabels.size();
@@ -238,11 +238,11 @@ void Foam::isoCutter::otherEdgeFace
     label& edge
 )
 {
-	const faceList& faces = mesh_.faces();
+    const faceList& faces = mesh_.faces();
     const label oldFace = cellFace;
     const labelList& cellFaces = mesh_.cells()[cellI];
 
-	labelList pLabels = faces[cellFaces[oldFace]];	
+    labelList pLabels = faces[cellFaces[oldFace]];
     label p1 = pLabels[edge];
     label nPoints = pLabels.size();
     label p2 = pLabels[(edge+1) % nPoints];
@@ -328,7 +328,7 @@ void Foam::isoCutter::getIsoFace
 bool Foam::isoCutter::getSubFace
 (
     const label& faceLabel,
-	const scalar& f0,
+    const scalar& f0,
     pointField& partSubFacePts
 )
 {
@@ -338,7 +338,7 @@ bool Foam::isoCutter::getSubFace
 
     const labelList pLabels = faces[faceLabel];
     const label nPoints = pLabels.size();
-	label pl1 = pLabels[0];
+    label pl1 = pLabels[0];
     forAll(pLabels,pi)
     {
         label pl2 = pLabels[(pi+1)%nPoints];
@@ -365,7 +365,7 @@ bool Foam::isoCutter::getSubFace
                 partSubFacePts.append(pCut);
             }
         }
-		pl1 = pl2;
+        pl1 = pl2;
     }
 
     return fullySubmerged;
@@ -374,56 +374,100 @@ bool Foam::isoCutter::getSubFace
 void Foam::isoCutter::getFaceCutPoints
 (
     const label& fLabel,
-	const scalar& f0,
+    const scalar& f0,
     pointField& cutPoints
 )
 {
     const faceList& faces = mesh_.faces();
     const pointField& points = mesh_.points();
-	
+
     const labelList pLabels = faces[fLabel];
     const label nPoints = pLabels.size();
-	label pl1 = pLabels[0];
-	scalar f1(f_[pl1]);
-	if (mag(f1-f0) < 1e-10)
-	{
-		f1 = f0;
-	}
-	Info << "face values differences from f0: ";
+    label pl1 = pLabels[0];
+    scalar f1(f_[pl1]);
+    if (mag(f1-f0) < 1e-10)
+    {
+        f1 = f0;
+    }
+    Info << "face values differences from f0: ";
     forAll(pLabels,pi)
     {
         label pl2 = pLabels[(pi+1)%nPoints];
 //        scalar f1(f_[pl1]), f2(f_[pl2]);
         scalar f2(f_[pl2]);
-		if (mag(f2-f0) < 1e-10)
-		{
-			f2 = f0;
-		}
-		Info << " " << f1-f0;
-//		bool edgeIsCut = ( (f1 >= f0) && (f2 < f0 && f1 > f0) ) || ( (f1 < f0) && (f2 > f0) );
-//		bool edgeIsCut = ( f1 <= f0 && f0 < f2 ) || ( f2 < f0 && f0 <= f1 );
-		bool edgeIsCut = min(f1,f2) < f0 && max(f1,f2) > f0;
+        if (mag(f2-f0) < 1e-10)
+        {
+            f2 = f0;
+        }
+        Info << " " << f1-f0;
+//      bool edgeIsCut = ( (f1 >= f0) && (f2 < f0 && f1 > f0) ) || ( (f1 < f0) && (f2 > f0) );
+//      bool edgeIsCut = ( f1 <= f0 && f0 < f2 ) || ( f2 < f0 && f0 <= f1 );
+        bool edgeIsCut = min(f1,f2) < f0 && max(f1,f2) > f0;
         if ( edgeIsCut )
         {
-			scalar s = (f0-f1)/(f2-f1);
-			point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
-			cutPoints.append(pCut);
+            scalar s = (f0-f1)/(f2-f1);
+            point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
+            cutPoints.append(pCut);
         }
-		else if ( f1 == f0 )
-	 	{
-			cutPoints.append(points[pl1]);			
-		}
-		pl1 = pl2;
-		f1 = f2;
+        else if ( f1 == f0 )
+        {
+            cutPoints.append(points[pl1]);
+        }
+        pl1 = pl2;
+        f1 = f2;
     }
-	Info << "." << endl;
+    Info << "." << endl;
 }
 
+void Foam::isoCutter::getFaceCutPoints
+(
+    const label& fLabel,
+    const scalarField& f,
+    const scalar& f0,
+    pointField& cutPoints
+)
+{
+    const faceList& faces = mesh_.faces();
+    const pointField& points = mesh_.points();
+
+    const labelList pLabels = faces[fLabel];
+    const label nPoints = pLabels.size();
+    label pl1 = pLabels[0];
+//  scalar f1(f_[pl1]);
+    scalar f1(f[0]);
+    if (mag(f1-f0) < 1e-10)
+    {
+        f1 = f0;
+    }
+    forAll(pLabels,pi)
+    {
+        label pl2 = pLabels[(pi+1)%nPoints];
+//        scalar f2(f[pl2]);
+        scalar f2(f[(pi+1)%nPoints]);
+        if (mag(f2-f0) < 1e-10)
+        {
+            f2 = f0;
+        }
+        bool edgeIsCut = min(f1,f2) < f0 && max(f1,f2) > f0;
+        if ( edgeIsCut )
+        {
+            scalar s = (f0-f1)/(f2-f1);
+            point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
+            cutPoints.append(pCut);
+        }
+        else if ( f1 == f0 )
+        {
+            cutPoints.append(points[pl1]);
+        }
+        pl1 = pl2;
+        f1 = f2;
+    }
+}
 
 void Foam::isoCutter::fullySubmergedFaces
 (
     const label& cellI,
-	const scalar& f0,
+    const scalar& f0,
     DynamicList<label>& fullSubFaces
 )
 {
@@ -500,14 +544,14 @@ void Foam::isoCutter::writeFacesToPlyFile
 
 void Foam::isoCutter::subFaceFractions
 (
-	const scalar& f0,
+    const scalar& f0,
     surfaceScalarField& alphaf
 )
 {
-	forAll(alphaf,fi)
-	{
-		subFaceFraction(fi,f0,alphaf[fi]);
-	}
+    forAll(alphaf,fi)
+    {
+        subFaceFraction(fi,f0,alphaf[fi]);
+    }
 /*
     alphaf = 0;
     const vectorField& Sf = mesh_.Sf();
@@ -533,161 +577,161 @@ void Foam::isoCutter::subFaceFractions
 
 void Foam::isoCutter::subFaceFraction
 (
-	const label& fi,
-	const scalar& f0,
+    const label& fi,
+    const scalar& f0,
     scalar& alphaf
 )
 {
     alphaf = 0;
-	pointField partSubFacePts;
-	bool fullySubmerged = getSubFace(fi,f0,partSubFacePts);
-	if (fullySubmerged)
-	{
-		alphaf = 1;
-	}
-	else if (partSubFacePts.size() != 0)
-	{
-		vector fCtr, fArea;
-		makeFaceCentreAndArea(partSubFacePts, fCtr, fArea);
-		alphaf = mag(fArea)/mag(mesh_.Sf()[fi]);
-	}
+    pointField partSubFacePts;
+    bool fullySubmerged = getSubFace(fi,f0,partSubFacePts);
+    if (fullySubmerged)
+    {
+        alphaf = 1;
+    }
+    else if (partSubFacePts.size() != 0)
+    {
+        vector fCtr, fArea;
+        makeFaceCentreAndArea(partSubFacePts, fCtr, fArea);
+        alphaf = mag(fArea)/mag(mesh_.Sf()[fi]);
+    }
 }
 
 void Foam::isoCutter::isoFaceCentreAndArea
 (
-	const label& ci,
-	const scalar& f0,
-	vector& faceCentre,
-	vector& faceArea
+    const label& ci,
+    const scalar& f0,
+    vector& faceCentre,
+    vector& faceArea
 )
 {
-	DynamicList<label> cutFaces;
-	DynamicList<label> cutEdges;
-	DynamicList<scalar> cutPoints;
-	bool fullySubmerged(false);
-	isoCutCell(ci,f0,cutFaces,cutEdges,cutPoints,fullySubmerged);
-	pointField isoPoints;
-	getIsoFace(cutFaces,cutEdges,cutPoints,isoPoints);
-	if (isoPoints.size()>0)
-	{
-		makeFaceCentreAndArea(isoPoints, faceCentre, faceArea);
-	}
-	else
-	{
-		Info << "Warning: isoPoints.size() <= 0 for cell " << ci << endl;
-	}	
+    DynamicList<label> cutFaces;
+    DynamicList<label> cutEdges;
+    DynamicList<scalar> cutPoints;
+    bool fullySubmerged(false);
+    isoCutCell(ci,f0,cutFaces,cutEdges,cutPoints,fullySubmerged);
+    pointField isoPoints;
+    getIsoFace(cutFaces,cutEdges,cutPoints,isoPoints);
+    if (isoPoints.size()>0)
+    {
+        makeFaceCentreAndArea(isoPoints, faceCentre, faceArea);
+    }
+    else
+    {
+        Info << "Warning: isoPoints.size() <= 0 for cell " << ci << endl;
+    }
 }
 
 void Foam::isoCutter::subCellFractions
 (
-	const scalar& f0,
+    const scalar& f0,
     volScalarField& alpha1
 )
 {
     for ( label ci = 0; ci < mesh_.nCells(); ci++ )
     {
-		scalar ai;
-		subCellFraction(ci, f0, ai);
-		alpha1[ci] = ai;
+        scalar ai;
+        subCellFraction(ci, f0, ai);
+        alpha1[ci] = ai;
     }
 }
 
 void Foam::isoCutter::vofCutCells
 (
-	const volScalarField& alpha1,
-	const scalar& tol,
-	const label& maxIter,
-	volScalarField& f0
+    const volScalarField& alpha1,
+    const scalar& tol,
+    const label& maxIter,
+    volScalarField& f0
 )
-{	
-	vector subCellCtr;
+{
+    vector subCellCtr;
     for ( label ci = 0; ci < mesh_.nCells(); ci++ )
     {
-		scalar fi;
-		scalar ai = alpha1[ci];
-		if ( 0 < ai && ai < 1)
-		{
-			vofCutCell(ci, ai, tol, maxIter, fi, subCellCtr);
-			f0[ci] = fi;
-		}
-		else
-		{
-			f0[ci] = ai;
-		}
+        scalar fi;
+        scalar ai = alpha1[ci];
+        if ( 0 < ai && ai < 1)
+        {
+            vofCutCell(ci, ai, tol, maxIter, fi, subCellCtr);
+            f0[ci] = fi;
+        }
+        else
+        {
+            f0[ci] = ai;
+        }
     }
 }
 
 
 void Foam::isoCutter::subCellFraction
 (
-	const label& ci,
-	const scalar& f0,
+    const label& ci,
+    const scalar& f0,
     scalar& alpha1
 )
 {
-	vector cellCtr;
-	subCellFraction(ci, f0, alpha1, cellCtr);
+    vector cellCtr;
+    subCellFraction(ci, f0, alpha1, cellCtr);
 }
 
 void Foam::isoCutter::subCellFraction
 (
-	const label& ci,
-	const scalar& f0,
+    const label& ci,
+    const scalar& f0,
     scalar& alpha1,
-	vector& cellCtr
+    vector& cellCtr
 )
 {
     alpha1 = 0;
 
-	DynamicList<label> cutFaces;
-	DynamicList<label> cutEdges;
-	DynamicList<scalar> cutPoints;
-	DynamicList<labelList> submergedPoints;
-	bool fullySubmerged(false);
-	isoCutCell(ci,f0,cutFaces,cutEdges,cutPoints,fullySubmerged);
+    DynamicList<label> cutFaces;
+    DynamicList<label> cutEdges;
+    DynamicList<scalar> cutPoints;
+    DynamicList<labelList> submergedPoints;
+    bool fullySubmerged(false);
+    isoCutCell(ci,f0,cutFaces,cutEdges,cutPoints,fullySubmerged);
 
-	if ( cutFaces.size() > 0 )
-	{
-		//Get isoFace points
-		pointField isoPoints;
-		getIsoFace(cutFaces,cutEdges,cutPoints,isoPoints);
+    if ( cutFaces.size() > 0 )
+    {
+        //Get isoFace points
+        pointField isoPoints;
+        getIsoFace(cutFaces,cutEdges,cutPoints,isoPoints);
 
-		//Get points of cut cell face
-		DynamicList<pointField> partSubFacePoints;
-		forAll(cutFaces,fi)
-		{
-			pointField subFacePoints;
-			getSubFace(cutFaces[fi],f0,subFacePoints);
-			partSubFacePoints.append(subFacePoints);
-		}
+        //Get points of cut cell face
+        DynamicList<pointField> partSubFacePoints;
+        forAll(cutFaces,fi)
+        {
+            pointField subFacePoints;
+            getSubFace(cutFaces[fi],f0,subFacePoints);
+            partSubFacePoints.append(subFacePoints);
+        }
 
-		//Get points of fully submerged cell face			
-		DynamicList<label> fullSubFaces;
-		fullySubmergedFaces(ci,f0,fullSubFaces);
-		DynamicList<pointField> fullSubFacePoints;
-		getFacePoints(fullSubFaces,fullSubFacePoints);
-		
-		//Gathering all cut cell face points in one list
-		DynamicList<pointField> cutCellFacePoints(partSubFacePoints);
-		cutCellFacePoints.append(isoPoints);
-		cutCellFacePoints.append(fullSubFacePoints);
+        //Get points of fully submerged cell face
+        DynamicList<label> fullSubFaces;
+        fullySubmergedFaces(ci,f0,fullSubFaces);
+        DynamicList<pointField> fullSubFacePoints;
+        getFacePoints(fullSubFaces,fullSubFacePoints);
 
-		//Calculating cut cell face centres and areas
-		vectorField faceCentres, faceAreas;
-		makeFaceCentresAndAreas(cutCellFacePoints, faceCentres, faceAreas);
+        //Gathering all cut cell face points in one list
+        DynamicList<pointField> cutCellFacePoints(partSubFacePoints);
+        cutCellFacePoints.append(isoPoints);
+        cutCellFacePoints.append(fullSubFacePoints);
 
-		//Calculating cut cell centre and volume
-//		vector cellCtr;
-		scalar cellVol;
-		makeCellCentreAndVol(faceCentres, faceAreas, cellCtr, cellVol);
-		const scalarField& V = mesh_.V();
-		alpha1 = (cellVol/V[ci]);
-		
-	} else if ( fullySubmerged )
-	{
-		alpha1 = 1;
-		cellCtr = mesh_.C()[ci];
-	}
+        //Calculating cut cell face centres and areas
+        vectorField faceCentres, faceAreas;
+        makeFaceCentresAndAreas(cutCellFacePoints, faceCentres, faceAreas);
+
+        //Calculating cut cell centre and volume
+//      vector cellCtr;
+        scalar cellVol;
+        makeCellCentreAndVol(faceCentres, faceAreas, cellCtr, cellVol);
+        const scalarField& V = mesh_.V();
+        alpha1 = (cellVol/V[ci]);
+
+    } else if ( fullySubmerged )
+    {
+        alpha1 = 1;
+        cellCtr = mesh_.C()[ci];
+    }
 }
 
 void Foam::isoCutter::makeFaceCentresAndAreas
@@ -860,32 +904,32 @@ void Foam::isoCutter::printPoints
 
 void Foam::isoCutter::getFacePoints
 (
-	const labelList& fLabels,
-	DynamicList<pointField>& facePointLists
+    const labelList& fLabels,
+    DynamicList<pointField>& facePointLists
 )
 {
-	forAll(fLabels,fi)
-	{
-		pointField fp;
-		getFacePoints(fLabels[fi],fp);
-		facePointLists.append(fp);
-	}
+    forAll(fLabels,fi)
+    {
+        pointField fp;
+        getFacePoints(fLabels[fi],fp);
+        facePointLists.append(fp);
+    }
 }
 
 
 void Foam::isoCutter::getFacePoints
 (
-	const label& faceLabel,
-	pointField& fp
+    const label& faceLabel,
+    pointField& fp
 )
 {
-	const pointField& points = mesh_.points();
+    const pointField& points = mesh_.points();
 
-	labelList fpLabels = mesh_.faces()[faceLabel];
-	forAll(fpLabels,pi)
-	{
-		fp.append(points[fpLabels[pi]]);
-	}	
+    labelList fpLabels = mesh_.faces()[faceLabel];
+    forAll(fpLabels,pi)
+    {
+        fp.append(points[fpLabels[pi]]);
+    }
 }
 
 // ************************************************************************* //
