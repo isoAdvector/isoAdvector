@@ -73,7 +73,7 @@ class isoAdvection
     //- Velocity field
     const volVectorField& U_;
 
-    //-
+    //- For each cell weather it qualifies as a surface cell
     boolList isSurfaceCell_;
 
     // Private Member Functions
@@ -89,7 +89,20 @@ class isoAdvection
         const label& ci,
         DynamicList<label>& outFluxingFaces
     );
+	
+	void getInAndOutFluxFaces
+	(
+		const label& ci,
+		DynamicList<label>& inFluxingFaces,
+		DynamicList<label>& outFluxingFaces
+	);
 
+	label otherCell
+	(
+		const label& fLabel,
+		const label& cLabel
+	);
+	
     scalar integratedArea
     (
         const label& fLabel,

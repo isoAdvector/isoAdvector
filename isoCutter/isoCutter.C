@@ -371,6 +371,70 @@ bool Foam::isoCutter::getSubFace
     return fullySubmerged;
 }
 
+
+Foam::scalar Foam::isoCutter::getSubFaceFraction
+(
+    const label& faceLabel,
+	const scalarField& f,
+    const scalar& f0
+)
+{
+    const faceList& faces = mesh_.faces();
+    const pointField& points = mesh_.points();
+    bool fullySubmerged = true;
+    const labelList pLabels = faces[faceLabel];
+    const label nPoints = pLabels.size();
+	
+	pointField partSubFacePts;
+
+    label pl1 = pLabels[0];
+    forAll(pLabels,pi)
+    {
+        label pl2 = pLabels[(pi+1)%nPoints];
+        scalar f1(f[pi]), f2(f[(pi+1)%nPoints]);
+        if (f1 >= f0)
+        {
+            partSubFacePts.append(points[pl1]);
+            if ( f2 < f0 && f1 > f0 )
+            {
+                scalar s = (f0-f1)/(f2-f1);
+//                Info << "Face " << faceLabel << ", edge " << pi << ": s = " << s << endl;
+                point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
+                partSubFacePts.append(pCut);
+            }
+        }
+        else if (f1 < f0)
+        {
+            fullySubmerged = false;
+            if (f2 > f0)
+            {
+                scalar s = (f0-f1)/(f2-f1);
+//                Info << "Face " << faceLabel << ", edge " << pi << ": s = " << s << endl;
+                point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
+                partSubFacePts.append(pCut);
+            }
+        }
+        pl1 = pl2;
+    }
+
+	//Calculating subface fraction
+	scalar alphaf = 0.0;
+	
+    if (fullySubmerged)
+    {
+        alphaf = 1;
+    }
+    else if (partSubFacePts.size() != 0)
+    {
+        vector fCtr, fArea;
+        makeFaceCentreAndArea(partSubFacePts, fCtr, fArea);
+        alphaf = mag(fArea)/mag(mesh_.Sf()[faceLabel]);
+    }
+	
+    return alphaf;
+}
+
+
 void Foam::isoCutter::getFaceCutPoints
 (
     const label& fLabel,
