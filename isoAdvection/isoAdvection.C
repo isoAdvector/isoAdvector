@@ -126,7 +126,7 @@ void Foam::isoAdvection::findSurfaceCells
     isSurfaceCell_ = false;
     forAll(alpha1_,ci)
     {
-        scalar aMin, aMax;
+        scalar aMin(GREAT), aMax(-GREAT);
         subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
 //        if ( (aMin < 0.5 && aMax > 0.5) && ( 1e-10 < alpha1_[ci] && alpha1_[ci] < 1-1e-10 ) )
         if ( (aMin < 0.5 && aMax > 0.5) )
@@ -155,19 +155,48 @@ void Foam::isoAdvection::calcIsoFace
     vector subCellCtr;
     cutter.vofCutCell(ci, alpha1_[ci], tol, maxIter, f0, subCellCtr);
 
-    bool cellAlmostEmpty = mag(alpha1_[ci]) < tol;
-    bool cellAlmostFull = mag(alpha1_[ci]) > 1.0-tol;
-    if ( !cellAlmostFull & !cellAlmostEmpty)
-    {
+//    bool cellAlmostEmpty = mag(alpha1_[ci]) < tol;
+//    bool cellAlmostFull = mag(alpha1_[ci]) > 1.0-tol;
+//    if ( !cellAlmostFull & !cellAlmostEmpty)
+//    {
 		Info << "Cell is neither almost full or almost empty" << endl;
         cutter.isoFaceCentreAndArea(ci,f0,x0,n0); //Stupid to recalculate this here - should be provided by vofCutCell above
+		
+		if (mag(n0)<SMALL) //Cell almost full or empty so isoFace is undefined. Calculating normal by going a little into the cell
+		{
+			scalar aMin(GREAT), aMax(-GREAT);
+			subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
+			if (mag(f0-aMin) < mag(f0-aMax)) //f0 almost equal to aMin, i.e. cell almost full
+			{
+				Info << "Cell is almost full" << endl;
+				scalar f0Inside =  aMin + tol*(aMax-aMin);
+				cutter.isoFaceCentreAndArea(ci,f0Inside,x0,n0);
+				if (((x0 - mesh_.C()[ci]) & n0) < 0.0) //n0 should point from cell centre towards isoFace centre for an almost full cell
+				{
+					n0 *= (-1.0);
+					Info << "Changing direction of n0 " << n0 << endl;
+				}
+			}
+			else //f0 almost equal to aMax, i.e. cell almost empty
+			{
+				Info << "Cell is almost empty" << endl;
+				scalar f0Inside =  aMax + tol*(aMin-aMax);
+				cutter.isoFaceCentreAndArea(ci,f0Inside,x0,n0);
+				if (((mesh_.C()[ci] - x0) & n0) < 0.0) //n0 should point from isoFace centre towards cell centre for an almost empty cell
+				{
+					n0 *= (-1.0);
+					Info << "Changing direction of n0 " << n0 << endl;
+				}
+			}
+
+		}
         //Make n0 point out of subCell
-        if (((x0 - subCellCtr) & n0) < 0) //n0 should point out of water surface, i.e. in the direction from subCell centre to isoFace centre
+        else if (((x0 - subCellCtr) & n0) < 0) //n0 should point out of water surface, i.e. in the direction from subCell centre to isoFace centre
         {
             n0 *= (-1.0);
             Info << "Changing direction of n0 " << n0 << endl;
         }
-    }
+/*    }
     else if (cellAlmostEmpty) //We need to get the isoFace normal from an isoFace which is just inside the cell
     {
 		Info << "Cell is almost empty" << endl;
@@ -190,7 +219,7 @@ void Foam::isoAdvection::calcIsoFace
             Info << "Changing direction of n0 " << n0 << endl;
         }
     }
-	
+*/	
 	Info << "Normalising n0: " << n0 << endl;
 	n0 /= mag(n0);
 
