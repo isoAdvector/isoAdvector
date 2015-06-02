@@ -84,31 +84,28 @@ class isoAdvection
         scalarField& dVf
     );
 
+    scalar timeIntegratedFlux
+    (
+        const label& fLabel,
+        const vector& x0,
+        const vector& n0,
+        const scalar& Un0,
+        const scalar& f0,
+        const scalar& dt
+    );
+
     void getOutFluxFaces
     (
         const label& ci,
         DynamicList<label>& outFluxingFaces
     );
-	
-	void getInAndOutFluxFaces
-	(
-		const label& ci,
-		DynamicList<label>& inFluxingFaces,
-		DynamicList<label>& outFluxingFaces
-	);
-
+		
 	label otherCell
 	(
 		const label& fLabel,
 		const label& cLabel
 	);
 	
-    scalar integratedArea
-    (
-        const label& fLabel,
-        const scalar& a0,
-        const scalar& a1
-    );
 
     void quadAreaCoeffs
     (
@@ -130,7 +127,8 @@ class isoAdvection
 
     void boundAlpha
     (
-        scalarField& dVf
+        scalarField& dVf,
+		const scalar& dt
     );
 
     scalar netFlux
@@ -152,17 +150,14 @@ class isoAdvection
         scalar& f0,
         scalar& Un0
     );
-
-    scalar timeIntegratedFlux
+/*
+    scalar integratedArea
     (
         const label& fLabel,
-        const vector& x0,
-        const vector& n0,
-        const scalar& Un0,
-        const scalar& f0,
-        const scalar& dt
+        const scalar& a0,
+        const scalar& a1
     );
-
+*/
 public:
 
     isoAdvection

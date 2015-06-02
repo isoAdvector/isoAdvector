@@ -69,14 +69,14 @@ void Foam::isoCutter::vofCutCell
             fMin = fp;
         }
     }
-//  Info << "fMin = " << fMin << " fMax = " << fMax << endl;
+//    Info << "fMin = " << fMin << " fMax = " << fMax << endl;
 
     //Initial guess of isovalue
     scalar aMin(0), aMax(1), alpha0;
     f0 = (alpha1 - aMin)/(aMax-aMin)*(fMin-fMax) + fMax;
 //  f0 = 0.5*(fMin + fMax);
     subCellFraction(ci, f0, alpha0, subCellCtr);
-//  Info << "f0 = " << f0 << " gives alpha = " << alpha0 << endl;
+//    Info << "f0 = " << f0 << " gives alpha = " << alpha0 << endl;
 
     //Bisection method to find root
     //Since function is monotonically increasing and only piecewise smooth derivative based root finding algorithms should not be used here.
@@ -96,10 +96,10 @@ void Foam::isoCutter::vofCutCell
         f0 = 0.5*(fMin + fMax);
 //      f0 = (alpha1 - aMin)/(aMax-aMin)*(fMin-fMax) + fMax; //This does an extremely poor job in narrowing in the interval - especially for almost filled cells
         subCellFraction(ci, f0, alpha0, subCellCtr);
-//      Info << nIter << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
+//        Info << nIter << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
         nIter++;
     }
-////    Info << nIter-1 << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
+//    Info << nIter-1 << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
 }
 
 void Foam::isoCutter::isoCutCell
@@ -535,25 +535,35 @@ void Foam::isoCutter::fullySubmergedFaces
     DynamicList<label>& fullSubFaces
 )
 {
-    const faceList& faces = mesh_.faces();
-    const labelList faceLabels = mesh_.cells()[cellI];
+//    const cellList& cells = mesh_.cells(); //It is important for the efficiency of the code to verify that this call does not generate the cell faces for all cells each time it is called but only the first time!
+//    labelList cellFacesTest = cells[cellI];
 
-    forAll(faceLabels,fi)
+//    const faceList& faces = mesh_.faces();
+//    const labelList faceLabels = mesh_.cells()[cellI];
+    const cell& fLabels = mesh_.cells()[cellI];
+	
+//	Info << "Into fullySubmergedFaces for cell " << cellI << " which has fLabels = " << fLabels << endl;
+    forAll(fLabels,fi)
     {
-        labelList face = faces[faceLabels[fi]];
+		label fLabel = fLabels[fi];
+        labelList pLabels = mesh_.faces()[fLabel];
+//		Info << "fLabel = " << fLabel << ", pLabels = " << pLabels << endl;
         bool submerged(true);
-        forAll(face,pi)
+        forAll(pLabels,pi)
         {
-            if ( f_[face[pi]] <= f0 ) //By convention all face points must be strictly below surface for the face to be fully submerged
+			label pLabel = pLabels[pi];
+            if ( f_[pLabel] <= f0 ) //By convention all face points must be strictly below surface for the face to be fully submerged
             {
                 submerged = false;
             }
         }
         if (submerged)
         {
-            fullSubFaces.append(faceLabels[fi]);
+            fullSubFaces.append(fLabel);
         }
     }
+	fullSubFaces.shrink();
+//	Info << "Out of fullySubmergedFaces with fullSubFaces = " << fullSubFaces << endl;
 }
 
 
@@ -616,26 +626,6 @@ void Foam::isoCutter::subFaceFractions
     {
         subFaceFraction(fi,f0,alphaf[fi]);
     }
-/*
-    alphaf = 0;
-    const vectorField& Sf = mesh_.Sf();
-
-    forAll(Sf,fi)
-    {
-        pointField partSubFacePts;
-        bool fullySubmerged = getSubFace(fi,f0,partSubFacePts);
-        if (fullySubmerged)
-        {
-            alphaf[fi] = 1;
-        }
-        else if (partSubFacePts.size() != 0)
-        {
-            vector fCtr, fArea;
-            makeFaceCentreAndArea(partSubFacePts, fCtr, fArea);
-            alphaf[fi] = mag(fArea)/mag(Sf[fi]);
-        }
-    }
-*/
 }
 
 
@@ -772,6 +762,7 @@ void Foam::isoCutter::subCellFraction
         //Get points of fully submerged cell face
         DynamicList<label> fullSubFaces;
         fullySubmergedFaces(ci,f0,fullSubFaces);
+
         DynamicList<pointField> fullSubFacePoints;
         getFacePoints(fullSubFaces,fullSubFacePoints);
 

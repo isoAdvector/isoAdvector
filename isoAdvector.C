@@ -53,6 +53,10 @@ int main(int argc, char *argv[])
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+//	const cellList& cellFaces = mesh.cells();
+//	const labelList fLabels = cellFaces[854];
+//	Info << "Cell 854 which has fLabels = " << fLabels << endl;
+
     Info<< "\nStarting time loop\n" << endl;
     isoAdvection advector(alpha1,phi,U);
 
