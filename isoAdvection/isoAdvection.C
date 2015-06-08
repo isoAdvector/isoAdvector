@@ -373,7 +373,7 @@ void Foam::isoAdvection::quadAreaCoeffs
     cutter.getFaceCutPoints(fLabel,f,f1,pf1);
 
     label np0(pf0.size()), np1(pf1.size());
-//    Info << "Face " << fLabel << " was cut " << np0 << " times by f0 = " << f0 << " and " << np1 << " times by " << " f1 = " << f1 << endl;
+    Info << "Face " << fLabel << " was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;
 
 //  scalar area(0.0);
     alpha = 0.0;
@@ -391,7 +391,7 @@ void Foam::isoAdvection::quadAreaCoeffs
 		}
 		else
 		{
-			B = A + 1e-10*(pf1[1]-pf1[0]);
+			B = A + 1e-8*(pf1[1]-pf1[0]);
 		}
 
         if (np1 == 2)
@@ -400,7 +400,7 @@ void Foam::isoAdvection::quadAreaCoeffs
 		}
 		else
 		{
-			D = C + 1e-10*(pf0[1]-pf0[0]);
+			D = C + 1e-8*(A-B);
 		}
 
 		//Defining local coordinates for area integral calculation
@@ -413,6 +413,7 @@ void Foam::isoAdvection::quadAreaCoeffs
         vector yhat = zhat ^ xhat;
         yhat /= mag(yhat); //Should not be necessary
 
+		Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = " << (yhat & zhat) << endl;
 /*		
 		//Defining local coordinates for area integral calculation
         vector xhat(vector::zero), yhat, zhat;
@@ -667,12 +668,12 @@ Foam::scalar Foam::isoAdvection::netFlux
             if (owner == cLabel)
             {
                 dV += dVf[fLabel];
-				Info << "Cell " << cLabel << " is owner and dVf[ " << fLabel << "] = " << dVf[fLabel] << ". Neighbour is " << mesh_.neighbour()[fLabel] << endl;
+//				Info << "Cell " << cLabel << " is owner and dVf[ " << fLabel << "] = " << dVf[fLabel] << ". Neighbour is " << mesh_.neighbour()[fLabel] << endl;
             }
             else
             {
                 dV -= dVf[fLabel];
-				Info << "Cell " << cLabel << " is neighbour and dVf[ " << fLabel << "] = " << dVf[fLabel] << ". Owner is " << owner << endl;
+//				Info << "Cell " << cLabel << " is neighbour and dVf[ " << fLabel << "] = " << dVf[fLabel] << ". Owner is " << owner << endl;
             }
         }
     }
@@ -690,7 +691,6 @@ void Foam::isoAdvection::advect
     scalarField& dVfi = dVf;
     timeIntegratedFlux(dt, dVfi);
 	boundAlpha(dVfi,dt);
-//	boundAlpha(dVfi,dt);
     alpha1_ -= fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume
     alpha1_.correctBoundaryConditions();
 	forAll(alpha1_,ci)

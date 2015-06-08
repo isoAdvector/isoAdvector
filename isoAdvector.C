@@ -72,6 +72,11 @@ int main(int argc, char *argv[])
 			 << ",\t dev = " << 100*(V0-sum(mesh.V()*alpha1).value())/V0 << "%" 
              << ",\t max(alpha1)-1 = " << max(alpha1).value()-1
              << ",\t min(alpha1) = " << min(alpha1).value() << endl;
+			 
+		
+		alpha1 = min(1.0,max(0.0,alpha1));
+		scalar eps = 1e-12;
+        alpha1 = alpha1*pos(alpha1-eps)*neg(alpha1-(1.0-eps)) + pos(alpha1-(1.0-eps));
 
         alpha1.write();
         U.write();
