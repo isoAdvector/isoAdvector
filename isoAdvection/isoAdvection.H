@@ -150,15 +150,9 @@ class isoAdvection
         scalar& f0,
         scalar& Un0
     );
-/*
-    scalar integratedArea
-    (
-        const label& fLabel,
-        const scalar& a0,
-        const scalar& a1
-    );
-*/
-public:
+
+	
+	public:
 
     isoAdvection
     (

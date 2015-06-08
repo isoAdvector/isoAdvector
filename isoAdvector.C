@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-	scalar V0 = sum(mesh.V()*alpha1).value();
+	scalar V0 = sum(mesh.V()*alpha1).value();	
 	
     Info<< "\nStarting time loop\n" << endl;
     isoAdvection advector(alpha1,phi,U);

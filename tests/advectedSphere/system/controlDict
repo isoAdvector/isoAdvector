@@ -25,7 +25,7 @@ startTime       0.0;
 
 stopAt          endTime;
 
-endTime         4;
+endTime         0.01;
 
 writeControl    timeStep;
 
