@@ -530,7 +530,7 @@ void Foam::isoAdvection::boundAlpha
 			}
 		}
 	}
-/*
+
     Info << "\nBounding transport from above" << endl;
 	
 	forAll(isSurfaceCell_,ci)
@@ -590,7 +590,7 @@ void Foam::isoAdvection::boundAlpha
 			}
 		}
 	}	
-*/
+
     Info << "\nBounding transport from below" << endl;
 	forAll(isSurfaceCell_,ci)
 	{
