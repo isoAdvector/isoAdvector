@@ -28,8 +28,6 @@
         mesh
     );
 
-	alpha1.correctBoundaryConditions();
-
 	Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value() 
 	 << ", max(alpha1)-1 = " << max(alpha1).value()-1.0
 	 << "\t min(alpha1) = " << min(alpha1).value() << endl;

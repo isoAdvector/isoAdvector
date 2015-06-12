@@ -125,6 +125,7 @@ class isoCutter
         const DynamicList<label>& cutFaces,
         const DynamicList<label>& cutEdges,
         const DynamicList<scalar>& cutPoints,
+//        DynamicList<point>& isoPoints
         pointField& isoPoints
     );
 

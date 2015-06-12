@@ -75,6 +75,7 @@ int main(int argc, char *argv[])
 	//Calculating alpha1 volScalarField from f = f0 isosurface
     Foam::isoCutter cutter(mesh,f);
     cutter.subCellFractions(f0,alpha1);
+	alpha1.correctBoundaryConditions();
     alpha1.write(); //Writing volScalarField alpha1
 //    cutter.write(); //Writing cutCells to ply files
 

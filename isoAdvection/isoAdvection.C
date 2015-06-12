@@ -128,8 +128,8 @@ void Foam::isoAdvection::findSurfaceCells
     {
         scalar aMin(GREAT), aMax(-GREAT);
         subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
-        if ( (aMin < 0.5 && aMax > 0.5) )
-//        if ( (aMin < 0.5 && aMax > 0.5) || ( 1e-6 < alpha1_[ci] && alpha1_[ci] < 1-1e-6 ) )
+//        if ( (aMin < 0.5 && aMax > 0.5) )
+        if ( (aMin < 0.5 && aMax > 0.5) || ( 1e-6 < alpha1_[ci] && alpha1_[ci] < 1-1e-6 ) )
         {
             isSurfaceCell_[ci] = true;
             surfaceCells.append(ci);
@@ -245,7 +245,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     }
 
     //Cutting sortedTimes at 0 and dt
-    scalarField t;
+    DynamicList<scalar> t;
     t.append(0.0);
     forAll(sortedTimes,ti)
     {
@@ -693,26 +693,6 @@ void Foam::isoAdvection::advect
 	boundAlpha(dVfi,dt);
     alpha1_ -= fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume
     alpha1_.correctBoundaryConditions();
-	forAll(alpha1_,ci)
-	{
-		if ( alpha1_[ci] < 0.0 || alpha1_[ci] > 1.0 )
-		{
-			Info << "Unbound cell " << ci << " with isSurfaceCell = " << isSurfaceCell_[ci] << " has alpha1_ = " << alpha1_[ci] << " and surfCell neighbours:" << endl;
-			labelList cellFaces = mesh_.cells()[ci];
-			forAll(cellFaces,fi)
-			{
-				label othCell = otherCell(cellFaces[fi],ci);
-				if (isSurfaceCell_[othCell])
-				{
-					Info << othCell << " ";
-				}
-			}
-			Info << "." << endl;
-		}
-	}
-//    alpha1_ = min(1.0,max(0.0,alpha1_));
-//	scalar eps = 1e-10;
-//    alpha1_ = alpha1_*pos(alpha1_-eps)*neg(alpha1_-(1.0-eps)) + pos(alpha1_-(1.0-eps));
 }
 
 
