@@ -1,6 +1,6 @@
 #!/bin/sh
 
-./Allclean
+./Allclean #test
 
 export FOAM_CASE_DIR=$PWD
 cd ../../isoCutter
