@@ -36,6 +36,7 @@ Author
 
 #include "fvCFD.H"
 #include "isoAdvection.H"
+#include "isoCutter.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
