@@ -47,11 +47,11 @@
 	scalar PI = Foam::constant::mathematical::pi;
 	scalarField X = mesh.C().component(0);
 	scalarField Z = mesh.C().component(2);
-	scalarField u = sin(2*PI*Z)*pow(sin(PI*X),2);
-	scalarField w = -sin(2*PI*X)*pow(sin(PI*Z),2);
+	scalarField u = -sin(2.0*PI*Z)*pow(sin(PI*X),2.0);
+	scalarField w = sin(2.0*PI*X)*pow(sin(PI*Z),2.0);
 	forAll(U,ci)
 	{
-		U[ci] = u[ci]*vector(1,0,0) + w[ci]*vector(0,0,1);
+		U[ci] = u[ci]*vector(1.0,0.0,0.0) + 0.0*vector(0.0,1.0,0.0) + w[ci]*vector(0.0,0.0,1.0);
 	}
 	
 	Info<< "Reading/calculating face flux field phi\n" << endl;
@@ -69,7 +69,7 @@
 		linearInterpolate(U) & mesh.Sf()
 	);
 
-	scalarField psi = -pow(sin(PI*x)*sin(PI*z),2)/PI;
+	scalarField psi = (1.0/PI)*pow(sin(PI*x),2.0)*pow(sin(PI*z),2.0);
 	forAll(phi,fi)
 	{
 		phi[fi] = 0.0;
@@ -80,8 +80,23 @@
 			label pl1 = faceLabels[pi];
 			label pl2 = faceLabels[(pi+1) % nPoints];
 			phi[fi] += 0.5*(psi[pl1]+psi[pl2])*(y[pl2]-y[pl1]);
+//			phi[fi] += 0.5*(psi[pl1]*y[pl2]-psi[pl2]*y[pl1]);
 		}
 	}
+	
+	scalarField sumPhi = fvc::surfaceIntegrate(phi);	
+	scalar maxMagSumPhi(0.0);
+	label maxLabel(0);
+	forAll(sumPhi,ci)
+	{
+		scalar msp = mag(sumPhi[ci]);
+		if (msp > maxMagSumPhi )
+		{
+			maxMagSumPhi = msp;
+			maxLabel = ci;
+		}
+	}
+	Info << "maxMagSumPhi/cellVol = " << maxMagSumPhi/mesh.V()[maxLabel] << endl;
 	
 	U.write();
 	phi.write();

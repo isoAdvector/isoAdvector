@@ -1,6 +1,5 @@
 Todo to bring the code to the level before the HD failure:
 - Setup notchedDisk/Zalesak test case (Remember stream function approach to calculating fluxes from analytical velocity field)
-- Setup diskInVortex case (-||-)
 - Setup scalarTransportFoam cases with HRIC, CICSAM, upwind, vanLeer01 (get setups from navalFoam cases)
 
 To bring the code further:
@@ -15,6 +14,7 @@ To bring the code further:
 - Develop and implement consistent boundary conditions for isosurface reconstruction step.
 
 Done:
+- Setup vortexShearedDisk case (done)
 - Setup unstructured advectedDisk case (done).
 - Rerun test cases including MULESadvector to test state of codes (done).
 - Make each isoAdvector test case have its own isoAdvector folder with isoAdvector.C and createFields.H so fields can be set individually for each case (done).

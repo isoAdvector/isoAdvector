@@ -29,9 +29,9 @@ endTime         4;
 
 writeControl    timeStep;
 
-writeInterval   1;
+writeInterval   2;
 
-deltaT          0.01;
+deltaT          0.005;
 
 purgeWrite      0;
 
