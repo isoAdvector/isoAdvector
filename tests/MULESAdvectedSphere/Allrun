@@ -2,26 +2,22 @@
 
 ./Allclean
 
-#Compiling iso2VOF
-export FOAM_CASE_DIR=$PWD
-cd ../../isoCutter
-export ISOCUTTER_DIR=$PWD
-cd -
-wmake ../../iso2VOF
-unset FOAM_CASE_DIR ISOCUTTER_DIR
+
 
 nProc=$(sed -ne "s/^numberOfSubdomains *\(.*\);/\1/p" system/decomposeParDict)
 application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
 jobStart=$(date +"%Y%m%d%H%M")
 #host=$HOSTNAME
 
+cp -r ../advectedSphere/0 .
+cp ../advectedSphere/constant/polyMesh/blockMeshDict constant/polyMesh
+
 if [ ! -d "logs" ]; then
         mkdir logs
-        cp -r 0.org 0
+#        cp -r 0.org 0
         blockMesh > logs/blockMesh.log 2>&1
 #        topoSet -dict constant/polyMesh/topoSetDict > logs/topoSetDict.log 2>&1
 #        refineMesh -dict constant/polyMesh/refineMeshDict -overwrite > logs/refineMeshDict.log 2>&1
-	iso2VOF/iso2VOF > logs/iso2VOF.log 2>&1
 else
         mv logs logs_$jobStart
         mkdir logs
