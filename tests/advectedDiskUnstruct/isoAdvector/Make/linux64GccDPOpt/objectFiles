@@ -1,0 +1,4 @@
+OBJECTS = \
+$(OBJECTS_DIR)/isoAdvector.o\
+$(OBJECTS_DIR)/isoAdvection.o\
+$(OBJECTS_DIR)/isoCutter.o

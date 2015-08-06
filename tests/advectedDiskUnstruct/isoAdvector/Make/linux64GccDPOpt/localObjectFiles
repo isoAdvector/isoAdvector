@@ -1,0 +1,4 @@
+LOCAL_OBJECTS = \
+isoAdvector.o\
+isoAdvection.o\
+isoCutter.o

@@ -1,7 +1,6 @@
 Todo to bring the code to the level before the HD failure:
-- Rerun test cases including MULESadvector to test state of codes.
 - Setup unstructured advectedDisk case
-- Setup scalarTransportFoam cases with HRIC, CICSAM, upwind, vanLeer01 (get setups from navaFoam cases)
+- Setup scalarTransportFoam cases with HRIC, CICSAM, upwind, vanLeer01 (get setups from navalFoam cases)
 - Setup notchedDisk/Zalesak test case (Remember stream function approach to calculating fluxes from analytical velocity field)
 - Setup diskInVortex case (-||-)
 - Setup unstructured version of advectedDisk
@@ -19,4 +18,4 @@ To bring the code further:
 
 Done:
 - Make each isoAdvector test case have its own isoAdvector folder with isoAdvector.C and createFields.H so fields can be set individually for each case (done).
-
+- Rerun test cases including MULESadvector to test state of codes (done).
