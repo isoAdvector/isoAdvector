@@ -88,8 +88,6 @@ int main(int argc, char *argv[])
         alpha1 = alpha1*pos(alpha1-eps)*neg(alpha1-(1.0-eps)) + pos(alpha1-(1.0-eps));
 
 		runTime.write();
-//		alpha1.write();
-//      U.write();
 
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"

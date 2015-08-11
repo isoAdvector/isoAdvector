@@ -129,7 +129,7 @@ void Foam::isoAdvection::findSurfaceCells
         scalar aMin(GREAT), aMax(-GREAT);
         subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
 //        if ( (aMin < 0.5 && aMax > 0.5) )
-        if ( (aMin < 0.5 && aMax > 0.5) || ( 1e-6 < alpha1_[ci] && alpha1_[ci] < 1-1e-6 ) )
+        if ( (aMin < 0.5 && aMax > 0.5) || ( 1e-8 < alpha1_[ci] && alpha1_[ci] < 1-1e-8 ) )
         {
             isSurfaceCell_[ci] = true;
             surfaceCells.append(ci);
@@ -151,7 +151,7 @@ void Foam::isoAdvection::calcIsoFace
 	Info << "Enter calcIsoFace" << endl;
     //Construction of isosurface calculator to get access to its functionality
     isoCutter cutter(mesh_,ap_);
-    scalar tol(1e-6);
+    scalar tol(1e-8);
     label maxIter(100);
     vector subCellCtr;
     cutter.vofCutCell(ci, alpha1_[ci], tol, maxIter, f0, subCellCtr);
@@ -159,7 +159,7 @@ void Foam::isoAdvection::calcIsoFace
 		Info << "Cell is neither almost full or almost empty" << endl;
         cutter.isoFaceCentreAndArea(ci,f0,x0,n0); //Stupid to recalculate this here - should be provided by vofCutCell above
 		
-		if (mag(n0)<SMALL) //Cell almost full or empty so isoFace is undefined. Calculating normal by going a little into the cell
+		if (mag(n0)<1e-8) //Cell almost full or empty so isoFace is undefined. Calculating normal by going a little into the cell
 		{
 			scalar aMin(GREAT), aMax(-GREAT);
 			subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
