@@ -59,8 +59,23 @@ void Foam::isoAdvection::timeIntegratedFlux
     dVf = 0.0; //estimated total water volume transported across mesh faces during time interval dt. The sign convenctino is like the flux phi, i.e. positive means out of owner cell.
 	
     //Interpolating VOF field to mesh points
-    volPointInterpolation vpi(mesh_);
-    ap_ = vpi.interpolate(alpha1_);
+	const labelListList& pCells = mesh_.pointCells();
+	forAll(pCells,pi)
+	{
+		const labelList pci = pCells[pi];
+		ap_[pi] = 0.0;
+		scalar vol(0.0);
+		forAll(pci,ci)
+		{
+			const label cLabel = pci[ci];
+			ap_[pi] += alpha1_[cLabel]*mesh_.V()[cLabel];
+			vol += mesh_.V()[cLabel];
+		}
+		ap_[pi] /= vol;
+	}
+	Info << "Using new interpolation method!!!!!" << endl;
+//    volPointInterpolation vpi(mesh_);
+//    ap_ = vpi.interpolate(alpha1_);
 
     //Construction of isosurface calculator to get access to its functionality
     isoCutter cutter(mesh_,ap_);
@@ -288,7 +303,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
         dVf += Unf*(t[nt+1]-t[nt])*(initialArea + integratedQuadArea);
         initialArea += sign(Un0)*(A + B); //Adding quad area to submerged area
 		Info << "Integrating area for " << nt+1 << "'th time interval: [" << t[nt] << ", " << t[nt+1] << "] giving dVf = " << dVf << " and a0 = " << initialArea/mag(mesh_.Sf()[fLabel]) << endl;
-		Info << "face owner = " << mesh_.owner()[fLabel] << endl;
+//		Info << "face owner = " << mesh_.owner()[fLabel] << endl;
 //      scalar newdVf = phi_[fLabel]/mag(mesh_.Sf()[fLabel])*(t1-t0)*(a0*mag(mesh_.Sf()[fLabel]) + sign(Un0)*integratedArea(fLabel,f0,f1));
         nt++;
     }
@@ -373,7 +388,7 @@ void Foam::isoAdvection::quadAreaCoeffs
     cutter.getFaceCutPoints(fLabel,f,f1,pf1);
 
     label np0(pf0.size()), np1(pf1.size());
-    Info << "Face " << fLabel << " was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;
+////    Info << "Face " << fLabel << " was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;
 
 //  scalar area(0.0);
     alpha = 0.0;
@@ -413,7 +428,7 @@ void Foam::isoAdvection::quadAreaCoeffs
         vector yhat = zhat ^ xhat;
         yhat /= mag(yhat); //Should not be necessary
 
-		Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = " << (yhat & zhat) << endl;
+////		Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = " << (yhat & zhat) << endl;
 /*		
 		//Defining local coordinates for area integral calculation
         vector xhat(vector::zero), yhat, zhat;
@@ -452,13 +467,13 @@ void Foam::isoAdvection::quadAreaCoeffs
         //Swapping pf1 points if pf0 and pf1 point in same general direction (because we want a quadrilateral ABCD where pf0 = AB and pf1 = CD)
         if ( ((B-A) & (D-C)) > 0 )
         {
-			Info << "Swapping C and D" << endl;
+////			Info << "Swapping C and D" << endl;
             vector tmp = D;
             D = C;
             C = tmp;
         }
 
-		Info << "A = " << A << ", B = " << B << ", C = " << C << ", D = " << D << endl;
+////		Info << "A = " << A << ", B = " << B << ", C = " << C << ", D = " << D << endl;
         scalar Bx = mag(B-A);
         scalar Cx = (C-A) & xhat;
         scalar Cy = mag((C-A) & yhat);
@@ -469,7 +484,7 @@ void Foam::isoAdvection::quadAreaCoeffs
 //      area = ((Cx-Bx)*Dy-Dx*Cy)/6.0 + 0.25*Bx*(Dy+Cy);
         alpha = 0.5*((Cx-Bx)*Dy-Dx*Cy);
         beta = 0.5*Bx*(Dy+Cy);
-		Info << "Bx = " << Bx << ", Cx = " << Cx << ", Cy = " << Cy << ", Dx = " << Dx << ", Dy = " << Dy << ", alpha = " << alpha << ", beta = " << beta << endl;
+////		Info << "Bx = " << Bx << ", Cx = " << Cx << ", Cy = " << Cy << ", Dx = " << Dx << ", Dy = " << Dy << ", alpha = " << alpha << ", beta = " << beta << endl;
         //area(t) = A*t^2+B*t
         //integratedArea = A/3+B/2
     }

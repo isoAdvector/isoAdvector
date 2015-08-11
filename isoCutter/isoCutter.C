@@ -24,7 +24,7 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "isoCutter.H"
-#include "volPointInterpolation.H"
+#include "volPointInterpolation.H" //Is this used at all?
 #include "interpolationCellPoint.H"
 //#include "isoSubCell.H"
 
