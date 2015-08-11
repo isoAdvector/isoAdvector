@@ -1,0 +1,22 @@
+#!/bin/sh
+
+./Allclean
+
+cd ../isoAdvector
+wmake
+cd -
+
+nProc=$(sed -ne "s/^numberOfSubdomains *\(.*\);/\1/p" system/decomposeParDict)
+#application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
+jobStart=$(date +"%Y%m%d%H%M")
+
+if [ ! -d "logs" ]; then
+        mkdir logs
+        cp -r 0.org 0
+else
+        mv logs logs_$jobStart
+        mkdir logs
+fi
+
+../isoAdvector/isoAdvector > logs/isoAdvector.log 2>&1
+
