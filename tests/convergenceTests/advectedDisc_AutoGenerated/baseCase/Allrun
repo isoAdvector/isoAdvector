@@ -1,0 +1,20 @@
+#!/bin/sh
+
+./Allclean
+
+#export nx=400
+export ny=1
+#export nz=20
+export L=20
+export T=19
+#export dt=0.01
+export Ux=1
+export Uy=0
+export Uz=0
+
+mkdir logs
+cp -r 0.org 0
+blockMesh > logs/blockMesh.log
+
+../isoAdvector/isoAdvector > logs/isoAdvector.log 2>&1
+
