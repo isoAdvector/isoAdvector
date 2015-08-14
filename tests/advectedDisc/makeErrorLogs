@@ -1,0 +1,17 @@
+#!/bin/bash
+
+NzList=(20 20 20 20 40 40 40 40 80 80 80 80)
+NxList=(400 400 400 400 800 800 800 800 1600 1600 1600 1600)
+dtList=(0.005 0.01 0.02 0.04 0.0025 0.005 0.01 0.02 0.00125 0.0025 0.005 0.01)
+CoList=(01 02 04 08 01 02 04 08 01 02 04 08)
+
+for n in ${!NzList[*]} 
+do 
+    export nx=${NxList[$n]}
+    export nz=${NzList[$n]}
+    export dt=${dtList[$n]}
+    caseName=N${NzList[$n]}Co${CoList[$n]}
+    echo $caseName
+    grep "Error = " ${caseName}/logs/isoAdvector.log | cut -d' ' -f6 | sed -e 's/,//g' > ${caseName}.log    
+done
+tail --lines=1 *.log

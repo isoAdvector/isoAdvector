@@ -50,13 +50,14 @@ int main(int argc, char *argv[])
     #include "readTimeControls.H"
     #include "CourantNo.H"
     #include "setInitialDeltaT.H"
+	#include "readIsoAdvectorControls.H"
 
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 	scalar V0 = sum(mesh.V()*alpha1).value();	
 	
     Info<< "\nStarting time loop\n" << endl;
-    isoAdvection advector(alpha1,phi,U);
+    isoAdvection advector(alpha1,phi,U,boundAlpha,vof2IsoTol,surfCellTol,writeToLog);
 
     while (runTime.run())
     {
@@ -73,17 +74,44 @@ int main(int argc, char *argv[])
 			 << ",\t dev = " << 100*(V0-sum(mesh.V()*alpha1).value())/V0 << "%" 
              << ",\t max(alpha1)-1 = " << max(alpha1).value()-1
              << ",\t min(alpha1) = " << min(alpha1).value() << endl;
-			 
 		
-		alpha1 = min(1.0,max(0.0,alpha1));
-		scalar eps = 1e-12;
-        alpha1 = alpha1*pos(alpha1-eps)*neg(alpha1-(1.0-eps)) + pos(alpha1-(1.0-eps));
-
+		if ( clipAlphaTol > 0.0 )
+		{
+			alpha1 = alpha1*pos(alpha1-clipAlphaTol)*neg(alpha1-(1.0-clipAlphaTol)) + pos(alpha1-(1.0-clipAlphaTol));
+		}
+		if ( snapAlpha )
+		{
+			alpha1 = min(1.0,max(0.0,alpha1));
+		}
+		
         runTime.write();
-
+		
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
             << nl << endl;
+			
+			
+		//Error compared to exact solution:
+		xc = x0 + Ux*runTime.time().value();
+		zc = z0 + Uz*runTime.time().value();
+	    f = -sqrt(pow(x-xc,2) + pow(z-zc,2));	
+		Foam::isoCutter cutter(mesh,f);
+		volScalarField alpha0(alpha1);
+		alpha0 = 0.0;
+		cutter.subCellFractions(-rad,alpha0);
+		scalar Err(0.0), maxErr(0.0);
+		label maxErrorCell(0);
+		forAll(alpha0,ci)
+		{
+			scalar err = mag(alpha1[ci]-alpha0[ci])*mesh.V()[ci];
+			if (err > maxErr)
+			{
+				maxErr = err;
+				maxErrorCell = ci;
+			}
+			Err += err;
+		}
+		Info << "Time = " << runTime.time().value() << ", Error = " << Err << ", maxErrorCell = " << maxErrorCell << endl;
     }
 
     Info<< "End\n" << endl;

@@ -1,0 +1,10 @@
+#!/bin/sh
+
+./Allclean
+
+mkdir logs
+cp -r 0.org 0
+blockMesh > logs/blockMesh.log
+
+../discIsoAdvector/discIsoAdvector > logs/discIsoAdvector.log 2>&1
+

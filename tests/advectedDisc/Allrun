@@ -1,25 +1,12 @@
-#!/bin/sh
-
-./Allclean
+#!/bin/bash
 
 cd isoAdvector
 wmake
 cd ..
 
-nProc=$(sed -ne "s/^numberOfSubdomains *\(.*\);/\1/p" system/decomposeParDict)
-#application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
-jobStart=$(date +"%Y%m%d%H%M")
-
-if [ ! -d "logs" ]; then
-        mkdir logs
-        cp -r 0.org 0
-        blockMesh > logs/blockMesh.log 2>&1
-        topoSet -dict constant/polyMesh/topoSetDict > logs/topoSetDict.log 2>&1
-        refineMesh -dict constant/polyMesh/refineMeshDict -overwrite > logs/refineMeshDict.log 2>&1
-else
-        mv logs logs_$jobStart
-        mkdir logs
-fi
-
-isoAdvector/isoAdvector > logs/isoAdvector.log 2>&1
-
+for caseDir in $(ls -d N*Co0[0-9] )
+do 
+    cd $caseDir
+    ./Allrun &
+    cd ..
+done
