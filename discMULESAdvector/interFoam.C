@@ -45,6 +45,7 @@ Description
 #include "turbulenceModel.H"
 #include "pimpleControl.H"
 #include "fvIOoptionList.H"
+#include "isoCutter.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -106,8 +107,30 @@ int main(int argc, char *argv[])
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
             << nl << endl;
+			
+		//Error compared to exact solution:
+		xc = x0 + Ux*runTime.time().value();
+		zc = z0 + Uz*runTime.time().value();
+	    f = -sqrt(pow(x-xc,2) + pow(z-zc,2));	
+		Foam::isoCutter cutter(mesh,f);
+		volScalarField alpha0(alpha1);
+		alpha0 = 0.0;
+		cutter.subCellFractions(-rad,alpha0);
+		scalar Err(0.0), maxErr(0.0);
+		label maxErrorCell(0);
+		forAll(alpha0,ci)
+		{
+			scalar err = mag(alpha1[ci]-alpha0[ci])*mesh.V()[ci];
+			if (err > maxErr)
+			{
+				maxErr = err;
+				maxErrorCell = ci;
+			}
+			Err += err;
+		}
+		Info << "Time = " << runTime.time().value() << ", Error = " << Err << ", maxErrorCell = " << maxErrorCell << endl;
     }
-
+	
     Info<< "End\n" << endl;
 
     return 0;
