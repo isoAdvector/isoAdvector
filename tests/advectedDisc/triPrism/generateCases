@@ -8,18 +8,19 @@ export T=4
 export Ux=1
 export Uy=0
 export Uz=0
-export solver=$(sed -ne "s/^application *\(.*\);/\1/p" baseCase/system/controlDict)
+#series=$(sed -ne "s/^application *\(.*\);/\1/p" baseCase/system/controlDict)
+series=discIsoAdvector_bounded
 
-mkdir $solver
+mkdir $series
 
 for n in ${!NzList[*]} 
 do
     export dt=${dtList[$n]}
     caseName=N${NzList[$n]}Co${CoList[$n]}
     echo $caseName
-    cp -r baseCase ${solver}/$caseName
-    cp meshes/N${NzList[$n]}/* ${solver}/${caseName}/constant/polyMesh/
-    envsubst < baseCase/system/controlDict > ${solver}/${caseName}/system/controlDict
-    envsubst < baseCase/0.org/U > ${solver}/${caseName}/0.org/U
-    touch ${solver}/${caseName}/${caseName}.foam
+    cp -r baseCase ${series}/$caseName
+    cp meshes/N${NzList[$n]}/* ${series}/${caseName}/constant/polyMesh/
+    envsubst < baseCase/system/controlDict > ${series}/${caseName}/system/controlDict
+    envsubst < baseCase/0.org/U > ${series}/${caseName}/0.org/U
+    touch ${series}/${caseName}/${caseName}.foam
 done
