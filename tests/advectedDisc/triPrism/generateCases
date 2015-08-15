@@ -1,0 +1,25 @@
+#!/bin/bash
+
+NzList=(20 20 20 20 40 40 40 40 80 80 80 80)
+dtList=(0.0025 0.005 0.01 0.02 0.00125 0.0025 0.005 0.01 0.000625 0.00125 0.0025 0.005)
+CoList=(01 02 04 08 01 02 04 08 01 02 04 08)
+
+export T=4
+export Ux=1
+export Uy=0
+export Uz=0
+export solver=$(sed -ne "s/^application *\(.*\);/\1/p" baseCase/system/controlDict)
+
+mkdir $solver
+
+for n in ${!NzList[*]} 
+do
+    export dt=${dtList[$n]}
+    caseName=N${NzList[$n]}Co${CoList[$n]}
+    echo $caseName
+    cp -r baseCase ${solver}/$caseName
+    cp meshes/N${NzList[$n]}/* ${solver}/${caseName}/constant/polyMesh/
+    envsubst < baseCase/system/controlDict > ${solver}/${caseName}/system/controlDict
+    envsubst < baseCase/0.org/U > ${solver}/${caseName}/0.org/U
+    touch ${solver}/${caseName}/${caseName}.foam
+done

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+application=$(sed -ne "s/^application *\(.*\);/\1/p" baseCase/system/controlDict)
+
+for caseDir in $(ls -d ${application}/N*Co0[0-9] )
+do 
+    cd $caseDir
+    ./Allrun &
+    cd -
+done
