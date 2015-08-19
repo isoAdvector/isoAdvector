@@ -76,17 +76,17 @@ class isoAdvection
     //- For each cell weather it qualifies as a surface cell
     boolList isSurfaceCell_;
 
-	//- Switch to choose if alpha should be bounded
-	const bool boundAlpha_;
-	
-	//- Tolerance for search of isoFace giving specified VOF value
-	const scalar vof2IsoTol_;
-	
-	//- Cells with surfCellTol_ < alpha1 < surfCellTol_ are treated as surface cells
-	const scalar surfCellTol_;
+    //- Switch to choose if alpha should be bounded
+    const bool boundAlpha_;
+
+    //- Tolerance for search of isoFace giving specified VOF value
+    const scalar vof2IsoTol_;
+
+    //- Cells with surfCellTol_ < alpha1 < surfCellTol_ are treated as surface cells
+    const scalar surfCellTol_;
 
     //- Control to switch detailed writing to log file on and off
-	const bool writeToLog_;
+    const bool writeToLog_;
 
     // Private Member Functions
 
@@ -111,13 +111,13 @@ class isoAdvection
         const label& ci,
         DynamicList<label>& outFluxingFaces
     );
-		
-	label otherCell
-	(
-		const label& fLabel,
-		const label& cLabel
-	);
-	
+
+    label otherCell
+    (
+        const label& fLabel,
+        const label& cLabel
+    );
+
 
     void quadAreaCoeffs
     (
@@ -140,7 +140,7 @@ class isoAdvection
     void boundAlpha
     (
         scalarField& dVf,
-		const scalar& dt
+        const scalar& dt
     );
 
     scalar netFlux
@@ -163,18 +163,18 @@ class isoAdvection
         scalar& Un0
     );
 
-	
-	public:
+
+    public:
 
     isoAdvection
     (
         volScalarField& alpha1,
         const surfaceScalarField& phi,
         const volVectorField& U,
-		const bool& boundAlpha,
-		const scalar& vof2IsoTol,
-		const scalar& surfCellTol,
-		const bool& writeToLog
+        const bool& boundAlpha,
+        const scalar& vof2IsoTol,
+        const scalar& surfCellTol,
+        const bool& writeToLog
     );
 
     void advect
