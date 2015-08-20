@@ -17,7 +17,7 @@ FoamFile
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     discMULESAdvector;
+application     isoAdvector;
 
 startFrom       latestTime;
 
@@ -25,13 +25,13 @@ startTime       0.0;
 
 stopAt          endTime;
 
-endTime         $T;
+endTime         4;
 
 writeControl    timeStep;
 
-writeInterval   1;
+writeInterval   2;
 
-deltaT          $dt;
+deltaT          0.001;
 
 purgeWrite      0;
 
