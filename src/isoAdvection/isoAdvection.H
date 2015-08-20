@@ -76,26 +76,28 @@ class isoAdvection
     //- For each cell weather it qualifies as a surface cell
     boolList isSurfaceCell_;
 
-	//- Switch to choose if alpha should be bounded
-	const bool boundAlpha_;
-	
-	//- Tolerance for search of isoFace giving specified VOF value
-	const scalar vof2IsoTol_;
-	
-	//- Cells with surfCellTol_ < alpha1 < surfCellTol_ are treated as surface cells
-	const scalar surfCellTol_;
+    //- Switch to choose if alpha should be bounded
+    const bool boundAlpha_;
+
+    //- Tolerance for search of isoFace giving specified VOF value
+    const scalar vof2IsoTol_;
+
+    //- Cells with surfCellTol_ < alpha1 < surfCellTol_ are treated as surface cells
+    const scalar surfCellTol_;
 
     //- Control to switch detailed writing to log file on and off
-	const bool writeToLog_;
+    const bool writeToLog_;
 
     // Private Member Functions
 
+    //- For each face calculate volumetric face transport during dt
     void timeIntegratedFlux
     (
         const scalar& dt,
         scalarField& dVf
     );
 
+    //- For face fLabel calculate volumetric face transport during dt given the isoFace data provided as input
     scalar timeIntegratedFlux
     (
         const label& fLabel,
@@ -106,19 +108,21 @@ class isoAdvection
         const scalar& dt
     );
 
+    //- For cell ci return labels of faces fluxing out of this cell (based on sign of phi)
     void getOutFluxFaces
     (
         const label& ci,
         DynamicList<label>& outFluxingFaces
     );
-		
-	label otherCell
-	(
-		const label& fLabel,
-		const label& cLabel
-	);
-	
 
+    //- For face fLabel of cell cLabel return label of other cell sharing face fLabel
+    label otherCell
+    (
+        const label& fLabel,
+        const label& cLabel
+    );
+
+    //- For face fLabel calculate polynomial coefficients A and B for time integrated area between isocutting lines with isovalues f0 and f1 given vertex values f
     void quadAreaCoeffs
     (
         const label& fLabel,
@@ -129,6 +133,7 @@ class isoAdvection
         scalar& B
     );
 
+	//- Find min and max of subset of scalarField f defined by labelList label
     void subSetExtrema
     (
         const scalarField& f,
@@ -137,23 +142,28 @@ class isoAdvection
         scalar& fMax
     );
 
+	//- Adjust face volume transport across isocut outfluxing faces of each cell which is overfilled or overemptied such that cell is exaclty filled/emptied.
     void boundAlpha
     (
         scalarField& dVf,
-		const scalar& dt
+        const scalar& dt
     );
 
+	//- Given the face volume transport dVf calculates the total volume leaving cell cLabel 
     scalar netFlux
     (
         const scalarField& dVf,
         const label& cLabel
     );
 
+	//- Find all surface cells
     void findSurfaceCells
     (
         DynamicList<label>& surfaceCells
     );
 
+	//- For cell ci calculate the isoFace centre x0, normal n0, and isovalue f0, of the isosurface cutting it at to the right volume fractions. 
+	//- Also calculates and returns the isoFace velocity normal to itself.
     void calcIsoFace
     (
         const label& ci,
@@ -163,20 +173,22 @@ class isoAdvection
         scalar& Un0
     );
 
-	
-	public:
 
+    public:
+
+	//- Constructor
     isoAdvection
     (
         volScalarField& alpha1,
         const surfaceScalarField& phi,
         const volVectorField& U,
-		const bool& boundAlpha,
-		const scalar& vof2IsoTol,
-		const scalar& surfCellTol,
-		const bool& writeToLog
+        const bool& boundAlpha,
+        const scalar& vof2IsoTol,
+        const scalar& surfCellTol,
+        const bool& writeToLog
     );
 
+	//- Update the alpha1 field to the next time step
     void advect
     (
         const scalar& dt

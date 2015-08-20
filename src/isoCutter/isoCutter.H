@@ -276,15 +276,15 @@ public:
             pointField& partSubFacePts
         );
 
-		//- Subface fraction with face label, face vertex values and isovalue specified
-		scalar getSubFaceFraction
-		(
-			const label& faceLabel,
-			const scalarField& f,
-			const scalar& f0
-		);
+        //- Subface fraction with face label, face vertex values and isovalue specified
+        scalar getSubFaceFraction
+        (
+            const label& faceLabel,
+            const scalarField& f,
+            const scalar& f0
+        );
 
-		
+
         //- Return cutPoints for a given face - will typically contain 0 or 2 points. May be 1 point if face just touched by surface. May in rare cases be > 2 points if f-f0 changes sign more than twice along face
         void getFaceCutPoints
         (
