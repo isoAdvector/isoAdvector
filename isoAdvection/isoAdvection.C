@@ -243,7 +243,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     {
         fPts[pi] = mesh_.points()[pLabels[pi]];
     }
-    scalarField pTimes = ((fPts - x0) & n0)/Un0; //Here we estimate time of arrival to the face points from their normal distance to the initial surface and the surface normal velocity
+    scalarField pTimes = ((fPts - x0) & n0)/(Un0+SMALL); //Here we estimate time of arrival to the face points from their normal distance to the initial surface and the surface normal velocity
     scalarField sortedTimes(pTimes);
     sort(sortedTimes);
     Info << "sortedTimes = " << sortedTimes << endl;
