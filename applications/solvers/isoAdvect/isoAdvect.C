@@ -50,14 +50,13 @@ int main(int argc, char *argv[])
     #include "readTimeControls.H"
     #include "CourantNo.H"
     #include "setInitialDeltaT.H"
-	#include "readIsoAdvectorControls.H"
 
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 	scalar V0 = sum(mesh.V()*alpha1).value();	
 	
     Info<< "\nStarting time loop\n" << endl;
-    isoAdvection advector(alpha1,phi,U,boundAlpha,vof2IsoTol,surfCellTol,writeToLog);
+    isoAdvection advector(alpha1,phi,U,isoAdvectorDict);
 
     while (runTime.run())
     {
