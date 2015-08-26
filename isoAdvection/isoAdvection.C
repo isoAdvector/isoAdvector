@@ -31,10 +31,10 @@ License
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-#ifdef USEDEBUG
-#define Debug(x) std::cout << x
+#ifdef ISODEBUG
+#define isoDebug(x) x
 #else
-#define Debug(x) 
+#define isoDebug(x) 
 #endif 
 
 Foam::isoAdvection::isoAdvection
@@ -73,7 +73,9 @@ void Foam::isoAdvection::timeIntegratedFlux
     dVf = 0.0; //estimated total water volume transported across mesh faces during time interval dt. The sign convenctino is like the flux phi, i.e. positive means out of owner cell.
 
     //Interpolating VOF field to mesh points
-    const labelListList& pCells = mesh_.pointCells();
+/*  
+	//Testing 
+	const labelListList& pCells = mesh_.pointCells();
     forAll(pCells,pi)
     {
         const labelList pci = pCells[pi];
@@ -87,9 +89,10 @@ void Foam::isoAdvection::timeIntegratedFlux
         }
         ap_[pi] /= vol;
     }
-    Info << "Using new interpolation method!!!!!" << endl;
-//    volPointInterpolation vpi(mesh_);
-//    ap_ = vpi.interpolate(alpha1_);
+	isoDebug("Using cell volume weighted cell-point interpolation" << endl;)
+*/
+    volPointInterpolation vpi(mesh_);
+    ap_ = vpi.interpolate(alpha1_);
 
     //Construction of isosurface calculator to get access to its functionality
     isoCutter cutter(mesh_,ap_);
@@ -116,7 +119,7 @@ void Foam::isoAdvection::timeIntegratedFlux
         }
         else
         {
-            Info << "Warning: No donor cell for face " << fi << endl;
+            isoDebug(Info << "Warning: No donor cell for face " << fi << endl;)
         }
     }
 
@@ -124,24 +127,24 @@ void Foam::isoAdvection::timeIntegratedFlux
     forAll(surfaceCells,cellI)
     {
         const label ci = surfaceCells[cellI];
-        Info << "\n------------ Cell " << ci << " with alpha1_ = " << alpha1_[ci] << " ------------" << endl;
+        isoDebug(Info << "\n------------ Cell " << ci << " with alpha1_ = " << alpha1_[ci] << " ------------" << endl;)
 
         //Make list of all cell faces out of which fluid is flowing
         DynamicList<label> outFluxingFaces;
         getOutFluxFaces(ci, outFluxingFaces);
-        Info << "outFluxingFaces: " << outFluxingFaces << "\n" << endl;
+        isoDebug(Info << "outFluxingFaces: " << outFluxingFaces << "\n" << endl;)
 
         //Calculate isoFace0 centre xs0, normal ns0, and velocity U0 = U(xs0)
         scalar f0(0.0), Un0(0.0);
         vector x0(vector::zero), n0(vector::zero);
         calcIsoFace(ci,x0,n0,f0,Un0); //This one really also should give us a0 on all faces since it is calculated anyway. Do this with a cutCell structure
-        Info << "calcIsoFace gives initial surface: \nx0 = " << x0 << ", \nn0 = " << n0 << ", \nf0 = " << f0 << ", \nUn0 = " << Un0 << endl;
+        isoDebug(Info << "calcIsoFace gives initial surface: \nx0 = " << x0 << ", \nn0 = " << n0 << ", \nf0 = " << f0 << ", \nUn0 = " << Un0 << endl;)
 
         //Estimating time integrated water flux through each outfluxing face
         forAll(outFluxingFaces,fi)
         {
             const label fLabel = outFluxingFaces[fi];
-            Info << "\nFace " << fLabel << " with outward normal nf = " << sign( (mesh_.Cf()[fLabel]-mesh_.C()[ci]) & mesh_.Sf()[fLabel] )*mesh_.Sf()[fLabel]/mag(mesh_.Sf()[fLabel]) << endl;
+            isoDebug(Info << "\nFace " << fLabel << " with outward normal nf = " << sign( (mesh_.Cf()[fLabel]-mesh_.C()[ci]) & mesh_.Sf()[fLabel] )*mesh_.Sf()[fLabel]/mag(mesh_.Sf()[fLabel]) << endl;)
             dVf[fLabel] = timeIntegratedFlux(fLabel,x0,n0,Un0,f0,dt);
         }
     }
@@ -165,7 +168,7 @@ void Foam::isoAdvection::findSurfaceCells
         }
     }
     surfaceCells.shrink();
-    Info << "\nnSurfaceCells = " << surfaceCells.size() << endl;
+    isoDebug(Info << "\nnSurfaceCells = " << surfaceCells.size() << endl;)
 }
 
 void Foam::isoAdvection::calcIsoFace
@@ -177,7 +180,7 @@ void Foam::isoAdvection::calcIsoFace
     scalar& Un0
 )
 {
-    Info << "Enter calcIsoFace" << endl;
+    isoDebug(Info << "Enter calcIsoFace" << endl;)
     //Construction of isosurface calculator to get access to its functionality
     isoCutter cutter(mesh_,ap_);
     label maxIter(100);
@@ -191,26 +194,26 @@ void Foam::isoAdvection::calcIsoFace
         subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
         if (mag(f0-aMin) < mag(f0-aMax)) //f0 almost equal to aMin, i.e. cell almost full
         {
-            Info << "Cell is almost full" << endl;
+            isoDebug(Info << "Cell is almost full" << endl;)
 //            scalar f0Inside =  aMin + 1e-4*(aMax-aMin);
             scalar f0Inside =  f0 + 1e-3*(aMax-f0);
             cutter.isoFaceCentreAndArea(ci,f0Inside,x0,n0);
             if (((x0 - mesh_.C()[ci]) & n0) < 0.0) //n0 should point from cell centre towards isoFace centre for an almost full cell
             {
                 n0 *= (-1.0);
-                Info << "Changing direction of n0 " << n0 << endl;
+                isoDebug(Info << "Changing direction of n0 " << n0 << endl;)
             }
         }
         else //f0 almost equal to aMax, i.e. cell almost empty
         {
-            Info << "Cell is almost empty" << endl;
+            isoDebug(Info << "Cell is almost empty" << endl;)
 //            scalar f0Inside =  aMax + 1e-4*(aMin-aMax);
             scalar f0Inside =  f0 - 1e-3*(f0-aMin);
             cutter.isoFaceCentreAndArea(ci,f0Inside,x0,n0);
             if (((mesh_.C()[ci] - x0) & n0) < 0.0) //n0 should point from isoFace centre towards cell centre for an almost empty cell
             {
                 n0 *= (-1.0);
-                Info << "Changing direction of n0 " << n0 << endl;
+                isoDebug(Info << "Changing direction of n0 " << n0 << endl;)
             }
         }
 
@@ -219,10 +222,10 @@ void Foam::isoAdvection::calcIsoFace
     else if (((x0 - subCellCtr) & n0) < 0.0) //n0 should point out of water surface, i.e. in the direction from subCell centre to isoFace centre
     {
         n0 *= (-1.0);
-        Info << "Changing direction of n0 " << n0 << endl;
+        isoDebug(Info << "Changing direction of n0 " << n0 << endl;)
     }
 
-    Info << "Normalising n0: " << n0 << endl;
+    isoDebug(Info << "Normalising n0: " << n0 << endl;)
     n0 /= mag(n0);
 
     //Interpolate velocity to isoFace centre
@@ -252,14 +255,14 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     scalarField pTimes = ((fPts - x0) & n0)/(Un0+SMALL); //Here we estimate time of arrival to the face points from their normal distance to the initial surface and the surface normal velocity
     scalarField sortedTimes(pTimes);
     sort(sortedTimes);
-    Info << "sortedTimes = " << sortedTimes << endl;
+    isoDebug(Info << "sortedTimes = " << sortedTimes << endl;)
 
     scalar dVf(0.0); //Volume flowing through face in time interval [0,dt] to be calculated below
 
     //Dealing with case where face is not cut by surface during time interval [0,dt] because face was already passed by surface
     if ( sortedTimes[nPoints-1] <= 0.0 ) //All cuttings in the past
     {
-        Info << "All cuttings in the past" << endl;
+        isoDebug(Info << "All cuttings in the past" << endl;)
         dVf = phi_[fLabel]*dt*pos(Un0); //If all face cuttings were in the past and cell is filling up (Un0>0) then face must be full during whole time interval
         return dVf;
     }
@@ -267,7 +270,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     //Dealing with case where face is not cut by surface during time interval [0,dt] because dt is too small for surface to reach closest face point
     if ( sortedTimes[0] >= dt ) //All cuttings in the future
     {
-        Info << "All cuttings in the future" << endl;
+        isoDebug(Info << "All cuttings in the future" << endl;)
         dVf = phi_[fLabel]*dt*(1-pos(Un0)); //If all cuttings are in the future but non of them within [0,dt] then if cell is filling up (Un0 > 0) face must be empty during whole time interval
         return dVf;
     }
@@ -286,7 +289,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     {
         t.append(dt);
     }
-    Info << "Cutting sortedTimes at 0 and dt: t = " << t << endl;
+    isoDebug(Info << "Cutting sortedTimes at 0 and dt: t = " << t << endl;)
 
     bool faceUncutInFirstInterval(sortedTimes[0] > 0.0);
     bool faceUncutInLastInterval(sortedTimes[nPoints-1] < dt);
@@ -298,7 +301,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     {
         dVf = phi_[fLabel]*(t[nt+1]-t[nt])*(1.0-pos(Un0)); //If Un0 > 0 cell is filling up - hence if face is cut at a later time but not initially it must be initially empty
         initialArea = mag(mesh_.Sf()[fLabel])*(1.0-pos(Un0));
-        Info << "faceUncutInFirstInterval, so special treatment for first time interval: [" << t[nt] << ", " << t[nt+1] << "] giving dVf = " << dVf << endl;
+        isoDebug(Info << "faceUncutInFirstInterval, so special treatment for first time interval: [" << t[nt] << ", " << t[nt+1] << "] giving dVf = " << dVf << endl;)
         nt++;
     }
     else //calculate initialArea if face is initially cut
@@ -309,7 +312,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
         quadAreaCoeffs(fLabel,pTimes,t[nt],t[nt+1],A,B);
     }
 
-    Info << "InitialArea for next time step corresponds to face phase fraction a0 = " << initialArea/mag(mesh_.Sf()[fLabel]) << " where |Sf| = " << mag(mesh_.Sf()[fLabel]) << " was used." << endl;
+    isoDebug(Info << "InitialArea for next time step corresponds to face phase fraction a0 = " << initialArea/mag(mesh_.Sf()[fLabel]) << " where |Sf| = " << mag(mesh_.Sf()[fLabel]) << " was used." << endl;)
     while ( nt < t.size()-(1+faceUncutInLastInterval) ) //
     {
         scalar A(0.0), B(0.0);
@@ -318,7 +321,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
         scalar Unf = phi_[fLabel]/mag(mesh_.Sf()[fLabel]); //normal velocity on face
         dVf += Unf*(t[nt+1]-t[nt])*(initialArea + integratedQuadArea);
         initialArea += sign(Un0)*(A + B); //Adding quad area to submerged area
-        Info << "Integrating area for " << nt+1 << "'th time interval: [" << t[nt] << ", " << t[nt+1] << "] giving dVf = " << dVf << " and a0 = " << initialArea/mag(mesh_.Sf()[fLabel]) << endl;
+        isoDebug(Info << "Integrating area for " << nt+1 << "'th time interval: [" << t[nt] << ", " << t[nt+1] << "] giving dVf = " << dVf << " and a0 = " << initialArea/mag(mesh_.Sf()[fLabel]) << endl;)
 //      Info << "face owner = " << mesh_.owner()[fLabel] << endl;
 //      scalar newdVf = phi_[fLabel]/mag(mesh_.Sf()[fLabel])*(t1-t0)*(a0*mag(mesh_.Sf()[fLabel]) + sign(Un0)*integratedArea(fLabel,f0,f1));
         nt++;
@@ -326,7 +329,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 
     if ( faceUncutInLastInterval ) //Special treatment for last time interval if face is uncut during this
     {
-        Info << "faceUncutInLastInterval, so special treatment for last (" << nt+1 << "'th) time interval: [" << t[nt] << ", " << t[nt+1] << "]" << endl;
+        isoDebug(Info << "faceUncutInLastInterval, so special treatment for last (" << nt+1 << "'th) time interval: [" << t[nt] << ", " << t[nt+1] << "]" << endl;)
         dVf += phi_[fLabel]*(t[nt+1]-t[nt])*pos(Un0); //If face is cut at some intermediate time but not at last time, then if Un0 > 0 (cell filling up) face must be filled at last time interval.
     }
 
@@ -404,7 +407,7 @@ void Foam::isoAdvection::quadAreaCoeffs
     cutter.getFaceCutPoints(fLabel,f,f1,pf1);
 
     label np0(pf0.size()), np1(pf1.size());
-////    Info << "Face " << fLabel << " was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;
+//    isoDebug(Info << "Face " << fLabel << " was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;)
 
 //  scalar area(0.0);
     alpha = 0.0;
@@ -444,7 +447,7 @@ void Foam::isoAdvection::quadAreaCoeffs
         vector yhat = zhat ^ xhat;
         yhat /= mag(yhat); //Should not be necessary
 
-////        Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = " << (yhat & zhat) << endl;
+//        isoDebug(Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = " << (yhat & zhat) << endl;)
 /*
         //Defining local coordinates for area integral calculation
         vector xhat(vector::zero), yhat, zhat;
@@ -563,7 +566,7 @@ void Foam::isoAdvection::boundAlpha
         }
     }
 
-    Info << "\nBounding transport from above" << endl;
+    isoDebug(Info << "\nBounding transport from above" << endl;)
 
     forAll(isSurfaceCell_,ci)
     {
@@ -574,8 +577,8 @@ void Foam::isoAdvection::boundAlpha
 
             if (waterGain > availableSpace) //convert face air outfluxes to fractions of available air that is fluxed out
             {
-                Info << "\nCell " << ci << " with alpha1 = " << alpha1_[ci] << " has a waterGain = " << waterGain << " and availableSpace = " << availableSpace << "." << endl;
-                Info << "This waterGain would give a new alpha1 - 1 = " << (alpha1_[ci] + waterGain/mesh_.V()[ci] - 1.0) << endl;
+                isoDebug(Info << "\nCell " << ci << " with alpha1 = " << alpha1_[ci] << " has a waterGain = " << waterGain << " and availableSpace = " << availableSpace << "." << endl;)
+                isoDebug(Info << "This waterGain would give a new alpha1 - 1 = " << (alpha1_[ci] + waterGain/mesh_.V()[ci] - 1.0) << endl;)
                 scalar cellAirOutFlow(0.0), airToPullBack(waterGain-availableSpace);;
                 DynamicList<label> outFluxingFaces;
                 getOutFluxFaces(ci, outFluxingFaces);
@@ -595,35 +598,35 @@ void Foam::isoAdvection::boundAlpha
                 }
                 airOutFluxingFaces.shrink();
                 faceAirOutFlows.shrink();
-                Info << "airOutFluxingFaces = " << airOutFluxingFaces << " with faceAirOutFlows = " << faceAirOutFlows << endl;
+                isoDebug(Info << "airOutFluxingFaces = " << airOutFluxingFaces << " with faceAirOutFlows = " << faceAirOutFlows << endl;)
                 if (cellAirOutFlow > 0.0)
                 {
-                    Info << "cellAirOutFlow = " << cellAirOutFlow << endl;
+                    isoDebug(Info << "cellAirOutFlow = " << cellAirOutFlow << endl;)
                     forAll(airOutFluxingFaces,fi)
                     {
                         label fLabel = airOutFluxingFaces[fi];
                         label othCell = otherCell(fLabel,ci);
-                        Info << "Old neighbour alpha = " << alpha1_[othCell] << ", old updated neighbour alpha = " << (alpha1_[othCell] - netFlux(dVf,othCell)/mesh_.V()[othCell]) << endl;
+                        isoDebug(Info << "Old neighbour alpha = " << alpha1_[othCell] << ", old updated neighbour alpha = " << (alpha1_[othCell] - netFlux(dVf,othCell)/mesh_.V()[othCell]) << endl;)
 //                      scalar newAirOutFlow = availableSpace*(faceAirOutFlows[fi]/cellAirOutFlow);
                         scalar newAirOutFlow = airToPullBack*(faceAirOutFlows[fi]/cellAirOutFlow);
                         dVf[fLabel] += sign(dVf[fLabel])*airToPullBack*(faceAirOutFlows[fi]/cellAirOutFlow);
 //                      dVf[fLabel] = sign(dVf[fLabel])*(mag(phi_[fLabel])*dt-newAirOutFlow);
-                        Info << "Face " << fLabel << ": newAirOutFlow = " << newAirOutFlow << ", dVf = " << dVf[fLabel] << endl;
+                        isoDebug(Info << "Face " << fLabel << ": newAirOutFlow = " << newAirOutFlow << ", dVf = " << dVf[fLabel] << endl;)
                         scalar newUpdatedNeighbourAlpha = (alpha1_[othCell] - netFlux(dVf,othCell)/mesh_.V()[othCell]);
-                        Info << "New updated neighbour alpha = " << newUpdatedNeighbourAlpha << endl;
+                        isoDebug(Info << "New updated neighbour alpha = " << newUpdatedNeighbourAlpha << endl;)
                         if (newUpdatedNeighbourAlpha < 0.0 || newUpdatedNeighbourAlpha > 1.0)
                         {
-                            Info << "Warning: Neighbour became unbounded!!!" << endl;
+                            isoDebug(Info << "Warning: Neighbour became unbounded!!!" << endl;)
                         }
                     }
                     scalar newWaterGain = -netFlux(dVf,ci);
-                    Info << "New waterGain = " << newWaterGain << " giving rise to new alpha1 - 1 = " << (alpha1_[ci] + newWaterGain/mesh_.V()[ci] - 1.0) << endl;
+                    isoDebug(Info << "New waterGain = " << newWaterGain << " giving rise to new alpha1 - 1 = " << (alpha1_[ci] + newWaterGain/mesh_.V()[ci] - 1.0) << endl;)
                 }
             }
         }
     }
 
-    Info << "\nBounding transport from below" << endl;
+    isoDebug(Info << "\nBounding transport from below" << endl;)
     forAll(isSurfaceCell_,ci)
     {
         if (mightNeedBounding[ci])
@@ -633,9 +636,9 @@ void Foam::isoAdvection::boundAlpha
 
             if (waterLost > availableWater) //convert face air outfluxes to fractions of available air that is fluxed out
             {
-                Info << "\nCell " << ci << " with alpha1 = " << alpha1_[ci] << " has a waterLost = " << waterLost << " and availableWater = " << availableWater << "." << endl;
-                Info << "This waterLost would give a new alpha1 = " << (alpha1_[ci] - waterLost/mesh_.V()[ci]) << endl;
-                Info << "Cell faces: " << mesh_.cells()[ci] << endl;
+                isoDebug(Info << "\nCell " << ci << " with alpha1 = " << alpha1_[ci] << " has a waterLost = " << waterLost << " and availableWater = " << availableWater << "." << endl;)
+                isoDebug(Info << "This waterLost would give a new alpha1 = " << (alpha1_[ci] - waterLost/mesh_.V()[ci]) << endl;)
+                isoDebug(Info << "Cell faces: " << mesh_.cells()[ci] << endl;)
                 scalar cellWaterOutFlow(0.0), waterToPullBack(waterLost-availableWater);
                 DynamicList<label> outFluxingFaces;
                 getOutFluxFaces(ci, outFluxingFaces);
@@ -655,27 +658,27 @@ void Foam::isoAdvection::boundAlpha
                 }
                 waterOutFluxingFaces.shrink();
                 faceWaterOutFlows.shrink();
-                Info << "waterOutFluxingFaces = " << waterOutFluxingFaces << " with faceWaterOutFlows = " << faceWaterOutFlows << endl;
+                isoDebug(Info << "waterOutFluxingFaces = " << waterOutFluxingFaces << " with faceWaterOutFlows = " << faceWaterOutFlows << endl;)
                 if (cellWaterOutFlow > 0.0)
                 {
-                    Info << "cellWaterOutFlow = " << cellWaterOutFlow << endl;
+                    isoDebug(Info << "cellWaterOutFlow = " << cellWaterOutFlow << endl;)
                     forAll(waterOutFluxingFaces,fi)
                     {
                         label fLabel = waterOutFluxingFaces[fi];
                         label othCell = otherCell(fLabel,ci);
-                        Info << "Old neighbour alpha = " << alpha1_[othCell] << ", old updated neighbour alpha = " << (alpha1_[othCell] - netFlux(dVf,othCell)/mesh_.V()[othCell]) << endl;
+                        isoDebug(Info << "Old neighbour alpha = " << alpha1_[othCell] << ", old updated neighbour alpha = " << (alpha1_[othCell] - netFlux(dVf,othCell)/mesh_.V()[othCell]) << endl;)
 //                      scalar newWaterOutFlow = availableWater*(faceWaterOutFlows[fi]/cellWaterOutFlow);
                         dVf[fLabel] -= sign(dVf[fLabel])*waterToPullBack*(faceWaterOutFlows[fi]/cellWaterOutFlow);
-                        Info << "Face " << fLabel << ": newWaterOutFlow dVf = " << dVf[fLabel] << endl;
+                        isoDebug(Info << "Face " << fLabel << ": newWaterOutFlow dVf = " << dVf[fLabel] << endl;)
                         scalar newUpdatedNeighbourAlpha = (alpha1_[othCell] - netFlux(dVf,othCell)/mesh_.V()[othCell]);
-                        Info << "New updated neighbour alpha = " << newUpdatedNeighbourAlpha << endl;
+                        isoDebug(Info << "New updated neighbour alpha = " << newUpdatedNeighbourAlpha << endl;)
                         if (newUpdatedNeighbourAlpha < 0.0 || newUpdatedNeighbourAlpha > 1.0)
                         {
-                            Info << "Warning: Neighbour became unbounded!!!" << endl;
+                            isoDebug(Info << "Warning: Neighbour became unbounded!!!" << endl;)
                         }
                     }
                     scalar newWaterLost = netFlux(dVf,ci);
-                    Info << "New waterLost = " << newWaterLost << " giving rise to new alpha1 = " << (alpha1_[ci] - newWaterLost/mesh_.V()[ci]) << endl;
+                    isoDebug(Info << "New waterLost = " << newWaterLost << " giving rise to new alpha1 = " << (alpha1_[ci] - newWaterLost/mesh_.V()[ci]) << endl;)
                 }
             }
         }
@@ -718,7 +721,7 @@ void Foam::isoAdvection::advect
 {
     surfaceScalarField dVf(0*phi_); //Construct as copy - has same dimensions so will probably give problems. How to construct as zero's with phi's mesh etc e.g. surfaceScalarField dVf(phi.size(),0.0)?
     dVf.dimensions().reset(phi_.mesh().V().dimensions());
-    Info << "dVf.size() = " << dVf.size() << ", mesh_.nFaces() = " << mesh_.nFaces() << endl;
+    isoDebug(Info << "dVf.size() = " << dVf.size() << ", mesh_.nFaces() = " << mesh_.nFaces() << endl;)
     scalarField& dVfi = dVf;
     timeIntegratedFlux(dt, dVfi);
     if (boundAlpha_)
