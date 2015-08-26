@@ -31,6 +31,12 @@ License
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
+#ifdef USEDEBUG
+#define Debug(x) std::cout << x
+#else
+#define Debug(x) 
+#endif 
+
 Foam::isoAdvection::isoAdvection
 (
     volScalarField& alpha1,
@@ -276,7 +282,10 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
             t.append(sortedTimes[ti]);
         }
     }
-    t.append(dt);
+    if ( mag(t.last()-dt) > 1e-3*dt )
+    {
+        t.append(dt);
+    }
     Info << "Cutting sortedTimes at 0 and dt: t = " << t << endl;
 
     bool faceUncutInFirstInterval(sortedTimes[0] > 0.0);

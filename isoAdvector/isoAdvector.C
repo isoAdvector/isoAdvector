@@ -54,6 +54,8 @@ int main(int argc, char *argv[])
 
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+	//Initial Volume of Fluid (VOF)
     scalar V0 = sum(mesh.V()*alpha1).value();   
     
     Info<< "\nStarting time loop\n" << endl;
@@ -67,14 +69,17 @@ int main(int argc, char *argv[])
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
+		//Advance alpha1 from time t to t+dt
         scalar dt = runTime.deltaT().value();
         advector.advect(dt);
 
+		//Write total VOF and discrepancy from original VOF to log
         Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value()
              << ",\t dev = " << 100*(V0-sum(mesh.V()*alpha1).value())/V0 << "%" 
              << ",\t max(alpha1)-1 = " << max(alpha1).value()-1
              << ",\t min(alpha1) = " << min(alpha1).value() << endl;
         
+		//Clip and snap alpha1 to ensure strict boundedness to machine precision
         if ( clipAlphaTol > 0.0 )
         {
             alpha1 = alpha1*pos(alpha1-clipAlphaTol)*neg(alpha1-(1.0-clipAlphaTol)) + pos(alpha1-(1.0-clipAlphaTol));
