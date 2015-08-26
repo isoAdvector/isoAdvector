@@ -20,17 +20,29 @@ internalField   uniform 0;
 
 boundaryField
 {
+    bottom
+    {
+        type            zeroGradient;
+    }
+    left
+    {
+        type            zeroGradient;
+    }
+    right
+    {
+        type            zeroGradient;
+    }
+    side1
+    {
+        type            zeroGradient;
+    }
+    side2
+    {
+        type            zeroGradient;
+    }
     top
     {
-        type    zeroGradient;
-    }
-    sidesAndBottom
-    {
-        type    zeroGradient;
-    }
-    frontAndBack
-    {
-        type    zeroGradient;
+        type            zeroGradient;
     }
 }
 

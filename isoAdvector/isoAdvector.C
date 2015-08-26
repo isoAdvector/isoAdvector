@@ -50,12 +50,12 @@ int main(int argc, char *argv[])
     #include "readTimeControls.H"
     #include "CourantNo.H"
     #include "setInitialDeltaT.H"
-	#include "readIsoAdvectorControls.H"
+    #include "readIsoAdvectorControls.H"
 
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-	scalar V0 = sum(mesh.V()*alpha1).value();	
-	
+    scalar V0 = sum(mesh.V()*alpha1).value();   
+    
     Info<< "\nStarting time loop\n" << endl;
     isoAdvection advector(alpha1,phi,U,boundAlpha,vof2IsoTol,surfCellTol,writeToLog);
 
@@ -71,21 +71,21 @@ int main(int argc, char *argv[])
         advector.advect(dt);
 
         Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value()
-			 << ",\t dev = " << 100*(V0-sum(mesh.V()*alpha1).value())/V0 << "%" 
+             << ",\t dev = " << 100*(V0-sum(mesh.V()*alpha1).value())/V0 << "%" 
              << ",\t max(alpha1)-1 = " << max(alpha1).value()-1
              << ",\t min(alpha1) = " << min(alpha1).value() << endl;
-		
-		if ( clipAlphaTol > 0.0 )
-		{
-			alpha1 = alpha1*pos(alpha1-clipAlphaTol)*neg(alpha1-(1.0-clipAlphaTol)) + pos(alpha1-(1.0-clipAlphaTol));
-		}
-		if ( snapAlpha )
-		{
-			alpha1 = min(1.0,max(0.0,alpha1));
-		}
-		
+        
+        if ( clipAlphaTol > 0.0 )
+        {
+            alpha1 = alpha1*pos(alpha1-clipAlphaTol)*neg(alpha1-(1.0-clipAlphaTol)) + pos(alpha1-(1.0-clipAlphaTol));
+        }
+        if ( snapAlpha )
+        {
+            alpha1 = min(1.0,max(0.0,alpha1));
+        }
+        
         runTime.write();
-		
+        
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
             << nl << endl;

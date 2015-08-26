@@ -177,18 +177,17 @@ void Foam::isoAdvection::calcIsoFace
     label maxIter(100);
     vector subCellCtr;
     cutter.vofCutCell(ci, alpha1_[ci], vof2IsoTol_, maxIter, f0, subCellCtr);
-
-    Info << "Cell is neither almost full or almost empty" << endl;
     cutter.isoFaceCentreAndArea(ci,f0,x0,n0); //Stupid to recalculate this here - should be provided by vofCutCell above
 
-    if (mag(n0)<1e-6) //Cell almost full or empty so isoFace is undefined. Calculating normal by going a little into the cell
+    if ( mag(n0) < 1e-6 ) //Cell almost full or empty so isoFace is undefined. Calculating normal by going a little into the cell
     {
         scalar aMin(GREAT), aMax(-GREAT);
         subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
         if (mag(f0-aMin) < mag(f0-aMax)) //f0 almost equal to aMin, i.e. cell almost full
         {
             Info << "Cell is almost full" << endl;
-            scalar f0Inside =  aMin + 1e-4*(aMax-aMin);
+//            scalar f0Inside =  aMin + 1e-4*(aMax-aMin);
+            scalar f0Inside =  f0 + 1e-3*(aMax-f0);
             cutter.isoFaceCentreAndArea(ci,f0Inside,x0,n0);
             if (((x0 - mesh_.C()[ci]) & n0) < 0.0) //n0 should point from cell centre towards isoFace centre for an almost full cell
             {
@@ -199,7 +198,8 @@ void Foam::isoAdvection::calcIsoFace
         else //f0 almost equal to aMax, i.e. cell almost empty
         {
             Info << "Cell is almost empty" << endl;
-            scalar f0Inside =  aMax + 1e-4*(aMin-aMax);
+//            scalar f0Inside =  aMax + 1e-4*(aMin-aMax);
+            scalar f0Inside =  f0 - 1e-3*(f0-aMin);
             cutter.isoFaceCentreAndArea(ci,f0Inside,x0,n0);
             if (((mesh_.C()[ci] - x0) & n0) < 0.0) //n0 should point from isoFace centre towards cell centre for an almost empty cell
             {

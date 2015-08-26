@@ -49,6 +49,16 @@ solvers
     }
 }
 
+isoAdvector
+{
+    isoFaceTol	1e-8;
+    surfCellTol	1e-8;
+    clipAlphaTol 1e-12;
+    boundAlpha	true;
+    snapAlpha	true;
+    writeToLog	true;
+}
+
 PIMPLE
 {
     momentumPredictor no;

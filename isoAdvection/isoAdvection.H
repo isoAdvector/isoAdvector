@@ -133,7 +133,7 @@ class isoAdvection
         scalar& B
     );
 
-	//- Find min and max of subset of scalarField f defined by labelList label
+    //- Find min and max of subset of scalarField f defined by labelList label
     void subSetExtrema
     (
         const scalarField& f,
@@ -142,28 +142,28 @@ class isoAdvection
         scalar& fMax
     );
 
-	//- Adjust face volume transport across isocut outfluxing faces of each cell which is overfilled or overemptied such that cell is exaclty filled/emptied.
+    //- Adjust face volume transport across isocut outfluxing faces of each cell which is overfilled or overemptied such that cell is exaclty filled/emptied.
     void boundAlpha
     (
         scalarField& dVf,
         const scalar& dt
     );
 
-	//- Given the face volume transport dVf calculates the total volume leaving cell cLabel 
+    //- Given the face volume transport dVf calculates the total volume leaving cell cLabel 
     scalar netFlux
     (
         const scalarField& dVf,
         const label& cLabel
     );
 
-	//- Find all surface cells
+    //- Find all surface cells
     void findSurfaceCells
     (
         DynamicList<label>& surfaceCells
     );
 
-	//- For cell ci calculate the isoFace centre x0, normal n0, and isovalue f0, of the isosurface cutting it at to the right volume fractions. 
-	//- Also calculates and returns the isoFace velocity normal to itself.
+    //- For cell ci calculate the isoFace centre x0, normal n0, and isovalue f0, of the isosurface cutting it at to the right volume fractions. 
+    //- Also calculates and returns the isoFace velocity normal to itself.
     void calcIsoFace
     (
         const label& ci,
@@ -176,7 +176,7 @@ class isoAdvection
 
     public:
 
-	//- Constructor
+    //- Constructor
     isoAdvection
     (
         volScalarField& alpha1,
@@ -188,7 +188,7 @@ class isoAdvection
         const bool& writeToLog
     );
 
-	//- Update the alpha1 field to the next time step
+    //- Update the alpha1 field to the next time step
     void advect
     (
         const scalar& dt
