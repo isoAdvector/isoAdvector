@@ -276,7 +276,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     scalar dVf(0.0); //Volume flowing through face in time interval [0,dt] to be calculated below
 
     //Dealing with case where face is not cut by surface during time interval [0,dt] because face was already passed by surface
-    if ( sortedTimes[nPoints-1] < 0.0 ) //All cuttings in the past - Removed <= 0 with < 0.0 - blame vuko!!
+    if ( sortedTimes[nPoints-1] <= 0.0 ) //All cuttings in the past - Removed <= 0 with < 0.0 - blame vuko!!
     {
         isoDebug(Info << "All cuttings in the past" << endl;)
         dVf = phi_[fLabel]*dt*pos(Un0); //If all face cuttings were in the past and cell is filling up (Un0>0) then face must be full during whole time interval
@@ -284,7 +284,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     }
 
     //Dealing with case where face is not cut by surface during time interval [0,dt] because dt is too small for surface to reach closest face point
-    if ( sortedTimes[0] > dt ) //All cuttings in the future
+    if ( sortedTimes[0] >= dt ) //All cuttings in the future
     {
         isoDebug(Info << "All cuttings in the future" << endl;)
         dVf = phi_[fLabel]*dt*(1-pos(Un0)); //If all cuttings are in the future but non of them within [0,dt] then if cell is filling up (Un0 > 0) face must be empty during whole time interval
@@ -297,7 +297,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     forAll(sortedTimes,ti)
     {
 		const scalar& curTime = sortedTimes[ti];
-        if ( 1e-3*dt < curTime && curTime < (1.0-1e-3)*dt )
+        if ( 1e-6*dt < curTime && curTime < (1.0-1e-6)*dt )
         {
             t.append(curTime);
         }
