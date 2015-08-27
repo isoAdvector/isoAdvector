@@ -293,19 +293,16 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 
     //Cutting sortedTimes at 0 and dt
     DynamicList<scalar> t(pTimes.size()+2);
-    t.append(0.0);
+	t.append(0.0);
     forAll(sortedTimes,ti)
     {
 		const scalar& curTime = sortedTimes[ti];
-        if ( 0.0 < curTime && curTime < dt )
+        if ( 1e-3*dt < curTime && curTime < (1.0-1e-3)*dt )
         {
             t.append(curTime);
         }
     }
-    if ( mag(t.last()-dt) > 1e-3*dt )
-    {
-        t.append(dt);
-    }
+	t.append(dt);
     isoDebug(Info << "Cutting sortedTimes at 0 and dt: t = " << t << endl;)
 
     bool faceUncutInFirstInterval = sortedTimes[0] > 0.0;
