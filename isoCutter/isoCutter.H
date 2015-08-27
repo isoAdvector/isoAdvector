@@ -76,136 +76,136 @@ class isoCutter
 
     // Private Member Functions
 
-    //- Cut a cell and represent cut by the cut face labels, and for each of these,
-    //  the cut edges and the point along the edge at which it is cut.
-    //  If cell is not cut these lists will be empty.
-    //  If cell is strictly below isosurface (i.e. all vertex function values are strictly above f0_) fullySubmerged will be true.
-    void isoCutCell
-    (
-        const label&,
-        const scalar&,
-        DynamicList<label>&,
-        DynamicList<label>&,
-        DynamicList<scalar>&,
-        bool&
-    );
+        //- Cut a cell and represent cut by the cut face labels, and for each of these,
+        //  the cut edges and the point along the edge at which it is cut.
+        //  If cell is not cut these lists will be empty.
+        //  If cell is strictly below isosurface (i.e. all vertex function values are strictly above f0_) fullySubmerged will be true.
+        void isoCutCell
+        (
+            const label&,
+            const scalar&,
+            DynamicList<label>&,
+            DynamicList<label>&,
+            DynamicList<scalar>&,
+            bool&
+        );
 
-    //- For a cell search through its faces and find first cut edge
-    void findACutFaceEdgePair
-    (
-        const label& cellI,
-        const scalar&,
-        label& cutFace,
-        label& cutEdge,
-        scalar& cutPoint,
-        bool& fullySubmerged
-    );
+        //- For a cell search through its faces and find first cut edge
+        void findACutFaceEdgePair
+        (
+            const label& cellI,
+            const scalar&,
+            label& cutFace,
+            label& cutEdge,
+            scalar& cutPoint,
+            bool& fullySubmerged
+        );
 
-    //- Starting from a specified cell face-edge pair find next cut face-edge pair
-    void findNextCut
-    (
-        const label& cellI,
-        const scalar&,
-        label& cellFace,
-        label& edge,
-        scalar& cutPoint
-    );
+        //- Starting from a specified cell face-edge pair find next cut face-edge pair
+        void findNextCut
+        (
+            const label& cellI,
+            const scalar&,
+            label& cellFace,
+            label& edge,
+            scalar& cutPoint
+        );
 
-    //- For a given cell face-edge pair find the other cell face-edge of the same cell edge
-    void otherEdgeFace
-    (
-        const label& cellI,
-        label& cellFace,
-        label& edge
-    );
+        //- For a given cell face-edge pair find the other cell face-edge of the same cell edge
+        void otherEdgeFace
+        (
+            const label& cellI,
+            label& cellFace,
+            label& edge
+        );
 
-    //- Construct "isoFace" point list representing the union of a cell with the isosurface
-    void getIsoFace
-    (
-        const DynamicList<label>& cutFaces,
-        const DynamicList<label>& cutEdges,
-        const DynamicList<scalar>& cutPoints,
-//        DynamicList<point>& isoPoints
-        pointField& isoPoints
-    );
+        //- Construct "isoFace" point list representing the union of a cell with the isosurface
+        void getIsoFace
+        (
+            const DynamicList<label>& cutFaces,
+            const DynamicList<label>& cutEdges,
+            const DynamicList<scalar>& cutPoints,
+    //        DynamicList<point>& isoPoints
+            pointField& isoPoints
+        );
 
-    //- Return labels of all cell faces with all points strictly below isosurface
-    void fullySubmergedFaces
-    (
-        const label& cellI,
-        const scalar& f0,
-        DynamicList<label>& fullSubFaces
-    );
-
-
-    //- Write face points to .ply file e.g. for visualisation in Paraview.
-    //  No attempt is made to sort out non-unique points
-    void writeFacesToPlyFile
-    (
-        const List<pointField>& pfl,
-        const word& fileName,
-        const word& fileDir
-    );
+        //- Return labels of all cell faces with all points strictly below isosurface
+        void fullySubmergedFaces
+        (
+            const label& cellI,
+            const scalar& f0,
+            DynamicList<label>& fullSubFaces
+        );
 
 
-    //- Calculate face centres and areas from pointFields assumed to represent oriented faces
-    void makeFaceCentresAndAreas
-    (
-        const List<pointField>& pfList,
-        vectorField& fCtrs,
-        vectorField& fAreas
-    );
+        //- Write face points to .ply file e.g. for visualisation in Paraview.
+        //  No attempt is made to sort out non-unique points
+        void writeFacesToPlyFile
+        (
+            const List<pointField>& pfl,
+            const word& fileName,
+            const word& fileDir
+        );
 
 
-    //- Read face centres and face area vectors from mesh
-    void getFaceCentresAndAreas
-    (
-        const labelList& faceLabels,
-        vectorField& fCtrs,
-        vectorField& fAreas
-    );
+        //- Calculate face centres and areas from pointFields assumed to represent oriented faces
+        void makeFaceCentresAndAreas
+        (
+            const List<pointField>& pfList,
+            vectorField& fCtrs,
+            vectorField& fAreas
+        );
 
 
-    //- Calculate cell centre and volume from cell face centres and area vectors.
-    //  Taken from primitiveMesh
-    void makeCellCentreAndVol
-    (
-        const vectorField& fCtrs,
-        const vectorField& fAreas,
-        vector& cellCtr,
-        scalar& cellVol
-    );
-
-    //- Print a pointField to terminal/log file
-    //  Used to visually inspect cut cell faces in matlab
-    void printPoints
-    (
-        const pointField& pf
-    );
+        //- Read face centres and face area vectors from mesh
+        void getFaceCentresAndAreas
+        (
+            const labelList& faceLabels,
+            vectorField& fCtrs,
+            vectorField& fAreas
+        );
 
 
-    //- Print a list of pointFields to terminal/log file
-    //  Used to visually inspect cut cell faces in matlab
-    void printPoints
-    (
-        const List<pointField>& pfl
-    );
+        //- Calculate cell centre and volume from cell face centres and area vectors.
+        //  Taken from primitiveMesh
+        void makeCellCentreAndVol
+        (
+            const vectorField& fCtrs,
+            const vectorField& fAreas,
+            vector& cellCtr,
+            scalar& cellVol
+        );
+
+        //- Print a pointField to terminal/log file
+        //  Used to visually inspect cut cell faces in matlab
+        void printPoints
+        (
+            const pointField& pf
+        );
 
 
-    //- For a list of face labels return their pointField representations
-    void getFacePoints
-    (
-        const labelList& faceLabels,
-        DynamicList<pointField>&
-    );
+        //- Print a list of pointFields to terminal/log file
+        //  Used to visually inspect cut cell faces in matlab
+        void printPoints
+        (
+            const List<pointField>& pfl
+        );
 
 
-    //- For a given face label return its pointField representation
-    void getFacePoints
-    (
-        const label&,
-        pointField&
-    );
+        //- For a list of face labels return their pointField representations
+        void getFacePoints
+        (
+            const labelList& faceLabels,
+            DynamicList<pointField>&
+        );
+
+
+        //- For a given face label return its pointField representation
+        void getFacePoints
+        (
+            const label&,
+            pointField&
+        );
 
 
 public:

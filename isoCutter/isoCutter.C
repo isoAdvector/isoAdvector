@@ -56,6 +56,7 @@ void Foam::isoCutter::vofCutCell
 {
 ////    Info << "Enter vofCutCell for cell " << ci << " which has alpha1 = " << alpha1 << endl;
     scalar fMin(GREAT), fMax(-GREAT);
+	//Use subSetExtrema instead
     const labelList& pLabels = mesh_.cellPoints(ci);
     forAll(pLabels,pi)
     {
@@ -97,7 +98,7 @@ void Foam::isoCutter::vofCutCell
 //      f0 = (alpha1 - aMin)/(aMax-aMin)*(fMin-fMax) + fMax; //This does an extremely poor job in narrowing in the interval - especially for almost filled cells
         subCellFraction(ci, f0, alpha0, subCellCtr);
 //        Info << nIter << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
-        nIter++;
+        ++nIter;
     }
 //    Info << nIter-1 << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
 }
