@@ -128,7 +128,7 @@ class isoAdvection
     void quadAreaCoeffs
     (
         const label& fLabel,
-        const scalarField& f,
+        const scalarList& f,
         const scalar& f0,
         const scalar& f1,
         scalar& A,

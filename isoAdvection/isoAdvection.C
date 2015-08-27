@@ -245,7 +245,7 @@ void Foam::isoAdvection::calcIsoFace
 
     //Interpolate velocity to isoFace centre
     vector U0 = UInterp.interpolate(x0,ci);
-    Un0 = (U0 & n0);
+    Un0 = U0 & n0;
 }
 
 Foam::scalar Foam::isoAdvection::timeIntegratedFlux
@@ -259,22 +259,23 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 )
 {
     //Find sorted list of times where the isoFace will arrive at face points given initial position x0 and velocity Un0*n0
-    labelList pLabels = mesh_.faces()[fLabel];
-    label nPoints = pLabels.size();
+    const face& pLabels = mesh_.faces()[fLabel];
+    const label nPoints = pLabels.size();
+	const pointField& points = mesh_.points();
     pointField fPts(nPoints);
     forAll(fPts,pi)
     {
-        fPts[pi] = mesh_.points()[pLabels[pi]];
-    }
-    scalarField pTimes = ((fPts - x0) & n0)/(Un0+SMALL); //Here we estimate time of arrival to the face points from their normal distance to the initial surface and the surface normal velocity
-    scalarField sortedTimes(pTimes);
-    sort(sortedTimes);
+        fPts[pi] = points[pLabels[pi]];
+    }	
+    scalarList pTimes = ((fPts - x0) & n0)/(Un0+SMALL); //Here we estimate time of arrival to the face points from their normal distance to the initial surface and the surface normal velocity
+    scalarList sortedTimes(pTimes);
+	sort(sortedTimes);
     isoDebug(Info << "sortedTimes = " << sortedTimes << endl;)
 
     scalar dVf(0.0); //Volume flowing through face in time interval [0,dt] to be calculated below
 
     //Dealing with case where face is not cut by surface during time interval [0,dt] because face was already passed by surface
-    if ( sortedTimes[nPoints-1] <= 0.0 ) //All cuttings in the past
+    if ( sortedTimes[nPoints-1] < 0.0 ) //All cuttings in the past - Removed <= 0 with < 0.0 - blame vuko!!
     {
         isoDebug(Info << "All cuttings in the past" << endl;)
         dVf = phi_[fLabel]*dt*pos(Un0); //If all face cuttings were in the past and cell is filling up (Un0>0) then face must be full during whole time interval
@@ -282,7 +283,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     }
 
     //Dealing with case where face is not cut by surface during time interval [0,dt] because dt is too small for surface to reach closest face point
-    if ( sortedTimes[0] >= dt ) //All cuttings in the future
+    if ( sortedTimes[0] > dt ) //All cuttings in the future
     {
         isoDebug(Info << "All cuttings in the future" << endl;)
         dVf = phi_[fLabel]*dt*(1-pos(Un0)); //If all cuttings are in the future but non of them within [0,dt] then if cell is filling up (Un0 > 0) face must be empty during whole time interval
@@ -290,13 +291,14 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     }
 
     //Cutting sortedTimes at 0 and dt
-    DynamicList<scalar> t;
+    DynamicList<scalar> t(pTimes.size()+2);
     t.append(0.0);
     forAll(sortedTimes,ti)
     {
-        if ( 0.0 < sortedTimes[ti] && sortedTimes[ti] < dt )
+		const scalar& curTime = sortedTimes[ti];
+        if ( 0.0 < curTime && curTime < dt )
         {
-            t.append(sortedTimes[ti]);
+            t.append(curTime);
         }
     }
     if ( mag(t.last()-dt) > 1e-3*dt )
@@ -305,37 +307,38 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     }
     isoDebug(Info << "Cutting sortedTimes at 0 and dt: t = " << t << endl;)
 
-    bool faceUncutInFirstInterval(sortedTimes[0] > 0.0);
-    bool faceUncutInLastInterval(sortedTimes[nPoints-1] < dt);
+    bool faceUncutInFirstInterval = sortedTimes[0] > 0.0;
+    bool faceUncutInLastInterval = sortedTimes[nPoints-1] < dt;
 
     //Dealing with cases where face is cut at least once during time interval [0,dt]
     label nt = 0; //Time interval counter
     scalar initialArea(0.0); //Submerged area at time
+	const scalar magSf = mag(mesh_.Sf().internalField()[fLabel]);
     if ( faceUncutInFirstInterval ) //Special treatment for first time interval if face is uncut during this
     {
         dVf = phi_[fLabel]*(t[nt+1]-t[nt])*(1.0-pos(Un0)); //If Un0 > 0 cell is filling up - hence if face is cut at a later time but not initially it must be initially empty
-        initialArea = mag(mesh_.Sf()[fLabel])*(1.0-pos(Un0));
+        initialArea = magSf*(1.0-pos(Un0));
         isoDebug(Info << "faceUncutInFirstInterval, so special treatment for first time interval: [" << t[nt] << ", " << t[nt+1] << "] giving dVf = " << dVf << endl;)
-        nt++;
+        ++nt;
     }
     else //calculate initialArea if face is initially cut
     {
         isoCutter cutter(mesh_,ap_);
-        initialArea = cutter.getSubFaceFraction(fLabel, -sign(Un0)*pTimes, 0.0)*mag(mesh_.Sf()[fLabel]); //does not use ap_
+        initialArea = cutter.getSubFaceFraction(fLabel, -sign(Un0)*pTimes, 0.0)*magSf; //does not use ap_
         scalar A(0.0), B(0.0);
         quadAreaCoeffs(fLabel,pTimes,t[nt],t[nt+1],A,B);
     }
 
-    isoDebug(Info << "InitialArea for next time step corresponds to face phase fraction a0 = " << initialArea/mag(mesh_.Sf()[fLabel]) << " where |Sf| = " << mag(mesh_.Sf()[fLabel]) << " was used." << endl;)
+    isoDebug(Info << "InitialArea for next time step corresponds to face phase fraction a0 = " << initialArea/magSf << " where |Sf| = " << magSf << " was used." << endl;)
     while ( nt < t.size()-(1+faceUncutInLastInterval) ) //
     {
         scalar A(0.0), B(0.0);
         quadAreaCoeffs(fLabel,pTimes,t[nt],t[nt+1],A,B);
         scalar integratedQuadArea = sign(Un0)*(A/3.0 + 0.5*B); //Integration of area(t) = A*t^2+B*t from t = 0 to 1.
-        scalar Unf = phi_[fLabel]/mag(mesh_.Sf()[fLabel]); //normal velocity on face
+        scalar Unf = phi_[fLabel]/magSf; //normal velocity on face
         dVf += Unf*(t[nt+1]-t[nt])*(initialArea + integratedQuadArea);
         initialArea += sign(Un0)*(A + B); //Adding quad area to submerged area
-        isoDebug(Info << "Integrating area for " << nt+1 << "'th time interval: [" << t[nt] << ", " << t[nt+1] << "] giving dVf = " << dVf << " and a0 = " << initialArea/mag(mesh_.Sf()[fLabel]) << endl;)
+        isoDebug(Info << "Integrating area for " << nt+1 << "'th time interval: [" << t[nt] << ", " << t[nt+1] << "] giving dVf = " << dVf << " and a0 = " << initialArea/magSf << endl;)
 //      Info << "face owner = " << mesh_.owner()[fLabel] << endl;
 //      scalar newdVf = phi_[fLabel]/mag(mesh_.Sf()[fLabel])*(t1-t0)*(a0*mag(mesh_.Sf()[fLabel]) + sign(Un0)*integratedArea(fLabel,f0,f1));
         nt++;
@@ -410,7 +413,7 @@ Foam::label Foam::isoAdvection::otherCell
 void Foam::isoAdvection::quadAreaCoeffs
 (
     const label& fLabel,
-    const scalarField& f,
+    const scalarList& f,
     const scalar& f0,
     const scalar& f1,
     scalar& alpha,
@@ -418,7 +421,8 @@ void Foam::isoAdvection::quadAreaCoeffs
 )
 {
     isoCutter cutter(mesh_,ap_);
-    pointField pf0, pf1;
+    DynamicList<point> pf0(2);
+    DynamicList<point> pf1(2);
     cutter.getFaceCutPoints(fLabel,f,f0,pf0);
     cutter.getFaceCutPoints(fLabel,f,f1,pf1);
 
