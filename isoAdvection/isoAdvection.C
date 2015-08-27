@@ -26,7 +26,6 @@ License
 #include "isoAdvection.H"
 #include "isoCutter.H"
 #include "volPointInterpolation.H"
-#include "interpolationCellPoint.H"
 //#include "fvcSurfaceIntegrate.H"
 #include "fvc.H"
 #include "upwind.H"
@@ -135,6 +134,7 @@ void Foam::isoAdvection::timeIntegratedFlux
     vector x0(vector::zero);
     vector n0(vector::zero);
 
+	interpolationCellPoint<vector> UInterp(U_);
     forAll(surfaceCells,cellI)
     {
         const label ci = surfaceCells[cellI]; //Before loop!!!
@@ -146,7 +146,7 @@ void Foam::isoAdvection::timeIntegratedFlux
         isoDebug(Info << "outFluxingFaces: " << outFluxingFaces << "\n" << endl;)
 
         //Calculate isoFace0 centre xs0, normal ns0, and velocity U0 = U(xs0)
-        calcIsoFace(ci,x0,n0,f0,Un0); //This one really also should give us a0 on all faces since it is calculated anyway. Do this with a cutCell structure
+        calcIsoFace(ci,x0,n0,f0,Un0,UInterp); //This one really also should give us a0 on all faces since it is calculated anyway. Do this with a cutCell structure
         isoDebug(Info << "calcIsoFace gives initial surface: \nx0 = " << x0 << ", \nn0 = " << n0 << ", \nf0 = " << f0 << ", \nUn0 = " << Un0 << endl;)
 
         //Estimating time integrated water flux through each outfluxing face
@@ -190,7 +190,8 @@ void Foam::isoAdvection::calcIsoFace
     vector& x0,
     vector& n0,
     scalar& f0,
-    scalar& Un0
+    scalar& Un0,
+	const interpolationCellPoint<vector>& UInterp
 )
 {
     isoDebug(Info << "Enter calcIsoFace" << endl;)
@@ -204,6 +205,7 @@ void Foam::isoAdvection::calcIsoFace
     if ( mag(n0) < 1e-6 ) //Cell almost full or empty so isoFace is undefined. Calculating normal by going a little into the cell
     {
         scalar aMin(GREAT), aMax(-GREAT);
+		const vectorField& CIn = mesh_.C().internalField();
         subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
         if (mag(f0-aMin) < mag(f0-aMax)) //f0 almost equal to aMin, i.e. cell almost full
         {
@@ -211,9 +213,9 @@ void Foam::isoAdvection::calcIsoFace
 //            scalar f0Inside =  aMin + 1e-4*(aMax-aMin);
             scalar f0Inside =  f0 + 1e-3*(aMax-f0);
             cutter.isoFaceCentreAndArea(ci,f0Inside,x0,n0);
-            if (((x0 - mesh_.C()[ci]) & n0) < 0.0) //n0 should point from cell centre towards isoFace centre for an almost full cell
+            if (((x0 - CIn[ci]) & n0) < 0.0) //n0 should point from cell centre towards isoFace centre for an almost full cell
             {
-                n0 *= (-1.0);
+                n0 *= -1.0;
                 isoDebug(Info << "Changing direction of n0 " << n0 << endl;)
             }
         }
@@ -223,9 +225,9 @@ void Foam::isoAdvection::calcIsoFace
 //            scalar f0Inside =  aMax + 1e-4*(aMin-aMax);
             scalar f0Inside =  f0 - 1e-3*(f0-aMin);
             cutter.isoFaceCentreAndArea(ci,f0Inside,x0,n0);
-            if (((mesh_.C()[ci] - x0) & n0) < 0.0) //n0 should point from isoFace centre towards cell centre for an almost empty cell
+            if (((CIn[ci] - x0) & n0) < 0.0) //n0 should point from isoFace centre towards cell centre for an almost empty cell
             {
-                n0 *= (-1.0);
+                n0 *= -1.0;
                 isoDebug(Info << "Changing direction of n0 " << n0 << endl;)
             }
         }
@@ -242,7 +244,6 @@ void Foam::isoAdvection::calcIsoFace
     n0 /= mag(n0);
 
     //Interpolate velocity to isoFace centre
-    interpolationCellPoint<vector> UInterp(U_);
     vector U0 = UInterp.interpolate(x0,ci);
     Un0 = (U0 & n0);
 }
