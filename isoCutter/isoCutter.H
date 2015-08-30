@@ -290,16 +290,16 @@ public:
         (
             const label& fLabel,
             const scalar& f0,
-            DynamicList<point>& cutPoints
+            pointField& cutPoints
         );
 
         //- Return cutPoints for a given face as above but with field values in points specified by input scalarField f.
         void getFaceCutPoints
         (
             const label& fLabel,
-            const scalarList& f,
+            const scalarField& f,
             const scalar& f0,
-            DynamicList<point>& cutPoints
+            pointField& cutPoints
         );
 
 

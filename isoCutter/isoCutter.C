@@ -290,7 +290,8 @@ void Foam::isoCutter::getIsoFace
     const pointField& points = mesh_.points();
     bool findDuplicates = false;
 
-    DynamicList<point> p(6); 
+//    pointField p;
+    DynamicList<point> p;
     forAll(cutFaces,fi)
     {
         labelList pLabels = faces[cutFaces[fi]];
@@ -448,7 +449,7 @@ void Foam::isoCutter::getFaceCutPoints
 (
     const label& fLabel,
     const scalar& f0,
-    DynamicList<point>& cutPoints
+    pointField& cutPoints
 )
 {
     const faceList& faces = mesh_.faces();
@@ -463,7 +464,7 @@ void Foam::isoCutter::getFaceCutPoints
         f1 = f0;
     }
     Info << "face values differences from f0: ";
-//    DynamicList<point> cutPointList;
+    DynamicList<point> cutPointList;
     forAll(pLabels,pi)
     {
         label pl2 = pLabels[(pi+1)%nPoints];
@@ -481,25 +482,25 @@ void Foam::isoCutter::getFaceCutPoints
         {
             scalar s = (f0-f1)/(f2-f1);
             point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
-            cutPoints.append(pCut);
+            cutPointList.append(pCut);
         }
         else if ( f1 == f0 )
         {
-            cutPoints.append(points[pl1]);
+            cutPointList.append(points[pl1]);
         }
         pl1 = pl2;
         f1 = f2;
     }
     Info << "." << endl;
-//    cutPoints = cutPointList;
+    cutPoints = cutPointList;
 }
 
 void Foam::isoCutter::getFaceCutPoints
 (
     const label& fLabel,
-    const scalarList& f,
+    const scalarField& f,
     const scalar& f0,
-    DynamicList<point>& cutPoints
+    pointField& cutPoints
 )
 {
     const faceList& faces = mesh_.faces();
@@ -514,7 +515,7 @@ void Foam::isoCutter::getFaceCutPoints
     {
         f1 = f0;
     }
-//    DynamicList<point> cutPointList;
+    DynamicList<point> cutPointList;
     forAll(pLabels,pi)
     {
         label pl2 = pLabels[(pi+1)%nPoints];
@@ -529,16 +530,16 @@ void Foam::isoCutter::getFaceCutPoints
         {
             scalar s = (f0-f1)/(f2-f1);
             point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
-            cutPoints.append(pCut);
+            cutPointList.append(pCut);
         }
         else if ( f1 == f0 )
         {
-            cutPoints.append(points[pl1]);
+            cutPointList.append(points[pl1]);
         }
         pl1 = pl2;
         f1 = f2;
     }
-//    cutPoints = cutPointList;
+    cutPoints = cutPointList;
 }
 
 void Foam::isoCutter::fullySubmergedFaces
