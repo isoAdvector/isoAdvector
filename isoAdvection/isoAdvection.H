@@ -47,6 +47,7 @@ SourceFiles
 #include "volFields.H"
 #include "surfaceFields.H"
 #include "OFstream.H"
+#include "interpolationCellPoint.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -170,7 +171,8 @@ class isoAdvection
         vector& x0,
         vector& n0,
         scalar& f0,
-        scalar& Un0
+        scalar& Un0,
+        const interpolationCellPoint<vector>& UInterp
     );
 
 

@@ -124,6 +124,7 @@ void Foam::isoAdvection::timeIntegratedFlux
     }
 
     //Isocutting estimate of water flux from surface cellss
+    interpolationCellPoint<vector> UInterp(U_);
     forAll(surfaceCells,cellI)
     {
         const label ci = surfaceCells[cellI];
@@ -137,7 +138,7 @@ void Foam::isoAdvection::timeIntegratedFlux
         //Calculate isoFace0 centre xs0, normal ns0, and velocity U0 = U(xs0)
         scalar f0(0.0), Un0(0.0);
         vector x0(vector::zero), n0(vector::zero);
-        calcIsoFace(ci,x0,n0,f0,Un0); //This one really also should give us a0 on all faces since it is calculated anyway. Do this with a cutCell structure
+        calcIsoFace(ci,x0,n0,f0,Un0,UInterp); //This one really also should give us a0 on all faces since it is calculated anyway. Do this with a cutCell structure
         isoDebug(Info << "calcIsoFace gives initial surface: \nx0 = " << x0 << ", \nn0 = " << n0 << ", \nf0 = " << f0 << ", \nUn0 = " << Un0 << endl;)
 
         //Estimating time integrated water flux through each outfluxing face
@@ -177,7 +178,8 @@ void Foam::isoAdvection::calcIsoFace
     vector& x0,
     vector& n0,
     scalar& f0,
-    scalar& Un0
+    scalar& Un0,
+    const interpolationCellPoint<vector>& UInterp
 )
 {
     isoDebug(Info << "Enter calcIsoFace" << endl;)
@@ -229,7 +231,6 @@ void Foam::isoAdvection::calcIsoFace
     n0 /= mag(n0);
 
     //Interpolate velocity to isoFace centre
-    interpolationCellPoint<vector> UInterp(U_);
     vector U0 = UInterp.interpolate(x0,ci);
     Un0 = (U0 & n0);
 }
