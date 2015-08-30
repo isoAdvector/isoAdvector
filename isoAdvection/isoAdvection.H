@@ -65,7 +65,7 @@ class isoAdvection
     volScalarField& alpha1_;
 
     //- VOF field interpolated to mesh points
-    scalarField ap_; //Vuko: More descriptive name
+    scalarField ap_;
 
     //- Face fluxes
     const surfaceScalarField& phi_;
@@ -94,7 +94,7 @@ class isoAdvection
     void timeIntegratedFlux
     (
         const scalar& dt,
-        surfaceScalarField& dVf
+        scalarField& dVf
     );
 
     //- For face fLabel calculate volumetric face transport during dt given the isoFace data provided as input
@@ -145,7 +145,7 @@ class isoAdvection
     //- Adjust face volume transport across isocut outfluxing faces of each cell which is overfilled or overemptied such that cell is exaclty filled/emptied.
     void boundAlpha
     (
-        surfaceScalarField& dVf,
+        scalarField& dVf,
         const scalar& dt
     );
 

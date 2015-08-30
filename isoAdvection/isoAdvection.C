@@ -27,9 +27,7 @@ License
 #include "isoCutter.H"
 #include "volPointInterpolation.H"
 #include "interpolationCellPoint.H"
-//#include "fvcSurfaceIntegrate.H"
-#include "fvc.H"
-#include "upwind.H"
+#include "fvcSurfaceIntegrate.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -69,15 +67,14 @@ Foam::isoAdvection::isoAdvection
 void Foam::isoAdvection::timeIntegratedFlux
 (
     const scalar& dt,
-    surfaceScalarField& dVfa
+    scalarField& dVf
 )
 {
-	scalarField& dVf = dVfa.internalField();
-//    dVf = 0.0; //estimated total water volume transported across mesh faces during time interval dt. The sign convenctino is like the flux phi, i.e. positive means out of owner cell.
+    dVf = 0.0; //estimated total water volume transported across mesh faces during time interval dt. The sign convenctino is like the flux phi, i.e. positive means out of owner cell.
 
     //Interpolating VOF field to mesh points
 /*  
-	//Testing volume weighting in cell-point interpolation
+	//Testing 
 	const labelListList& pCells = mesh_.pointCells();
     forAll(pCells,pi)
     {
@@ -101,22 +98,20 @@ void Foam::isoAdvection::timeIntegratedFlux
     isoCutter cutter(mesh_,ap_);
 
     //Find surface cells
-    DynamicList<label> surfaceCells(mesh_.nCells()/2); //Convert to member!
+    DynamicList<label> surfaceCells;
     findSurfaceCells(surfaceCells);
 
     //Upwinding on all internal faces receiving fluid from a non-surface cell
-//	surfaceScalarField dVfa_test = upwind<scalar>(mesh_, phi_).flux(alpha1_); //VUKO: Test if this replaces forAll below
-	label donorCell;
     forAll(dVf,fi)
     {
-        donorCell = -1;
+        label donorCell(-1);
         if ( phi_[fi] >= 0 )
         {
             donorCell = mesh_.owner()[fi];
         }
-        else if ( fi < mesh_.nInternalFaces() ) //Vuko: Will never go into this because dVf ref to internalFaces
+        else if ( fi < mesh_.nInternalFaces() )
         {
-            donorCell = mesh_.neighbour()[fi]; //Vuko: NEVER do this. Make reference variable above loop!!!!!!!!
+            donorCell = mesh_.neighbour()[fi];
         }
         if (donorCell != -1)
         {
@@ -129,23 +124,19 @@ void Foam::isoAdvection::timeIntegratedFlux
     }
 
     //Isocutting estimate of water flux from surface cellss
-	DynamicList<label> outFluxingFaces(10);
-    scalar f0 = 0.0;
-	scalar Un0 = 0.0;
-    vector x0(vector::zero);
-    vector n0(vector::zero);
-
     forAll(surfaceCells,cellI)
     {
-        const label ci = surfaceCells[cellI]; //Before loop!!!
+        const label ci = surfaceCells[cellI];
         isoDebug(Info << "\n------------ Cell " << ci << " with alpha1_ = " << alpha1_[ci] << " ------------" << endl;)
 
         //Make list of all cell faces out of which fluid is flowing
-//        DynamicList<label> outFluxingFaces;
+        DynamicList<label> outFluxingFaces;
         getOutFluxFaces(ci, outFluxingFaces);
         isoDebug(Info << "outFluxingFaces: " << outFluxingFaces << "\n" << endl;)
 
         //Calculate isoFace0 centre xs0, normal ns0, and velocity U0 = U(xs0)
+        scalar f0(0.0), Un0(0.0);
+        vector x0(vector::zero), n0(vector::zero);
         calcIsoFace(ci,x0,n0,f0,Un0); //This one really also should give us a0 on all faces since it is calculated anyway. Do this with a cutCell structure
         isoDebug(Info << "calcIsoFace gives initial surface: \nx0 = " << x0 << ", \nn0 = " << n0 << ", \nf0 = " << f0 << ", \nUn0 = " << Un0 << endl;)
 
@@ -156,7 +147,6 @@ void Foam::isoAdvection::timeIntegratedFlux
             isoDebug(Info << "\nFace " << fLabel << " with outward normal nf = " << sign( (mesh_.Cf()[fLabel]-mesh_.C()[ci]) & mesh_.Sf()[fLabel] )*mesh_.Sf()[fLabel]/mag(mesh_.Sf()[fLabel]) << endl;)
             dVf[fLabel] = timeIntegratedFlux(fLabel,x0,n0,Un0,f0,dt);
         }
-		outFluxingFaces.clear();
     }
 }
 
@@ -166,21 +156,18 @@ void Foam::isoAdvection::findSurfaceCells
 )
 {
     isSurfaceCell_ = false;
-	scalar aMin, aMax;
-	const labelListList& cellPoints = mesh_.cellPoints();
     forAll(alpha1_,ci)
     {
-        aMin = GREAT;
-		aMax = -GREAT;
-        subSetExtrema(ap_, cellPoints[ci], aMin, aMax);
+        scalar aMin(GREAT), aMax(-GREAT);
+        subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
 //        if ( (aMin < 0.5 && aMax > 0.5) )
-        if ( (aMin < 0.5 && aMax > 0.5) || ( surfCellTol_ < alpha1_[ci] && alpha1_[ci] < 1 - surfCellTol_ ))
+        if ( (aMin < 0.5 && aMax > 0.5) || ( surfCellTol_ < alpha1_[ci] && alpha1_[ci] < 1-surfCellTol_ ) )
         {
             isSurfaceCell_[ci] = true;
             surfaceCells.append(ci);
         }
     }
-//    surfaceCells.shrink();
+    surfaceCells.shrink();
     isoDebug(Info << "\nnSurfaceCells = " << surfaceCells.size() << endl;)
 }
 
@@ -195,9 +182,9 @@ void Foam::isoAdvection::calcIsoFace
 {
     isoDebug(Info << "Enter calcIsoFace" << endl;)
     //Construction of isosurface calculator to get access to its functionality
-    isoCutter cutter(mesh_,ap_); //Vuko: Make into a member
+    isoCutter cutter(mesh_,ap_);
     label maxIter(100);
-    vector subCellCtr; //Make point
+    vector subCellCtr;
     cutter.vofCutCell(ci, alpha1_[ci], vof2IsoTol_, maxIter, f0, subCellCtr);
     cutter.isoFaceCentreAndArea(ci,f0,x0,n0); //Stupid to recalculate this here - should be provided by vofCutCell above
 
@@ -357,21 +344,19 @@ void Foam::isoAdvection::getOutFluxFaces
 )
 {
     const cellList& cells = mesh_.cells();
-    const cell& cellI = cells[ci];
-	label fLabel, owner; 
-	const label nFaces = mesh_.nInternalFaces();
-	const labelList& owners = mesh_.owner();
-
-	//Looping through cell faces
-    forAll(cellI,fi)
+    const labelList fLabels = cells[ci];
+    forAll(fLabels,fi)
     {
-        fLabel = cellI[fi];
-        if (fLabel < nFaces) //Vuko thinks this is not necessary - try without it
+        const label fLabel = fLabels[fi];
+        if (fLabel < mesh_.nInternalFaces())
         {
-            owner = owners[fLabel];
-            if (owner == ci && phi_[fLabel] > 0.0)
+            const label owner = mesh_.owner()[fLabel];
+            if (owner == ci)
             {
-				outFluxingFaces.append(fLabel);
+                if (phi_[fLabel] > 0.0)
+                {
+                    outFluxingFaces.append(fLabel);
+                }
             }
             else if ( phi_[fLabel] < 0.0 ) //ci must be neighbour of fLabel
             {
@@ -379,7 +364,7 @@ void Foam::isoAdvection::getOutFluxFaces
             }
         }
     }
-//    outFluxingFaces.shrink();
+    outFluxingFaces.shrink();
 }
 
 
@@ -554,11 +539,10 @@ void Foam::isoAdvection::subSetExtrema
 
 void Foam::isoAdvection::boundAlpha
 (
-    surfaceScalarField& dVfa,
+    scalarField& dVf,
     const scalar& dt
 )
 {
-	scalarField& dVf = dVfa.internalField();
 
     boolList mightNeedBounding(isSurfaceCell_.size(),false); //All surface cells and their face neighbours
     forAll(mightNeedBounding,ci)
@@ -735,35 +719,14 @@ void Foam::isoAdvection::advect
     const scalar& dt
 )
 {
-	//Construct as copy - has same dimensions so will probably give problems.
-	// How to construct as zero's with phi's mesh etc e.g. surfaceScalarField
-	// dVf(phi.size(),0.0)?
-	surfaceScalarField dVf
-	(
-		IOobject
-		(
-			"dVf",
-			mesh_.time().timeName(),
-			mesh_,
-			IOobject::NO_READ,
-			IOobject::NO_WRITE
-		),
-		mesh_,
-		dimensionedScalar("vol", dimVol, 0)
-	);
-
-//    surfaceScalarField dVf(0*phi_);
-//    dVf.dimensions().reset(phi_.mesh().V().dimensions());
-    isoDebug
-	(
-	    Info << "dVf.size() = " << dVf.size() << ", mesh_.nFaces() = " 
-		     << mesh_.nFaces() << endl;
-	)
-//    scalarField& dVfi = dVf.internalField();
-    timeIntegratedFlux(dt, dVf);
+    surfaceScalarField dVf(0*phi_); //Construct as copy - has same dimensions so will probably give problems. How to construct as zero's with phi's mesh etc e.g. surfaceScalarField dVf(phi.size(),0.0)?
+    dVf.dimensions().reset(phi_.mesh().V().dimensions());
+    isoDebug(Info << "dVf.size() = " << dVf.size() << ", mesh_.nFaces() = " << mesh_.nFaces() << endl;)
+    scalarField& dVfi = dVf;
+    timeIntegratedFlux(dt, dVfi);
     if (boundAlpha_)
     {
-        boundAlpha(dVf,dt);
+        boundAlpha(dVfi,dt);
     }
     alpha1_ -= fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume
     alpha1_.correctBoundaryConditions();
