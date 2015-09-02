@@ -1,0 +1,76 @@
+# PyFoam and python stuff
+PyFoam*
+PlyParser_FoamFileParser_parsetab.py*
+
+
+#*log*
+
+# Ignore timestep directories
+[0-9]/
+[0-9].*/
+!0.org/
+
+# contents of polyMesh
+points
+boundary
+owner
+neighbour
+faces
+*Zones*
+*Level
+
+# Paraview
+#*.foam
+!case.foam
+#*.pvsm
+
+# Vim crap
+*.sw*
+# Archives
+*.tgz
+*.zip
+*.gz
+*.7z
+*.bz2
+VTK
+*.vtk
+*.stl
+!front.stl
+*.pdf
+dynamicCode/
+francois-circle-curvature.dat
+__py*
+
+# git ls-files --others --exclude-from=.git/info/exclude
+# Lines that start with '#' are comments.
+# For a project mostly in C, the following would be a good set of
+# exclude patterns (uncomment them if you want to use them):
+# *.[oa]
+# *~
+linux*
+lnInclude
+*.dep
+*.swp
+*.log
+lnInclude/
+linux*/
+*.dep
+*.vim 
+*~
+*.vtk
+*.txt
+*.jpg
+*.png
+*.swp
+*.swo
+*.bmp
+*.pdf
+*.rar
+*.zip
+*.tgz
+doc
+*.svg
+*log*
+third-party
+gtest 
+_*
