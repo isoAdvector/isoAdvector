@@ -42,10 +42,7 @@ Foam::isoAdvection::isoAdvection
     volScalarField& alpha1,
     const surfaceScalarField& phi,
     const volVectorField& U,
-    const bool& boundAlpha = true,
-    const scalar& vof2IsoTol = 1e-8,
-    const scalar& surfCellTol = 1e-8,
-    const bool& writeToLog = false
+    const dictionary& dict
 )
 :
     mesh_(alpha1.mesh()),
@@ -54,12 +51,11 @@ Foam::isoAdvection::isoAdvection
     phi_(phi),
     U_(U),
     isSurfaceCell_(mesh_.nCells(),false),
-    boundAlpha_(boundAlpha),
-    vof2IsoTol_(vof2IsoTol),
-    surfCellTol_(surfCellTol),
-    writeToLog_(writeToLog)
-{
-}
+    boundAlpha_(dict.lookupOrDefault<bool>("boundAlpha", true)), 
+    vof2IsoTol_(dict.lookupOrDefault<scalar>("vof2IsoTol", 1e-8)),
+    surfCellTol_(dict.lookupOrDefault<scalar>("surfCellTol", 1e-8)),
+    writeToLog_(dict.lookupOrDefault<bool>("writeToLog", true))
+{}
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 

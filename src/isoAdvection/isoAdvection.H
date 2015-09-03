@@ -184,10 +184,7 @@ class isoAdvection
         volScalarField& alpha1,
         const surfaceScalarField& phi,
         const volVectorField& U,
-        const bool& boundAlpha,
-        const scalar& vof2IsoTol,
-        const scalar& surfCellTol,
-        const bool& writeToLog
+        const dictionary& dict
     );
 
     //- Update the alpha1 field to the next time step

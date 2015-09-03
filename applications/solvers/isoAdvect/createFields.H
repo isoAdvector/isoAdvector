@@ -31,3 +31,9 @@
     Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value() 
      << ", max(alpha1)-1 = " << max(alpha1).value()-1.0
      << "\t min(alpha1) = " << min(alpha1).value() << endl;
+
+    const dictionary& isoAdvectorDict = mesh.solutionDict().subDict("isoAdvector");
+
+    const scalar clipAlphaTol = isoAdvectorDict.lookupOrDefault<scalar>("clipAlphaTol", 1e-12);
+
+    const bool snapAlpha = isoAdvectorDict.lookupOrDefault<bool>("snapAlpha", true);

@@ -50,8 +50,6 @@ int main(int argc, char *argv[])
     #include "readTimeControls.H"
     #include "CourantNo.H"
     #include "setInitialDeltaT.H"
-    #include "readIsoAdvectorControls.H"
-
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -59,7 +57,7 @@ int main(int argc, char *argv[])
     scalar V0 = sum(mesh.V()*alpha1).value();   
     
     Info<< "\nStarting time loop\n" << endl;
-    isoAdvection advector(alpha1,phi,U,boundAlpha,vof2IsoTol,surfCellTol,writeToLog);
+    isoAdvection advector(alpha1,phi,U,isoAdvectorDict);
 
     while (runTime.run())
     {
@@ -79,7 +77,7 @@ int main(int argc, char *argv[])
              << ",\t max(alpha1)-1 = " << max(alpha1).value()-1
              << ",\t min(alpha1) = " << min(alpha1).value() << endl;
         
-		//Clip and snap alpha1 to ensure strict boundedness to machine precision
+        //Clip and snap alpha1 to ensure strict boundedness to machine precision
         if ( clipAlphaTol > 0.0 )
         {
             alpha1 = alpha1*pos(alpha1-clipAlphaTol)*neg(alpha1-(1.0-clipAlphaTol)) + pos(alpha1-(1.0-clipAlphaTol));
