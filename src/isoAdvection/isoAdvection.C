@@ -69,7 +69,7 @@ void Foam::isoAdvection::timeIntegratedFlux
     dVf = 0.0; //estimated total water volume transported across mesh faces during time interval dt. The sign convenctino is like the flux phi, i.e. positive means out of owner cell.
 
     //Interpolating VOF field to mesh points
-/*  
+  
 	//Testing 
 	const labelListList& pCells = mesh_.pointCells();
     forAll(pCells,pi)
@@ -86,9 +86,9 @@ void Foam::isoAdvection::timeIntegratedFlux
         ap_[pi] /= vol;
     }
 	isoDebug("Using cell volume weighted cell-point interpolation" << endl;)
-*/
-    volPointInterpolation vpi(mesh_);
-    ap_ = vpi.interpolate(alpha1_);
+
+//    volPointInterpolation vpi(mesh_);
+//    ap_ = vpi.interpolate(alpha1_);
 
     //Construction of isosurface calculator to get access to its functionality
     isoCutter cutter(mesh_,ap_);
@@ -187,30 +187,33 @@ void Foam::isoAdvection::calcIsoFace
     cutter.isoFaceCentreAndArea(ci,f0,x0,n0); //Stupid to recalculate this here - should be provided by vofCutCell above
     isoDebug(Info << "f0 = " << f0 << ", x0 = " << x0 << ", n0 = " << n0 << endl;)
 
-    if ( mag(n0) < vof2IsoTol_ ) //Cell almost full or empty so isoFace is undefined. Calculating normal by going a little into the cell
+    if (mag(n0)<1e-6) //Cell almost full or empty so isoFace is undefined. Calculating normal by going a little into the cell
     {
-        scalar aMin(GREAT), aMax(-GREAT), f0Inside(0.0);
+        scalar aMin(GREAT), aMax(-GREAT);
         subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
         if (mag(f0-aMin) < mag(f0-aMax)) //f0 almost equal to aMin, i.e. cell almost full
         {
-            isoDebug(Info << "Cell is almost full" << endl;)
-//            scalar f0Inside =  aMin + 1e-4*(aMax-aMin);
-            f0Inside =  f0 + 1e-3*(aMax-f0);
+            Info << "Cell is almost full" << endl;
+            scalar f0Inside =  aMin + 1e-4*(aMax-aMin);
+            cutter.isoFaceCentreAndArea(ci,f0Inside,x0,n0);
+            if (((x0 - mesh_.C()[ci]) & n0) < 0.0) //n0 should point from cell centre towards isoFace centre for an almost full cell
+            {
+                n0 *= (-1.0);
+                Info << "Changing direction of n0 " << n0 << endl;
+            }
         }
         else //f0 almost equal to aMax, i.e. cell almost empty
         {
-            isoDebug(Info << "Cell is almost empty" << endl;)
-//            scalar f0Inside =  aMax + 1e-4*(aMin-aMax);
-            f0Inside =  f0 - 1e-3*(f0-aMin);
+            Info << "Cell is almost empty" << endl;
+            scalar f0Inside =  aMax + 1e-4*(aMin-aMax);
+            cutter.isoFaceCentreAndArea(ci,f0Inside,x0,n0);
+            if (((mesh_.C()[ci] - x0) & n0) < 0.0) //n0 should point from isoFace centre towards cell centre for an almost empty cell
+            {
+                n0 *= (-1.0);
+                Info << "Changing direction of n0 " << n0 << endl;
+            }
         }
-        cutter.isoFaceCentreAndArea(ci,f0Inside,x0,n0);
-		isoDebug(Info << "aMin = " << aMin << ", aMax = " << aMax << ", f0Inside = " << f0Inside << ", x0 = " << n0 << ", n0 = " << n0 << endl;)
-		isoDebug(Info << "aMax - aMin = " << aMax - aMin << endl;)
-        if (((x0 - mesh_.C()[ci]) & n0) < 0.0) //n0 should point from cell centre towards isoFace centre for an almost full cell
-        {
-            n0 *= (-1.0);
-            isoDebug(Info << "Changing direction of n0 " << n0 << endl;)
-        }
+
     } //Make sure n0 points out of subCell
     else if (((x0 - subCellCtr) & n0) < 0.0) //n0 should point out of water surface, i.e. in the direction from subCell centre to isoFace centre
     {
