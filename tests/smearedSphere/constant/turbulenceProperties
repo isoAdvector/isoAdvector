@@ -10,69 +10,12 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    object      blockMeshDict;
+    location    "constant";
+    object      turbulenceProperties;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-convertToMeters 1;
+simulationType  laminar;
 
-x1 0;
-x2 1;
-y1 0;
-y2 1;
-z1 0;
-z2 1;
-nx 64;
-ny 64;
-nz 64;
-
-vertices
-(
-    ($x1 $y1 $z1)
-    ($x2 $y1 $z1)
-    ($x2 $y2 $z1)
-    ($x1 $y2 $z1)
-    ($x1 $y1 $z2)
-    ($x2 $y1 $z2)
-    ($x2 $y2 $z2)
-    ($x1 $y2 $z2)
-);
-
-blocks
-(
-    hex (0 1 2 3 4 5 6 7) ($nx $ny $nz) simpleGrading (1 1 1)
-);
-
-edges
-(
-);
-
-boundary
-(
-    rim
-    {
-        type patch;
-        faces
-        (
-            (4 5 6 7)
-            (0 4 7 3)
-            (1 2 6 5)
-            (0 3 2 1)
-        );
-    }
-    frontAndBack
-    {
-        type patch;
-        faces
-        (
-            (0 1 5 4)
-            (2 3 7 6)
-        );
-    }
-);
-
-mergePatchPairs
-(
-);
 
 // ************************************************************************* //

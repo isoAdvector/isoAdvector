@@ -52,13 +52,10 @@ int main(int argc, char *argv[])
     #include "setInitialDeltaT.H"
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-	//Initial Volume of Fluid (VOF)
-    scalar V0 = sum(mesh.V()*alpha1).value();   
     
     Info<< "\nStarting time loop\n" << endl;
     isoAdvection advector(alpha1,phi,U,isoAdvectorDict);
-
+	
     while (runTime.run())
     {
         #include "readTimeControls.H"
@@ -68,14 +65,39 @@ int main(int argc, char *argv[])
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
 		//Advance alpha1 from time t to t+dt
-        scalar dt = runTime.deltaT().value();
+
+        const scalar t = runTime.time().value();
+		if ( period > 0.0 )
+		{
+			phi = phi0*Foam::cos(2.0*PI*t/period);
+			U = U0*Foam::cos(2.0*PI*t/period);		
+		}
+		
+        const scalar dt = runTime.deltaT().value();
         advector.advect(dt);
 
 		//Write total VOF and discrepancy from original VOF to log
-        Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value()
-             << ",\t dev = " << 100*(V0-sum(mesh.V()*alpha1).value())/V0 << "%" 
-             << ",\t max(alpha1)-1 = " << max(alpha1).value()-1
-             << ",\t min(alpha1) = " << min(alpha1).value() << endl;
+		label lMin = -1, lMax = -1;
+		scalar aMax = -GREAT, aMin = GREAT;
+		forAll(alpha1,ci)
+		{
+			if ( alpha1[ci] > aMax)
+            {
+				aMax = alpha1[ci];
+				lMax = ci;
+			}
+			else if ( alpha1[ci] < aMin )
+			{
+				aMin = alpha1[ci];
+				lMin = ci;				
+			}
+		}
+		
+		const scalar V = sum(mesh.V()*alpha1).value();
+        Info << "t = " << t << ",\t sum(alpha*V) = " << V
+             << ",\t dev = " << 100*(1.0-V/V0) << "%" 
+             << ",\t 1-max(alpha1) = " << 1-aMax << " at cell " << lMax
+             << ",\t min(alpha1) = " << aMin << " at cell " << lMin << endl;
         
         //Clip and snap alpha1 to ensure strict boundedness to machine precision
         if ( clipAlphaTol > 0.0 )

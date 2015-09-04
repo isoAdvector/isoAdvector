@@ -2,12 +2,8 @@
 
 #./Allclean
 
-cd isoAdvector
-wmake
-cd ..
-
-nProc=$(sed -ne "s/^numberOfSubdomains *\(.*\);/\1/p" system/decomposeParDict)
-#application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
+#nProc=$(sed -ne "s/^numberOfSubdomains *\(.*\);/\1/p" system/decomposeParDict)
+application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
 jobStart=$(date +"%Y%m%d%H%M")
 
 if [ ! -d "logs" ]; then
@@ -19,5 +15,8 @@ else
         mkdir logs
 fi
 
-isoAdvector/isoAdvector > logs/isoAdvector.log 2>&1
+generateU/generateU > logs/generateU.log 2>&1
+isoSurf > logs/isoSurf.log 2>&1
+
+$application > logs/${application}.log 2>&1
 

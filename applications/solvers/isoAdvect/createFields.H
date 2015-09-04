@@ -27,13 +27,20 @@
         ),
         mesh
     );
+	
+	//Initial Volume of Fluid (VOF)
+    scalar V0 = sum(mesh.V()*alpha1).value();   
 
-    Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value() 
+    Info << "sum(alpha*V) = " << V0
      << ", max(alpha1)-1 = " << max(alpha1).value()-1.0
      << "\t min(alpha1) = " << min(alpha1).value() << endl;
 
     const dictionary& isoAdvectorDict = mesh.solutionDict().subDict("isoAdvector");
-
     const scalar clipAlphaTol = isoAdvectorDict.lookupOrDefault<scalar>("clipAlphaTol", 1e-12);
-
     const bool snapAlpha = isoAdvectorDict.lookupOrDefault<bool>("snapAlpha", true);
+	const scalar period = isoAdvectorDict.lookupOrDefault<scalar>("period", 0.0);
+
+	//Copies of initial U and phi for use when flow is periodic
+	surfaceScalarField phi0 = phi;
+	volVectorField U0 = U;
+	scalar PI = Foam::constant::mathematical::pi;
