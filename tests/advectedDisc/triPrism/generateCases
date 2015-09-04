@@ -8,8 +8,8 @@ export T=4
 export Ux=1
 export Uy=0
 export Uz=0
-#series=$(sed -ne "s/^application *\(.*\);/\1/p" baseCase/system/controlDict)
-series=discIsoAdvector_bounded
+series=convergenceTest
+export solver=isoAdvect
 
 mkdir $series
 
