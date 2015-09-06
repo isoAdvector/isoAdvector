@@ -2,7 +2,8 @@ EXE_INC = \
     -I$(ISOADVECTION)/src/lnInclude \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/meshTools/lnInclude \
-    -I$(LIB_SRC)/sampling/lnInclude
+    -I$(LIB_SRC)/sampling/lnInclude \
+    -DISODEBUG
 
 EXE_LIBS = \
     -L$(FOAM_USER_LIBBIN) \

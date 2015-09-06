@@ -85,7 +85,7 @@ void Foam::isoAdvection::timeIntegratedFlux
         }
         ap_[pi] /= vol;
     }
-	isoDebug("Using cell volume weighted cell-point interpolation" << endl;)
+//	isoDebug(Info << "Using cell volume weighted cell-point interpolation" << endl;)
 
 //    volPointInterpolation vpi(mesh_);
 //    ap_ = vpi.interpolate(alpha1_);
@@ -245,6 +245,8 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     const scalar& dt
 )
 {
+    scalar dVf(0.0); //Volume flowing through face in time interval [0,dt] to be calculated below
+
     //Find sorted list of times where the isoFace will arrive at face points given initial position x0 and velocity Un0*n0
     labelList pLabels = mesh_.faces()[fLabel];
     label nPoints = pLabels.size();
@@ -253,12 +255,23 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     {
         fPts[pi] = mesh_.points()[pLabels[pi]];
     }
-    scalarField pTimes = ((fPts - x0) & n0)/(Un0+SMALL); //Here we estimate time of arrival to the face points from their normal distance to the initial surface and the surface normal velocity
+    scalarField pTimes(fPts.size());
+	if ( mag(Un0) > 1e-12 )
+	{
+		pTimes = ((fPts - x0) & n0)/Un0; //Here we estimate time of arrival to the face points from their normal distance to the initial surface and the surface normal velocity
+	}
+	else //Un0 is almost zero
+	{
+        isoCutter cutter(mesh_,ap_);
+		scalar alphaf;
+		cutter.subFaceFraction(fLabel,f0,alphaf);
+		dVf = phi_[fLabel]*dt*alphaf;
+		return dVf;
+	}
+
     scalarField sortedTimes(pTimes);
     sort(sortedTimes);
     isoDebug(Info << "sortedTimes = " << sortedTimes << endl;)
-
-    scalar dVf(0.0); //Volume flowing through face in time interval [0,dt] to be calculated below
 
     //Dealing with case where face is not cut by surface during time interval [0,dt] because face was already passed by surface
     if ( sortedTimes[nPoints-1] <= 0.0 ) //All cuttings in the past
