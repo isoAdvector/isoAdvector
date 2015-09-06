@@ -115,6 +115,8 @@ int main(int argc, char *argv[])
     }
     Info << "maxMagSumPhi/cellVol = " << maxMagSumPhi/mesh.V()[maxLabel] << endl;
     
+	ISstream::defaultPrecision(18);
+
     U.write();
     phi.write();
     

@@ -51,7 +51,7 @@ Foam::isoAdvection::isoAdvection
     phi_(phi),
     U_(U),
     isSurfaceCell_(mesh_.nCells(),false),
-    boundAlpha_(dict.lookupOrDefault<bool>("boundAlpha", true)), 
+    nAlphaBounds_(dict.lookupOrDefault<label>("nAlphaBounds", 1)), 
     vof2IsoTol_(dict.lookupOrDefault<scalar>("vof2IsoTol", 1e-8)),
     surfCellTol_(dict.lookupOrDefault<scalar>("surfCellTol", 1e-8)),
     writeToLog_(dict.lookupOrDefault<bool>("writeToLog", true))
@@ -124,7 +124,7 @@ void Foam::isoAdvection::timeIntegratedFlux
     forAll(surfaceCells,cellI)
     {
         const label ci = surfaceCells[cellI];
-        isoDebug(Info << "\n------------ Cell " << ci << " with alpha1_ = " << alpha1_[ci] << " ------------" << endl;)
+        isoDebug(Info << "\n------------ Cell " << ci << " with alpha1 = " << alpha1_[ci] << " and 1-alpha1 = " << 1.0-alpha1_[ci] << " ------------" << endl;)
 
         //Make list of all cell faces out of which fluid is flowing
         DynamicList<label> outFluxingFaces;
@@ -158,7 +158,7 @@ void Foam::isoAdvection::findSurfaceCells
         scalar aMin(GREAT), aMax(-GREAT);
         subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
 //        if ( (aMin < 0.5 && aMax > 0.5) )
-        if ( (aMin < 0.5 && aMax > 0.5) || ( surfCellTol_ < alpha1_[ci] && alpha1_[ci] < 1-surfCellTol_ ) )
+        if ( (aMin < 0.5 && aMax > 0.5) || ( surfCellTol_ < alpha1_[ci] && alpha1_[ci] < 1.0-surfCellTol_ ) )
         {
             isSurfaceCell_[ci] = true;
             surfaceCells.append(ci);
@@ -738,10 +738,8 @@ void Foam::isoAdvection::advect
     isoDebug(Info << "dVf.size() = " << dVf.size() << ", mesh_.nFaces() = " << mesh_.nFaces() << endl;)
     scalarField& dVfi = dVf;
     timeIntegratedFlux(dt, dVfi);
-    if (boundAlpha_)
+    for ( label n = 0; n < nAlphaBounds_; n++ )
     {
-        boundAlpha(dVfi,dt);
-        boundAlpha(dVfi,dt);
         boundAlpha(dVfi,dt);
     }
     alpha1_ -= fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume

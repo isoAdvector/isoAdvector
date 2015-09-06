@@ -77,8 +77,8 @@ class isoAdvection
     //- For each cell weather it qualifies as a surface cell
     boolList isSurfaceCell_;
 
-    //- Switch to choose if alpha should be bounded
-    const bool boundAlpha_;
+    //- How many iterations of the alpha bounding function
+    const label nAlphaBounds_;
 
     //- Tolerance for search of isoFace giving specified VOF value
     const scalar vof2IsoTol_;
