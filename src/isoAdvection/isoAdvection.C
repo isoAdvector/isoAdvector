@@ -66,6 +66,8 @@ void Foam::isoAdvection::timeIntegratedFlux
     scalarField& dVf
 )
 {
+    isoDebug(Info << "Enter timeIntegratedFlux" << endl;)
+
     dVf = 0.0; //estimated total water volume transported across mesh faces during time interval dt. The sign convenctino is like the flux phi, i.e. positive means out of owner cell.
 
     //Interpolating VOF field to mesh points
@@ -152,6 +154,8 @@ void Foam::isoAdvection::findSurfaceCells
     DynamicList<label>& surfaceCells
 )
 {
+    isoDebug(Info << "Enter findSurfaceCells" << endl;)
+
     isSurfaceCell_ = false;
     forAll(alpha1_,ci)
     {
@@ -245,6 +249,8 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     const scalar& dt
 )
 {
+    isoDebug(Info << "Enter timeIntegratedFlux for face " << fLabel << endl;)
+
     scalar dVf(0.0); //Volume flowing through face in time interval [0,dt] to be calculated below
 
     //Find sorted list of times where the isoFace will arrive at face points given initial position x0 and velocity Un0*n0
@@ -415,6 +421,7 @@ void Foam::isoAdvection::quadAreaCoeffs
     scalar& beta
 )
 {
+    isoDebug(Info << "Enter quadAreaCoeffs" << endl;)
     isoCutter cutter(mesh_,ap_);
     pointField pf0, pf1;
     cutter.getFaceCutPoints(fLabel,f,f0,pf0);
@@ -557,6 +564,7 @@ void Foam::isoAdvection::boundAlpha
     const scalar& dt
 )
 {
+    isoDebug(Info << "Enter boundAlpha" << endl;)
 
     boolList mightNeedBounding(isSurfaceCell_.size(),false); //All surface cells and their face neighbours
     forAll(mightNeedBounding,ci)
@@ -732,7 +740,8 @@ void Foam::isoAdvection::advect
 (
     const scalar& dt
 )
-{
+    isoDebug(Info << "Enter advect" << endl;)
+
     surfaceScalarField dVf(0*phi_); //Construct as copy - has same dimensions so will probably give problems. How to construct as zero's with phi's mesh etc e.g. surfaceScalarField dVf(phi.size(),0.0)?
     dVf.dimensions().reset(phi_.mesh().V().dimensions());
     isoDebug(Info << "dVf.size() = " << dVf.size() << ", mesh_.nFaces() = " << mesh_.nFaces() << endl;)
