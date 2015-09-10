@@ -17,7 +17,7 @@ FoamFile
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     isoAdvector;
+application     isoAdvect;
 
 startFrom       latestTime;
 
@@ -25,7 +25,7 @@ startTime       0.0;
 
 stopAt          endTime;
 
-endTime         4;
+endTime         3;
 
 writeControl    timeStep;
 

@@ -57,13 +57,14 @@ isoAdvector
     boundAlpha	true;
     snapAlpha	true;
     writeToLog	true;
+    period 0;
 }
 
 PIMPLE
 {
     momentumPredictor no;
-    nCorrectors     3;
-    nNonOrthogonalCorrectors 0;
+    nCorrectors     -1;
+    nNonOrthogonalCorrectors -1;
     nAlphaCorr      1;
     nAlphaSubCycles 1;
     cAlpha          1;
