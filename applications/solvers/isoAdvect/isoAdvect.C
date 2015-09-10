@@ -55,7 +55,6 @@ int main(int argc, char *argv[])
     
     Info<< "\nStarting time loop\n" << endl;
     isoAdvection advector(alpha1,phi,U,isoAdvectorDict);
-	
     while (runTime.run())
     {
         #include "readTimeControls.H"
@@ -67,6 +66,15 @@ int main(int argc, char *argv[])
 		//Advance alpha1 from time t to t+dt
 
         const scalar t = runTime.time().value();
+		if ( reverseTime > 0.0 && t > reverseTime )
+		{
+			Info<< "Reversing flow" << endl;
+			phi = -phi;
+			phi0 = -phi0;
+			U = -U;
+			U0 = -U0;
+			reverseTime = -1.0;
+		}
 		if ( period > 0.0 )
 		{
 			phi = phi0*Foam::cos(2.0*PI*t/period);

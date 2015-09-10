@@ -39,6 +39,7 @@
     const scalar clipAlphaTol = isoAdvectorDict.lookupOrDefault<scalar>("clipAlphaTol", 1e-12);
     const bool snapAlpha = isoAdvectorDict.lookupOrDefault<bool>("snapAlpha", true);
 	const scalar period = isoAdvectorDict.lookupOrDefault<scalar>("period", 0.0);
+	scalar reverseTime = isoAdvectorDict.lookupOrDefault<scalar>("reverseTime", 0.0);
 
 	//Copies of initial U and phi for use when flow is periodic
 	surfaceScalarField phi0 = phi;
