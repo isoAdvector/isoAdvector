@@ -6,8 +6,8 @@ Developed by Johan Roenby <jro@dhigroup.com>
 
 Contributors:  
 
-Tomislav Maric <tomislav@sourceflux.de> 
-Vuko Vukcevic <vuko.vukcevic@fsb.hr>
+* Tomislav Maric <tomislav@sourceflux.de>
+* Vuko Vukcevic <vuko.vukcevic@fsb.hr>
 
 # Project structure 
 
@@ -18,12 +18,14 @@ Vuko Vukcevic <vuko.vukcevic@fsb.hr>
 
 `applications/` 
 
-- `applications/utilities/postProcessing/isoCut` 
-    - Sets the initial volume fraction field. 
 - `applications/solvers/isoAdvect` 
-    - Solves the volume fraction advection equation. 
+    - Solves the volume fraction advection equation in either steady flow or periodic flow with the option of changing the flow direction at a specified time.
+- `applications/utilities/preProcessing/isoSurf` 
+    - Sets the initial volume fraction field for either a sphere, a cylinder or a plane. 
 
 ## IsoAdvection 
+
+- Calculates the total volume of water crossing each face in the mesh during the time interval from time t to time t + dt.
 
 ## IsoCutter
 
@@ -40,9 +42,10 @@ The routine was deliberately build to travel through all cells instead of all fa
 
 # Usage  
 
-1. `isoCut`
-2. `isoAdvect`
-3. ... 
+See the tests directory for examples of usage.
+For instance go to tests/discInUniFlow/hex and execute the generateCase script to make a simple case
+Go to the newly created case folder and execute the Allrun script.
+After a few seconds it should finish and inspection of the alpha1 field in Paraview will show a circular water volume going from lower left to upper right corner of the domain.
 
 ## Compilation 
 
@@ -53,6 +56,8 @@ The routine was deliberately build to travel through all cells instead of all fa
 ~~~
 
 2. Execute the `Allwmake` script. 
+
+To avoid the writing of all details from isoAdvect to log file go into Make/applications/isoAdvect/Make/options and remove the line saying -DISODEBUG (and the backslash at the end of the line above it).
 
 ## Preprocessing 
 
@@ -71,12 +76,7 @@ Add feature and improvement ideas/requests here. Some of them will be taken over
 
 ## To bring the code further:
 
-- Setup unstructured version of advectedSphere
 - Reimplement method to find isovalue that gives VOF value
-- Make switch that allows one to turn on/off debug messages from isoAdvector
-
-- Implement isoAdvector in interFoam instead of MULES: isoInterFoam
 - Setup filling tank case
 - Setup standing wave test case 
-
 - Develop and implement consistent boundary conditions for isosurface reconstruction step.

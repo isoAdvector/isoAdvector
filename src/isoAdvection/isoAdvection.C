@@ -161,7 +161,6 @@ void Foam::isoAdvection::findSurfaceCells
     {
         scalar aMin(GREAT), aMax(-GREAT);
         subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
-//        if ( (aMin < 0.5 && aMax > 0.5) )
         if ( (aMin < 0.5 && aMax > 0.5) || ( surfCellTol_ < alpha1_[ci] && alpha1_[ci] < 1.0-surfCellTol_ ) )
         {
             isSurfaceCell_[ci] = true;
@@ -197,7 +196,7 @@ void Foam::isoAdvection::calcIsoFace
         subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
         if (mag(f0-aMin) < mag(f0-aMax)) //f0 almost equal to aMin, i.e. cell almost full
         {
-            isoDebug(Info << "Cell is almost full" << endl;)
+            isoDebug(Info << "Cell is almost full with aMin = " << aMin << " and aMax = " << aMax << endl;)
             scalar f0Inside =  aMin + 1e-3*(aMax-aMin);
 			vector xdum;
             cutter.isoFaceCentreAndArea(ci,f0Inside,xdum,n0);
@@ -209,7 +208,7 @@ void Foam::isoAdvection::calcIsoFace
         }
         else if (mag(f0-aMin) > mag(f0-aMax))//f0 almost equal to aMax, i.e. cell almost empty
         {
-            isoDebug(Info << "Cell is almost empty" << endl;)
+            isoDebug(Info << "Cell is almost empty with aMin = " << aMin << " and aMax = " << aMax << endl;)
             scalar f0Inside =  aMax + 1e-3*(aMin-aMax);
 			vector xdum;
             cutter.isoFaceCentreAndArea(ci,f0Inside,xdum,n0);
@@ -326,9 +325,11 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     }
     else //calculate initialArea if face is initially cut
     {
+        isoDebug(Info << "face is initially cut, so finding initial area, pTimes = " << pTimes << ", Un0 = " << Un0 << endl;)
         isoCutter cutter(mesh_,ap_);
         initialArea = cutter.getSubFaceFraction(fLabel, -sign(Un0)*pTimes, 0.0)*mag(mesh_.Sf()[fLabel]); //does not use ap_
         scalar A(0.0), B(0.0);
+        isoDebug(Info << "Calculating quadCoeffs" << endl;)
         quadAreaCoeffs(fLabel,pTimes,t[nt],t[nt+1],A,B);
     }
 
@@ -740,6 +741,7 @@ void Foam::isoAdvection::advect
 (
     const scalar& dt
 )
+{
     isoDebug(Info << "Enter advect" << endl;)
 
     surfaceScalarField dVf(0*phi_); //Construct as copy - has same dimensions so will probably give problems. How to construct as zero's with phi's mesh etc e.g. surfaceScalarField dVf(phi.size(),0.0)?
