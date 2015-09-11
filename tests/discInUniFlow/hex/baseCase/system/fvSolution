@@ -53,8 +53,8 @@ isoAdvector
 {
     isoFaceTol	1e-8;
     surfCellTol	1e-8;
-    clipAlphaTol 0;
-    boundAlpha	false;
+    clipAlphaTol 1e-12;
+    nAlphaBounds 1;
     snapAlpha	false;
     writeToLog	true;
 }

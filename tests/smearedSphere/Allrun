@@ -6,6 +6,10 @@
 application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
 jobStart=$(date +"%Y%m%d%H%M")
 
+cd generateU
+wmake
+cd ..
+
 if [ ! -d "logs" ]; then
     mkdir logs
     cp -r 0.org 0
