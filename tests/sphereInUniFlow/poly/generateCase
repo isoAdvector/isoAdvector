@@ -3,13 +3,13 @@
 meshType=tet
 dxList=(005)
 dtList=(0.005)
-CoList=(05)
+CoList=(05_interFoam)
 
 export T=4
 export Ux=0
 export Uy=0
 export Uz=1
-export solver=isoAdvect #Change to interFoam to run with MULES
+export solver=interFoam #Change to interFoam to run with MULES
 
 for n in ${!dxList[*]} 
 do
