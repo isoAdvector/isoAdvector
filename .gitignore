@@ -29,7 +29,7 @@ faces
 # Archives
 *.tgz
 *.zip
-*.gz
+#*.gz
 *.7z
 *.bz2
 VTK
