@@ -429,7 +429,7 @@ void Foam::isoAdvection::quadAreaCoeffs
     cutter.getFaceCutPoints(fLabel,f,f1,pf1);
 
     label np0(pf0.size()), np1(pf1.size());
-//    isoDebug(Info << "Face " << fLabel << " was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;)
+    isoDebug(Info << "Face " << fLabel << " was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;)
 
 //  scalar area(0.0);
     alpha = 0.0;
@@ -447,7 +447,7 @@ void Foam::isoAdvection::quadAreaCoeffs
         }
         else
         {
-            B = A + 1e-8*(pf1[1]-pf1[0]);
+            B = A + 1e-4*(pf1[1]-pf1[0]);
         }
 
         if (np1 == 2)
@@ -456,7 +456,7 @@ void Foam::isoAdvection::quadAreaCoeffs
         }
         else
         {
-            D = C + 1e-8*(A-B);
+            D = C + 1e-4*(A-B);
         }
 
         //Defining local coordinates for area integral calculation
@@ -464,47 +464,13 @@ void Foam::isoAdvection::quadAreaCoeffs
 
         vector xhat = B-A;
         xhat -= (xhat & zhat)*zhat;
-        xhat /= mag(xhat);
-
         vector yhat = zhat ^ xhat;
+
+        isoDebug(Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = " << (yhat & zhat) << endl;)
+
+        xhat /= mag(xhat);
         yhat /= mag(yhat); //Should not be necessary
 
-//        isoDebug(Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = " << (yhat & zhat) << endl;)
-/*
-        //Defining local coordinates for area integral calculation
-        vector xhat(vector::zero), yhat, zhat;
-        zhat = mesh_.Sf()[fLabel]/mag(mesh_.Sf()[fLabel]);
-
-        if (np0 == 2)
-        {
-            xhat = pf0[1]-pf0[0];
-            xhat -= (xhat & zhat)*zhat;
-            xhat /= mag(xhat);
-        }
-        else if (np1 == 2)
-        {
-            xhat = pf1[1]-pf1[0];
-            xhat -= (xhat & zhat)*zhat;
-            xhat /= mag(xhat);
-        }
-        yhat = zhat ^ xhat;
-        yhat /= mag(yhat); //Should not be necessary
-
-
-
-        if (np0 == 1)
-        {
-            Info << "Warning: np0 == 1" << endl;
-            Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = " << (yhat & zhat) << endl;
-            pf0.append(pf0[0]);
-        }
-        else if (np1 == 1)
-        {
-            Info << "Warning: np1 == 1" << endl;
-            Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = " << (yhat & zhat) << endl;
-            pf1.append(pf1[0]);
-        }
-*/
         //Swapping pf1 points if pf0 and pf1 point in same general direction (because we want a quadrilateral ABCD where pf0 = AB and pf1 = CD)
         if ( ((B-A) & (D-C)) > 0 )
         {
@@ -529,7 +495,6 @@ void Foam::isoAdvection::quadAreaCoeffs
         //area(t) = A*t^2+B*t
         //integratedArea = A/3+B/2
     }
-//  return area;
 }
 
 

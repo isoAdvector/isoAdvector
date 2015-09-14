@@ -43,7 +43,7 @@ The routine was deliberately build to travel through all cells instead of all fa
 # Usage  
 
 See the tests directory for examples of usage.
-For instance go to tests/discInUniFlow/hex and execute the generateCase script to make a simple case
+For instance go to tests/discInUniFlow/hex and execute the generateCase script to make a simple case.
 Go to the newly created case folder and execute the Allrun script.
 After a few seconds it should finish and inspection of the alpha1 field in Paraview will show a circular water volume going from lower left to upper right corner of the domain.
 
@@ -69,14 +69,11 @@ To avoid the writing of all details from isoAdvect to log file go into Make/appl
 
 Add feature and improvement ideas/requests here. Some of them will be taken over by the development team and converted to issues. If you see an open feature request in this list that you want to take on, open an issue and leave a comment in the issue tracker.  
 
-## Bring the code to the level before the HD failure:
-
-- Setup notchedDisk/Zalesak test case (Remember stream function approach to calculating fluxes from analytical velocity field)
-- Setup scalarTransportFoam cases with HRIC, CICSAM, upwind, vanLeer01 (get setups from navalFoam cases)
-
 ## To bring the code further:
 
 - Reimplement method to find isovalue that gives VOF value
+- Setup notchedDisk/Zalesak test case (Remember stream function approach to calculating fluxes from analytical velocity field)
 - Setup filling tank case
 - Setup standing wave test case 
 - Develop and implement consistent boundary conditions for isosurface reconstruction step.
+- Setup scalarTransportFoam cases with HRIC, CICSAM, upwind, vanLeer01 (get setups from navalFoam cases)
