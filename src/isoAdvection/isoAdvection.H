@@ -95,7 +95,7 @@ class isoAdvection
     void timeIntegratedFlux
     (
         const scalar& dt,
-        scalarField& dVf
+        surfaceScalarField& dVfa
     );
 
     //- For face fLabel calculate volumetric face transport during dt given the isoFace data provided as input
@@ -146,7 +146,7 @@ class isoAdvection
     //- Adjust face volume transport across isocut outfluxing faces of each cell which is overfilled or overemptied such that cell is exaclty filled/emptied.
     void boundAlpha
     (
-        scalarField& dVf,
+        surfaceScalarField& dVfa,
         const scalar& dt
     );
 

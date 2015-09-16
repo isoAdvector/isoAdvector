@@ -63,12 +63,13 @@ Foam::isoAdvection::isoAdvection
 void Foam::isoAdvection::timeIntegratedFlux
 (
     const scalar& dt,
-    scalarField& dVf
+    surfaceScalarField& dVfa
 )
 {
     isoDebug(Info << "Enter timeIntegratedFlux" << endl;)
 
-    dVf = 0.0; //estimated total water volume transported across mesh faces during time interval dt. The sign convenctino is like the flux phi, i.e. positive means out of owner cell.
+	//Estimated total water volume transported across mesh faces during time interval dt. The sign convenctino is like the flux phi, i.e. positive means out of owner cell.
+	scalarField& dVf = dVfa.internalField();
 
     //Interpolating VOF field to mesh points
 /*  
@@ -525,12 +526,13 @@ void Foam::isoAdvection::subSetExtrema
 
 void Foam::isoAdvection::boundAlpha
 (
-    scalarField& dVf,
+    surfaceScalarField& dVfa,
     const scalar& dt
 )
 {
     isoDebug(Info << "Enter boundAlpha" << endl;)
 
+	scalarField& dVf = dVfa.internalField();
     boolList mightNeedBounding(isSurfaceCell_.size(),false); //All surface cells and their face neighbours
     forAll(mightNeedBounding,ci)
     {
@@ -708,6 +710,26 @@ void Foam::isoAdvection::advect
 {
     isoDebug(Info << "Enter advect" << endl;)
 
+	surfaceScalarField dVf
+	(
+		IOobject
+		(
+			"dVf",
+			mesh_.time().timeName(),
+			mesh_,
+			IOobject::NO_READ,
+			IOobject::NO_WRITE
+		),
+		mesh_,
+		dimensionedScalar("vol", dimVol, 0)
+    );
+    timeIntegratedFlux(dt, dVf);
+    for ( label n = 0; n < nAlphaBounds_; n++ )
+    {
+        boundAlpha(dVf,dt);
+    }
+
+/*	
     surfaceScalarField dVf(0*phi_); //Construct as copy - has same dimensions so will probably give problems. How to construct as zero's with phi's mesh etc e.g. surfaceScalarField dVf(phi.size(),0.0)?
     dVf.dimensions().reset(phi_.mesh().V().dimensions());
     isoDebug(Info << "dVf.size() = " << dVf.size() << ", mesh_.nFaces() = " << mesh_.nFaces() << endl;)
@@ -717,6 +739,7 @@ void Foam::isoAdvection::advect
     {
         boundAlpha(dVfi,dt);
     }
+*/
     alpha1_ -= fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume
     alpha1_.correctBoundaryConditions();
 }
