@@ -516,15 +516,13 @@ void Foam::isoCutter::getFaceCutPoints
     const label nPoints = pLabels.size();
     label pl1 = pLabels[0];
     scalar f1(f[0]);
-    if (mag(f1-f0) < 1e-12)
-    {
-        f1 = f0;
-    }
-//    DynamicList<point> cutPointList;
+//    if (mag(f1-f0) < 1e-12)
+//    {
+//        f1 = f0;
+//    }
     forAll(pLabels,pi)
     {
         label pl2 = pLabels[(pi+1)%nPoints];
-//        scalar f2(f[pl2]);
         scalar f2(f[(pi+1)%nPoints]);
         if (mag(f2-f0) < 1e-12)
         {
@@ -544,7 +542,6 @@ void Foam::isoCutter::getFaceCutPoints
         pl1 = pl2;
         f1 = f2;
     }
-//    cutPoints = cutPointList;
 }
 
 void Foam::isoCutter::fullySubmergedFaces

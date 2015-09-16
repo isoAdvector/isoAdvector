@@ -77,7 +77,7 @@ void Foam::isoAdvection::timeIntegratedFlux
 	const labelListList& pCells = mesh_.pointCells();
     forAll(pCells,pi)
     {
-        const labelList pci = pCells[pi];
+        const labelList& pci = pCells[pi];
         ap_[pi] = 0.0;
         scalar vol(0.0);
         forAll(pci,ci)
@@ -170,7 +170,7 @@ void Foam::isoAdvection::findSurfaceCells
         }
     }
     surfaceCells.shrink();
-    isoDebug(Info << "\nnSurfaceCells = " << surfaceCells.size() << endl;)
+    Info << "\nnSurfaceCells = " << surfaceCells.size() << endl;
 }
 
 void Foam::isoAdvection::calcIsoFace
@@ -255,8 +255,8 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     scalar dVf(0.0); //Volume flowing through face in time interval [0,dt] to be calculated below
 
     //Find sorted list of times where the isoFace will arrive at face points given initial position x0 and velocity Un0*n0
-    labelList pLabels = mesh_.faces()[fLabel];
-    label nPoints = pLabels.size();
+    const labelList& pLabels = mesh_.faces()[fLabel];
+    const label nPoints = pLabels.size();
     pointField fPts(nPoints);
     forAll(fPts,pi)
     {
@@ -364,7 +364,7 @@ void Foam::isoAdvection::getOutFluxFaces
 )
 {
     const cellList& cells = mesh_.cells();
-    const labelList fLabels = cells[ci];
+    const labelList& fLabels = cells[ci];
     forAll(fLabels,fi)
     {
         const label fLabel = fLabels[fi];
@@ -543,7 +543,7 @@ void Foam::isoAdvection::boundAlpha
         else
         {
             const cellList& cells = mesh_.cells();
-            const labelList cellFaces = cells[ci];
+            const labelList& cellFaces = cells[ci];
             forAll(cellFaces,fi)
             {
                 label othCell = otherCell(cellFaces[fi],ci);
@@ -681,7 +681,7 @@ Foam::scalar Foam::isoAdvection::netFlux
 )
 {
     scalar dV = 0.0; //Net volume of water leaving cell cLabel. If dV is negative, cLabel, receives water from neighbours.
-    const labelList fLabels = mesh_.cells()[cLabel];
+    const labelList& fLabels = mesh_.cells()[cLabel];
     forAll(fLabels,fi)
     {
         const label fLabel = fLabels[fi];
@@ -728,19 +728,8 @@ void Foam::isoAdvection::advect
     {
         boundAlpha(dVf,dt);
     }
-
-/*	
-    surfaceScalarField dVf(0*phi_); //Construct as copy - has same dimensions so will probably give problems. How to construct as zero's with phi's mesh etc e.g. surfaceScalarField dVf(phi.size(),0.0)?
-    dVf.dimensions().reset(phi_.mesh().V().dimensions());
-    isoDebug(Info << "dVf.size() = " << dVf.size() << ", mesh_.nFaces() = " << mesh_.nFaces() << endl;)
-    scalarField& dVfi = dVf;
-    timeIntegratedFlux(dt, dVfi);
-    for ( label n = 0; n < nAlphaBounds_; n++ )
-    {
-        boundAlpha(dVfi,dt);
-    }
-*/
-    alpha1_ -= fvc::surfaceIntegrate(dVf); //For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume
+	//For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume
+    alpha1_ -= fvc::surfaceIntegrate(dVf); 
     alpha1_.correctBoundaryConditions();
 }
 
