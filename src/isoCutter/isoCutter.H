@@ -82,8 +82,8 @@ class isoCutter
     //  If cell is strictly below isosurface (i.e. all vertex function values are strictly above f0_) fullySubmerged will be true.
     void isoCutCell
     (
-        const label&,
-        const scalar&,
+        const label,
+        const scalar,
         DynamicList<label>&,
         DynamicList<label>&,
         DynamicList<scalar>&,
@@ -93,8 +93,8 @@ class isoCutter
     //- For a cell search through its faces and find first cut edge
     void findACutFaceEdgePair
     (
-        const label& cellI,
-        const scalar&,
+        const label cellI,
+        const scalar,
         label& cutFace,
         label& cutEdge,
         scalar& cutPoint,
@@ -104,8 +104,8 @@ class isoCutter
     //- Starting from a specified cell face-edge pair find next cut face-edge pair
     void findNextCut
     (
-        const label& cellI,
-        const scalar&,
+        const label cellI,
+        const scalar,
         label& cellFace,
         label& edge,
         scalar& cutPoint
@@ -114,7 +114,7 @@ class isoCutter
     //- For a given cell face-edge pair find the other cell face-edge of the same cell edge
     void otherEdgeFace
     (
-        const label& cellI,
+        const label cellI,
         label& cellFace,
         label& edge
     );
@@ -132,8 +132,8 @@ class isoCutter
     //- Return labels of all cell faces with all points strictly below isosurface
     void fullySubmergedFaces
     (
-        const label& cellI,
-        const scalar& f0,
+        const label cellI,
+        const scalar f0,
         DynamicList<label>& fullSubFaces
     );
 
@@ -203,7 +203,7 @@ class isoCutter
     //- For a given face label return its pointField representation
     void getFacePoints
     (
-        const label&,
+        const label,
         pointField&
     );
 
@@ -227,7 +227,7 @@ public:
         //- Cell volume fractions beneath isosurface
         void subCellFractions
         (
-            const scalar&,
+            const scalar,
             volScalarField&
         );
 
@@ -249,46 +249,46 @@ public:
         void vofCutCells
         (
             const volScalarField& alpha1,
-            const scalar& tol,
-            const label& maxIter,
+            const scalar tol,
+            const label maxIter,
             volScalarField& f0
         );
 
         //- Faces area fractions beneath isosurface
         void subFaceFractions
         (
-            const scalar& f0,
+            const scalar f0,
             surfaceScalarField&
         );
 
         void subFaceFraction
         (
-            const label& fi,
-            const scalar& f0,
+            const label fi,
+            const scalar f0,
             scalar& alphaf
         );
 
         //- Cuts a face at intersection with isosurface and returns lower subface
         bool getSubFace
         (
-            const label& faceLabel,
-            const scalar& f0,
+            const label faceLabel,
+            const scalar f0,
             pointField& partSubFacePts
         );
 
         //- Subface fraction with face label, face vertex values and isovalue specified
         scalar getSubFaceFraction
         (
-            const label& faceLabel,
+            const label faceLabel,
             const scalarField& f,
-            const scalar& f0
+            const scalar f0
         );
 
 
         //- Return cutPoints for a given face - will typically contain 0 or 2 points. May be 1 point if face just touched by surface. May in rare cases be > 2 points if f-f0 changes sign more than twice along face
         void getFaceCutPoints
         (
-            const label& fLabel,
+            const label fLabel,
             const scalar f0,
             DynamicList<point>& cutPoints
         );
@@ -296,7 +296,7 @@ public:
         //- Return cutPoints for a given face as above but with field values in points specified by input scalarField f.
         void getFaceCutPoints
         (
-            const label& fLabel,
+            const label fLabel,
             const scalarField& f,
             const scalar f0,
             DynamicList<point>& cutPoints
@@ -315,10 +315,10 @@ public:
         //-
         void vofCutCell
         (
-            const label& cellI,
-            const scalar& vof,
-            const scalar& tol,
-            const label& maxIter,
+            const label cellI,
+            const scalar vof,
+            const scalar tol,
+            const label maxIter,
             scalar& vofout,
             vector& subCellCtr
         );
@@ -326,8 +326,8 @@ public:
 
         void isoFaceCentreAndArea
         (
-            const label& cLabel,
-            const scalar& f0,
+            const label cLabel,
+            const scalar f0,
             vector& faceCentre,
             vector& faceArea
         );

@@ -52,10 +52,10 @@ Foam::isoCutter::isoCutter
 
 void Foam::isoCutter::vofCutCell
 (
-    const label& ci,
-    const scalar& alpha1,
-    const scalar& tol,
-    const label& maxIter,
+    const label ci,
+    const scalar alpha1,
+    const scalar tol,
+    const label maxIter,
     scalar& f0,
     vector& subCellCtr
 )
@@ -110,8 +110,8 @@ void Foam::isoCutter::vofCutCell
 
 void Foam::isoCutter::isoCutCell
 (
-    const label& cellI,
-    const scalar& f0,
+    const label cellI,
+    const scalar f0,
     DynamicList<label>& cutFaces,
     DynamicList<label>& cutEdges,
     DynamicList<scalar>& cutPoints,
@@ -148,8 +148,8 @@ void Foam::isoCutter::isoCutCell
 
 void Foam::isoCutter::findACutFaceEdgePair
 (
-    const label& cellI,
-    const scalar& f0,
+    const label cellI,
+    const scalar f0,
     label& cutFace,
     label& cutEdge,
     scalar& cutPoint,
@@ -197,8 +197,8 @@ void Foam::isoCutter::findACutFaceEdgePair
 
 void Foam::isoCutter::findNextCut
 (
-    const label& cellI,
-    const scalar& f0,
+    const label cellI,
+    const scalar f0,
     label& cellFace,
     label& edge,
     scalar& cutPoint
@@ -239,7 +239,7 @@ void Foam::isoCutter::findNextCut
 
 void Foam::isoCutter::otherEdgeFace
 (
-    const label& cellI,
+    const label cellI,
     label& cellFace,
     label& edge
 )
@@ -337,8 +337,8 @@ void Foam::isoCutter::getIsoFace
 
 bool Foam::isoCutter::getSubFace
 (
-    const label& faceLabel,
-    const scalar& f0,
+    const label faceLabel,
+    const scalar f0,
     pointField& partSubFacePts
 )
 {
@@ -386,9 +386,9 @@ bool Foam::isoCutter::getSubFace
 
 Foam::scalar Foam::isoCutter::getSubFaceFraction
 (
-    const label& faceLabel,
+    const label faceLabel,
     const scalarField& f,
-    const scalar& f0
+    const scalar f0
 )
 {
     const faceList& faces = mesh_.faces();
@@ -452,7 +452,7 @@ Foam::scalar Foam::isoCutter::getSubFaceFraction
 
 void Foam::isoCutter::getFaceCutPoints
 (
-    const label& fLabel,
+    const label fLabel,
     const scalar f0,
     DynamicList<point>& cutPoints
 )
@@ -502,7 +502,7 @@ void Foam::isoCutter::getFaceCutPoints
 
 void Foam::isoCutter::getFaceCutPoints
 (
-    const label& fLabel,
+    const label fLabel,
     const scalarField& f,
     const scalar f0,
     DynamicList<point>& cutPoints
@@ -549,8 +549,8 @@ void Foam::isoCutter::getFaceCutPoints
 
 void Foam::isoCutter::fullySubmergedFaces
 (
-    const label& cellI,
-    const scalar& f0,
+    const label cellI,
+    const scalar f0,
     DynamicList<label>& fullSubFaces
 )
 {
@@ -637,7 +637,7 @@ void Foam::isoCutter::writeFacesToPlyFile
 
 void Foam::isoCutter::subFaceFractions
 (
-    const scalar& f0,
+    const scalar f0,
     surfaceScalarField& alphaf
 )
 {
@@ -650,8 +650,8 @@ void Foam::isoCutter::subFaceFractions
 
 void Foam::isoCutter::subFaceFraction
 (
-    const label& fi,
-    const scalar& f0,
+    const label fi,
+    const scalar f0,
     scalar& alphaf
 )
 {
@@ -672,8 +672,8 @@ void Foam::isoCutter::subFaceFraction
 
 void Foam::isoCutter::isoFaceCentreAndArea
 (
-    const label& ci,
-    const scalar& f0,
+    const label ci,
+    const scalar f0,
     vector& faceCentre,
     vector& faceArea
 )
@@ -697,7 +697,7 @@ void Foam::isoCutter::isoFaceCentreAndArea
 
 void Foam::isoCutter::subCellFractions
 (
-    const scalar& f0,
+    const scalar f0,
     volScalarField& alpha1
 )
 {
@@ -712,8 +712,8 @@ void Foam::isoCutter::subCellFractions
 void Foam::isoCutter::vofCutCells
 (
     const volScalarField& alpha1,
-    const scalar& tol,
-    const label& maxIter,
+    const scalar tol,
+    const label maxIter,
     volScalarField& f0
 )
 {
@@ -999,7 +999,7 @@ void Foam::isoCutter::getFacePoints
 
 void Foam::isoCutter::getFacePoints
 (
-    const label& faceLabel,
+    const label faceLabel,
     pointField& fp
 )
 {
