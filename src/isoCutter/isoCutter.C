@@ -453,8 +453,8 @@ Foam::scalar Foam::isoCutter::getSubFaceFraction
 void Foam::isoCutter::getFaceCutPoints
 (
     const label& fLabel,
-    const scalar& f0,
-    pointField& cutPoints
+    const scalar f0,
+    DynamicList<point>& cutPoints
 )
 {
     const faceList& faces = mesh_.faces();
@@ -469,7 +469,7 @@ void Foam::isoCutter::getFaceCutPoints
         f1 = f0;
     }
     Info << "face values differences from f0: ";
-    DynamicList<point> cutPointList;
+//    DynamicList<point> cutPointList;
     forAll(pLabels,pi)
     {
         label pl2 = pLabels[(pi+1)%nPoints];
@@ -487,24 +487,24 @@ void Foam::isoCutter::getFaceCutPoints
         {
             scalar s = (f0-f1)/(f2-f1);
             point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
-            cutPointList.append(pCut);
+            cutPoints.append(pCut);
         }
         else if ( f1 == f0 )
         {
-            cutPointList.append(points[pl1]);
+            cutPoints.append(points[pl1]);
         }
         pl1 = pl2;
         f1 = f2;
     }
     Info << "." << endl;
-    cutPoints = cutPointList;
+//    cutPoints = cutPointList;
 }
 
 void Foam::isoCutter::getFaceCutPoints
 (
     const label& fLabel,
     const scalarField& f,
-    const scalar& f0,
+    const scalar f0,
     DynamicList<point>& cutPoints
 )
 {
@@ -512,7 +512,7 @@ void Foam::isoCutter::getFaceCutPoints
     const faceList& faces = mesh_.faces();
     const pointField& points = mesh_.points();
 
-    const labelList pLabels = faces[fLabel];
+    const labelList& pLabels = faces[fLabel];
     const label nPoints = pLabels.size();
     label pl1 = pLabels[0];
     scalar f1(f[0]);

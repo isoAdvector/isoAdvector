@@ -62,7 +62,7 @@ Foam::isoAdvection::isoAdvection
 
 void Foam::isoAdvection::timeIntegratedFlux
 (
-    const scalar& dt,
+    const scalar dt,
     surfaceScalarField& dVfa
 )
 {
@@ -175,7 +175,7 @@ void Foam::isoAdvection::findSurfaceCells
 
 void Foam::isoAdvection::calcIsoFace
 (
-    const label& ci,
+    const label ci,
     vector& x0,
     vector& n0,
     scalar& f0,
@@ -242,12 +242,12 @@ void Foam::isoAdvection::calcIsoFace
 
 Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 (
-    const label& fLabel,
+    const label fLabel,
     const vector& x0,
     const vector& n0,
-    const scalar& Un0,
-    const scalar& f0,
-    const scalar& dt
+    const scalar Un0,
+    const scalar f0,
+    const scalar dt
 )
 {
     isoDebug(Info << "Enter timeIntegratedFlux for face " << fLabel << endl;)
@@ -359,7 +359,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 
 void Foam::isoAdvection::getOutFluxFaces
 (
-    const label& ci,
+    const label ci,
     DynamicList<label>& outFluxingFaces
 )
 {
@@ -391,8 +391,8 @@ void Foam::isoAdvection::getOutFluxFaces
 
 Foam::label Foam::isoAdvection::otherCell
 (
-    const label& fLabel,
-    const label& cLabel
+    const label fLabel,
+    const label cLabel
 )
 {
     label otherCellLabel(-1);
@@ -413,10 +413,10 @@ Foam::label Foam::isoAdvection::otherCell
 
 void Foam::isoAdvection::quadAreaCoeffs
 (
-    const label& fLabel,
+    const label fLabel,
     const scalarField& f,
-    const scalar& f0,
-    const scalar& f1,
+    const scalar f0,
+    const scalar f1,
     scalar& alpha,
     scalar& beta
 )
@@ -527,7 +527,7 @@ void Foam::isoAdvection::subSetExtrema
 void Foam::isoAdvection::boundAlpha
 (
     surfaceScalarField& dVfa,
-    const scalar& dt
+    const scalar dt
 )
 {
     isoDebug(Info << "Enter boundAlpha" << endl;)
@@ -677,7 +677,7 @@ void Foam::isoAdvection::boundAlpha
 Foam::scalar Foam::isoAdvection::netFlux
 (
     const scalarField& dVf,
-    const label& cLabel
+    const label cLabel
 )
 {
     scalar dV = 0.0; //Net volume of water leaving cell cLabel. If dV is negative, cLabel, receives water from neighbours.
@@ -705,7 +705,7 @@ Foam::scalar Foam::isoAdvection::netFlux
 
 void Foam::isoAdvection::advect
 (
-    const scalar& dt
+    const scalar dt
 )
 {
     isoDebug(Info << "Enter advect" << endl;)

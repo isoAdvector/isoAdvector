@@ -94,42 +94,42 @@ class isoAdvection
     //- For each face calculate volumetric face transport during dt
     void timeIntegratedFlux
     (
-        const scalar& dt,
+        const scalar dt,
         surfaceScalarField& dVfa
     );
 
     //- For face fLabel calculate volumetric face transport during dt given the isoFace data provided as input
     scalar timeIntegratedFlux
     (
-        const label& fLabel,
+        const label fLabel,
         const vector& x0,
         const vector& n0,
-        const scalar& Un0,
-        const scalar& f0,
-        const scalar& dt
+        const scalar Un0,
+        const scalar f0,
+        const scalar dt
     );
 
     //- For cell ci return labels of faces fluxing out of this cell (based on sign of phi)
     void getOutFluxFaces
     (
-        const label& ci,
+        const label ci,
         DynamicList<label>& outFluxingFaces
     );
 
     //- For face fLabel of cell cLabel return label of other cell sharing face fLabel
     label otherCell
     (
-        const label& fLabel,
-        const label& cLabel
+        const label fLabel,
+        const label cLabel
     );
 
     //- For face fLabel calculate polynomial coefficients A and B for time integrated area between isocutting lines with isovalues f0 and f1 given vertex values f
     void quadAreaCoeffs
     (
-        const label& fLabel,
+        const label fLabel,
         const scalarField& f,
-        const scalar& f0,
-        const scalar& f1,
+        const scalar f0,
+        const scalar f1,
         scalar& A,
         scalar& B
     );
@@ -147,14 +147,14 @@ class isoAdvection
     void boundAlpha
     (
         surfaceScalarField& dVfa,
-        const scalar& dt
+        const scalar dt
     );
 
     //- Given the face volume transport dVf calculates the total volume leaving cell cLabel 
     scalar netFlux
     (
         const scalarField& dVf,
-        const label& cLabel
+        const label cLabel
     );
 
     //- Find all surface cells
@@ -167,7 +167,7 @@ class isoAdvection
     //- Also calculates and returns the isoFace velocity normal to itself.
     void calcIsoFace
     (
-        const label& ci,
+        const label ci,
         vector& x0,
         vector& n0,
         scalar& f0,
@@ -190,7 +190,7 @@ class isoAdvection
     //- Update the alpha1 field to the next time step
     void advect
     (
-        const scalar& dt
+        const scalar dt
     );
 
 };
