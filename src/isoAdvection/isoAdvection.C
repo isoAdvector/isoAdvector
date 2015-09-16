@@ -71,7 +71,7 @@ void Foam::isoAdvection::timeIntegratedFlux
     dVf = 0.0; //estimated total water volume transported across mesh faces during time interval dt. The sign convenctino is like the flux phi, i.e. positive means out of owner cell.
 
     //Interpolating VOF field to mesh points
-  
+/*  
 	//Testing 
 	const labelListList& pCells = mesh_.pointCells();
     forAll(pCells,pi)
@@ -88,9 +88,10 @@ void Foam::isoAdvection::timeIntegratedFlux
         ap_[pi] /= vol;
     }
 //	isoDebug(Info << "Using cell volume weighted cell-point interpolation" << endl;)
+*/
 
-//    volPointInterpolation vpi(mesh_);
-//    ap_ = vpi.interpolate(alpha1_);
+    volPointInterpolation vpi(mesh_);
+    ap_ = vpi.interpolate(alpha1_);
 
     //Construction of isosurface calculator to get access to its functionality
     isoCutter cutter(mesh_,ap_);
@@ -299,15 +300,12 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     t.append(0.0);
     forAll(sortedTimes,ti)
     {
-        if ( 0.0 < sortedTimes[ti] && sortedTimes[ti] < dt )
+        if ( 1e-3*dt < sortedTimes[ti] && sortedTimes[ti] < (1-1e-3)*dt )
         {
             t.append(sortedTimes[ti]);
         }
     }
-    if ( mag(t.last()-dt) > 1e-3*dt )
-    {
-        t.append(dt);
-    }
+    t.append(dt);
     isoDebug(Info << "Cutting sortedTimes at 0 and dt: t = " << t << endl;)
 
     bool faceUncutInFirstInterval(sortedTimes[0] > 0.0);
@@ -424,7 +422,7 @@ void Foam::isoAdvection::quadAreaCoeffs
 {
     isoDebug(Info << "Enter quadAreaCoeffs" << endl;)
     isoCutter cutter(mesh_,ap_);
-    pointField pf0, pf1;
+    DynamicList<point> pf0, pf1;
     cutter.getFaceCutPoints(fLabel,f,f0,pf0);
     cutter.getFaceCutPoints(fLabel,f,f1,pf1);
 
@@ -464,12 +462,13 @@ void Foam::isoAdvection::quadAreaCoeffs
 
         vector xhat = B-A;
         xhat -= (xhat & zhat)*zhat;
+        xhat /= mag(xhat);
+
         vector yhat = zhat ^ xhat;
+        yhat /= mag(yhat); //Should not be necessary
 
         isoDebug(Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = " << (yhat & zhat) << endl;)
 
-        xhat /= mag(xhat);
-        yhat /= mag(yhat); //Should not be necessary
 
         //Swapping pf1 points if pf0 and pf1 point in same general direction (because we want a quadrilateral ABCD where pf0 = AB and pf1 = CD)
         if ( ((B-A) & (D-C)) > 0 )

@@ -28,6 +28,12 @@ License
 #include "interpolationCellPoint.H"
 //#include "isoSubCell.H"
 
+#ifdef ISODEBUG
+#define isoDebug(x) x
+#else
+#define isoDebug(x) 
+#endif 
+
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 Foam::isoCutter::isoCutter
@@ -499,28 +505,28 @@ void Foam::isoCutter::getFaceCutPoints
     const label& fLabel,
     const scalarField& f,
     const scalar& f0,
-    pointField& cutPoints
+    DynamicList<point>& cutPoints
 )
 {
+	isoDebug(Info << "Enter getFaceCutPoints" << endl;)
     const faceList& faces = mesh_.faces();
     const pointField& points = mesh_.points();
 
     const labelList pLabels = faces[fLabel];
     const label nPoints = pLabels.size();
     label pl1 = pLabels[0];
-//  scalar f1(f_[pl1]);
     scalar f1(f[0]);
-    if (mag(f1-f0) < 1e-10)
+    if (mag(f1-f0) < 1e-12)
     {
         f1 = f0;
     }
-    DynamicList<point> cutPointList;
+//    DynamicList<point> cutPointList;
     forAll(pLabels,pi)
     {
         label pl2 = pLabels[(pi+1)%nPoints];
 //        scalar f2(f[pl2]);
         scalar f2(f[(pi+1)%nPoints]);
-        if (mag(f2-f0) < 1e-10)
+        if (mag(f2-f0) < 1e-12)
         {
             f2 = f0;
         }
@@ -529,16 +535,16 @@ void Foam::isoCutter::getFaceCutPoints
         {
             scalar s = (f0-f1)/(f2-f1);
             point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
-            cutPointList.append(pCut);
+            cutPoints.append(pCut);
         }
         else if ( f1 == f0 )
         {
-            cutPointList.append(points[pl1]);
+            cutPoints.append(points[pl1]);
         }
         pl1 = pl2;
         f1 = f2;
     }
-    cutPoints = cutPointList;
+//    cutPoints = cutPointList;
 }
 
 void Foam::isoCutter::fullySubmergedFaces

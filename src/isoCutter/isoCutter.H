@@ -299,7 +299,7 @@ public:
             const label& fLabel,
             const scalarField& f,
             const scalar& f0,
-            pointField& cutPoints
+            DynamicList<point>& cutPoints
         );
 
 
