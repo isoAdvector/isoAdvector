@@ -150,6 +150,13 @@ class isoAdvection
         const scalar dt
     );
 
+    //- Adjust face volume transport across isocut outfluxing faces of each cell which is overfilled or overemptied such that cell is exaclty filled/emptied.
+    void boundAlpha2
+    (
+        surfaceScalarField& dVfa,
+        const scalar dt
+    );
+
     //- Given the face volume transport dVf calculates the total volume leaving cell cLabel 
     scalar netFlux
     (

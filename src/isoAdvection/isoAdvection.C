@@ -115,7 +115,7 @@ void Foam::isoAdvection::timeIntegratedFlux
         }
         if (donorCell != -1)
         {
-            dVf[fi] = phi_[fi]*alpha1_[donorCell]*dt;
+            dVf[fi] = phi_[fi]*max(min(1,alpha1_[donorCell]),0)*dt;
         }
         else
         {
@@ -163,7 +163,8 @@ void Foam::isoAdvection::findSurfaceCells
     {
         scalar aMin(GREAT), aMax(-GREAT);
         subSetExtrema(ap_,mesh_.cellPoints()[ci],aMin,aMax);
-        if ( (aMin < 0.5 && aMax > 0.5) || ( surfCellTol_ < alpha1_[ci] && alpha1_[ci] < 1.0-surfCellTol_ ) )
+//        if ( (aMin < 0.5 && aMax > 0.5) || ( surfCellTol_ < alpha1_[ci] && alpha1_[ci] < 1.0-surfCellTol_ ) )
+        if ( ( surfCellTol_ < alpha1_[ci] && alpha1_[ci] < 1.0-surfCellTol_ ) )
         {
             isSurfaceCell_[ci] = true;
             surfaceCells.append(ci);
@@ -327,9 +328,9 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
         isoDebug(Info << "face is initially cut, so finding initial area, pTimes = " << pTimes << ", Un0 = " << Un0 << endl;)
         isoCutter cutter(mesh_,ap_);
         initialArea = cutter.getSubFaceFraction(fLabel, -sign(Un0)*pTimes, 0.0)*mag(mesh_.Sf()[fLabel]); //does not use ap_
-        scalar A(0.0), B(0.0);
-        isoDebug(Info << "Calculating quadCoeffs" << endl;)
-        quadAreaCoeffs(fLabel,pTimes,t[nt],t[nt+1],A,B);
+//        scalar A(0.0), B(0.0);
+//        isoDebug(Info << "Calculating quadCoeffs" << endl;)
+//        quadAreaCoeffs(fLabel,pTimes,t[nt],t[nt+1],A,B);
     }
 
     isoDebug(Info << "InitialArea for next time step corresponds to face phase fraction a0 = " << initialArea/mag(mesh_.Sf()[fLabel]) << " where |Sf| = " << mag(mesh_.Sf()[fLabel]) << " was used." << endl;)
@@ -444,19 +445,27 @@ void Foam::isoAdvection::quadAreaCoeffs
         {
             B = pf0[1];
         }
-        else
+        else if ( np0 == 1 )
         {
             B = A + 1e-4*(pf1[1]-pf1[0]);
         }
+		else
+		{
+			Info << "Warning: Face " << fLabel << " was cut at " << pf0 << " by f0 = " << f0 << endl;			
+		}
 
         if (np1 == 2)
         {
             D = pf1[1];
         }
-        else
+        else if ( np1 == 1 )
         {
             D = C + 1e-4*(A-B);
         }
+		else
+		{
+			Info << "Warning: Face " << fLabel << " was cut at " << pf1 << " by f1 = " << f1 << endl;			
+		}
 
         //Defining local coordinates for area integral calculation
         vector zhat = mesh_.Sf()[fLabel]/mag(mesh_.Sf()[fLabel]);
@@ -533,6 +542,17 @@ void Foam::isoAdvection::boundAlpha
     isoDebug(Info << "Enter boundAlpha" << endl;)
 
 	scalarField& dVf = dVfa.internalField();
+    boolList mightNeedBounding(isSurfaceCell_.size(),true); //All surface cells and their face neighbours
+	
+	scalarField alphaNew = alpha1_ - fvc::surfaceIntegrate(dVfa); 
+	scalar bTol = 1e-12;
+	scalar nUndershoots = sum(neg(alphaNew+bTol));
+	scalar nOvershoots = sum(pos(alphaNew-1-bTol));
+	scalar maxAlphaMinus1 = max(alphaNew-1);
+	scalar minAlpha = min(alphaNew);
+	Info << "Before bounding: nOvershoots = " << nOvershoots << " with max(alphaNew-1) = " << maxAlphaMinus1 << " and nUndershoots = " << nUndershoots << " with min(alphaNew) = " << minAlpha << endl;
+
+/*
     boolList mightNeedBounding(isSurfaceCell_.size(),false); //All surface cells and their face neighbours
     forAll(mightNeedBounding,ci)
     {
@@ -554,7 +574,7 @@ void Foam::isoAdvection::boundAlpha
             }
         }
     }
-
+*/
     isoDebug(Info << "\nBounding transport from above" << endl;)
 
     forAll(isSurfaceCell_,ci)
@@ -564,7 +584,7 @@ void Foam::isoAdvection::boundAlpha
             scalar waterGain = -netFlux(dVf,ci);
             scalar availableSpace = (1.0-alpha1_[ci])*(mesh_.V()[ci]);
 
-            if (waterGain > availableSpace) //convert face air outfluxes to fractions of available air that is fluxed out
+            if (waterGain > availableSpace + bTol*mesh_.V()[ci]) //convert face air outfluxes to fractions of available air that is fluxed out
             {
                 isoDebug(Info << "\nCell " << ci << " with alpha1 = " << alpha1_[ci] << " has a waterGain = " << waterGain << " and availableSpace = " << availableSpace << "." << endl;)
                 isoDebug(Info << "This waterGain would give a new alpha1 - 1 = " << (alpha1_[ci] + waterGain/mesh_.V()[ci] - 1.0) << endl;)
@@ -623,7 +643,7 @@ void Foam::isoAdvection::boundAlpha
             scalar waterLost = netFlux(dVf,ci);
             scalar availableWater = alpha1_[ci]*(mesh_.V()[ci]);
 
-            if (waterLost > availableWater) //convert face air outfluxes to fractions of available air that is fluxed out
+            if (waterLost > availableWater + bTol*mesh_.V()[ci]) //convert face air outfluxes to fractions of available air that is fluxed out
             {
                 isoDebug(Info << "\nCell " << ci << " with alpha1 = " << alpha1_[ci] << " has a waterLost = " << waterLost << " and availableWater = " << availableWater << "." << endl;)
                 isoDebug(Info << "This waterLost would give a new alpha1 = " << (alpha1_[ci] - waterLost/mesh_.V()[ci]) << endl;)
@@ -672,7 +692,30 @@ void Foam::isoAdvection::boundAlpha
             }
         }
     }
+
+	alphaNew = alpha1_ - fvc::surfaceIntegrate(dVfa); 
+    nUndershoots = sum(neg(alphaNew+bTol));
+    nOvershoots = sum(pos(alphaNew-1-bTol));
+	maxAlphaMinus1 = max(alphaNew-1);
+	minAlpha = min(alphaNew);
+	Info << "After bounding: nOvershoots = " << nOvershoots << " with max(alphaNew-1) = " << maxAlphaMinus1 << " and nUndershoots = " << nUndershoots << " with min(alphaNew) = " << minAlpha << endl;
 }
+
+void Foam::isoAdvection::boundAlpha2
+(
+    surfaceScalarField& dVfa,
+    const scalar dt
+)
+{
+    isoDebug(Info << "Enter boundAlpha2" << endl;)
+
+	scalarField& dVf = dVfa.internalField();
+
+	scalarField alphaNew = alpha1_ - fvc::surfaceIntegrate(dVfa); 
+	scalar bTol = 1e-12;
+	
+}
+
 
 Foam::scalar Foam::isoAdvection::netFlux
 (

@@ -107,6 +107,8 @@ int main(int argc, char *argv[])
              << ",\t 1-max(alpha1) = " << 1-aMax << " at cell " << lMax
              << ",\t min(alpha1) = " << aMin << " at cell " << lMin << endl;
         
+        runTime.write();
+
         //Clip and snap alpha1 to ensure strict boundedness to machine precision
         if ( clipAlphaTol > 0.0 )
         {
@@ -117,7 +119,6 @@ int main(int argc, char *argv[])
             alpha1 = min(1.0,max(0.0,alpha1));
         }
         
-        runTime.write();
         
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
