@@ -539,28 +539,54 @@ bool Foam::isoAdvection::limitFluxes
     const scalar dt
 )
 {
-	Info << "Bound from above... " << endl;
-	scalarField alpha1 = alpha1_;
-	scalarField dVfcorrected = dVf.internalField();
-	DynamicList<label> correctedFaces;
-	boundFromAbove(alpha1,dt,dVfcorrected,correctedFaces);
-	forAll(correctedFaces,fi)
 	{
-		label fLabel = correctedFaces[fi];
-		dVf[fLabel] = dVfcorrected[fLabel];
+		Info << "Checking that sign(dVf) = sign(phi) and  |dVf| <= phi*dt for all faces..." << endl;
+		scalarField dVfi = dVf.internalField();
+		label nProblems = 0;
+		forAll(dVfi,fLabel)
+		{
+			if ( mag(dVfi[fLabel]) > mag(phi_[fLabel]*dt) )
+			{
+				Info << "Warning: mag(dVfi[fLabel]) > mag(phi_[fLabel]*dt) for face " << fLabel << endl; 
+				nProblems++;
+			}
+			if ( sign(dVfi[fLabel]) != sign(phi_[fLabel]) )
+			{
+				Info << "Warning: sign(dVfi[fLabel]) != sign(phi_[fLabel]) for face " << fLabel << endl; 
+				nProblems++;
+			}
+		}
+		if ( nProblems < 1 )
+		{
+			Info << "No problems detected" << endl;
+		}
 	}
-		
-	Info << "Bound from below... " << endl;
-    alpha1 -= fvc::surfaceIntegrate(dVf); 
-	alpha1 = 1 - alpha1;
-	dVfcorrected = phi_.internalField()*dt - dVf; //phi_ and dVf have same sign and dVf is the portion of phi_*dt that is water. 
-	//If phi_ > 0 then dVf > 0 and mag(phi_*dt-dVf) < mag(phi_*dt) as it should. 
-	//If phi_ < 0 then dVf < 0 and mag(phi_*dt-dVf) < mag(phi_*dt) as it should. 
-	boundFromAbove(alpha1,dt,dVfcorrected,correctedFaces);
-	forAll(correctedFaces,fi)
+
+	Info << "Bound from above... " << endl;
 	{
-		label fLabel = correctedFaces[fi];
-		dVf[fLabel] = phi_[fLabel]*dt - dVfcorrected[fLabel];
+		scalarField dVfcorrected = dVf.internalField();
+		DynamicList<label> correctedFaces;
+		boundFromAbove(alpha1_,dt,dVfcorrected,correctedFaces);
+		forAll(correctedFaces,fi)
+		{
+			label fLabel = correctedFaces[fi];
+			dVf[fLabel] = dVfcorrected[fLabel];
+		}
+	}
+
+	{
+		Info << "Bound from below... " << endl;
+		scalarField alpha2 = 1 - alpha1_.internalField();
+		scalarField dVfcorrected = phi_.internalField()*dt - dVf; //phi_ and dVf have same sign and dVf is the portion of phi_*dt that is water. 
+		//If phi_ > 0 then dVf > 0 and mag(phi_*dt-dVf) < mag(phi_*dt) as it should. 
+		//If phi_ < 0 then dVf < 0 and mag(phi_*dt-dVf) < mag(phi_*dt) as it should. 
+		DynamicList<label> correctedFaces;
+		boundFromAbove(alpha2,dt,dVfcorrected,correctedFaces);
+		forAll(correctedFaces,fi)
+		{
+			label fLabel = correctedFaces[fi];
+			dVf[fLabel] = phi_[fLabel]*dt - dVfcorrected[fLabel];
+		}
 	}
 
 	//Check if still unbounded
@@ -572,6 +598,7 @@ bool Foam::isoAdvection::limitFluxes
 	scalar minAlpha = min(alphaNew);
 	Info << "After bounding: nOvershoots = " << nOvershoots << " with max(alphaNew-1) = " << maxAlphaMinus1 << " and nUndershoots = " << nUndershoots << " with min(alphaNew) = " << minAlpha << endl;
 	return ( nUndershoots == 0 && nOvershoots == 0 );
+
 }
 
 
