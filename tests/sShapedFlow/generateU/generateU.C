@@ -59,15 +59,32 @@ int main(int argc, char *argv[])
     );
 
     {
-		scalar PI = Foam::constant::mathematical::pi;
 		scalarField X = mesh.C().component(0);
 		scalarField Z = mesh.C().component(2);
 		scalarField u = 0.25*(4.0*X-2.0 + pow(4.0*Z-2.0,3));
 		scalarField w = -0.25*(4.0*Z-2.0 + pow(4.0*X-2.0,3));
+		
+		//Setting U in all cells
 		forAll(U,ci)
 		{
 			U[ci] = u[ci]*vector(1.0,0.0,0.0) + 0.0*vector(0.0,1.0,0.0) + w[ci]*vector(0.0,0.0,1.0);
 		}
+
+		//Setting U on all boundary patches
+		forAll(mesh.boundary(), patchI)
+		{
+			const vectorField& Cf = mesh.boundary()[patchI].Cf();
+			scalarField Xb = Cf.component(0);
+			scalarField Zb = Cf.component(2);
+			scalarField ub = 0.25*(4.0*Xb-2.0 + pow(4.0*Zb-2.0,3));
+			scalarField wb = -0.25*(4.0*Zb-2.0 + pow(4.0*Xb-2.0,3));
+			vectorField& Ub = U.boundaryField()[patchI];
+			forAll(Ub,fi)
+			{
+				Ub[fi] = ub[fi]*vector(1.0,0.0,0.0) + 0.0*vector(0.0,1.0,0.0) + wb[fi]*vector(0.0,0.0,1.0);
+			}
+		}
+
     }
     
 	Info<< "Reading/calculating face flux field phi\n" << endl;
@@ -90,20 +107,43 @@ int main(int argc, char *argv[])
 		const scalarField y = mesh.points().component(1);
 		const scalarField z = mesh.points().component(2);
 		scalarField psi = 0.25*(4.0*x*z - 2.0*x - 2.0*z + pow(1.0-2.0*z,4) + pow(1.0-2.0*x,4));
+
+		//Setting phi on internal faces
 		forAll(phi,fi)
 		{
 			phi[fi] = 0.0;
-			labelList faceLabels = mesh.faces()[fi];
-			label nPoints = faceLabels.size();
-			forAll(faceLabels,pi)
+			labelList pointLabels = mesh.faces()[fi];
+			label nPoints = pointLabels.size();
+			forAll(pointLabels,pi)
 			{
-				label pl1 = faceLabels[pi];
-				label pl2 = faceLabels[(pi+1) % nPoints];
+				label pl1 = pointLabels[pi];
+				label pl2 = pointLabels[(pi+1) % nPoints];
 				phi[fi] += 0.5*(psi[pl1]+psi[pl2])*(y[pl2]-y[pl1]);
 			}
 		}
+		
+		//Setting phi on boundary patches
+		forAll(phi.boundaryField(), patchI)
+		{
+		    scalarField& phib = phi.boundaryField()[patchI];
+		    forAll(phib,fi)
+		    {
+				phib[fi] = 0.0;
+				const label start = mesh.boundary()[patchI].start();
+				const labelList& pointLabels = mesh.faces()[start + fi];
+				label nPoints = pointLabels.size();
+				forAll(pointLabels,pi)
+				{
+					label pl1 = pointLabels[pi];
+					label pl2 = pointLabels[(pi+1) % nPoints];
+					phib[fi] += 0.5*(psi[pl1]+psi[pl2])*(y[pl2]-y[pl1]);
+				}
+		    }
+		}
+
 	}
-	scalarField sumPhi = fvc::surfaceIntegrate(phi);	
+	
+	scalarField sumPhi = fvc::surfaceIntegrate(phi);
 	scalar maxMagSumPhi(0.0);
 	label maxLabel(0);
 	forAll(sumPhi,ci)
@@ -115,7 +155,7 @@ int main(int argc, char *argv[])
 			maxLabel = ci;
 		}
 	}
-	Info << "maxMagSumPhi/cellVol = " << maxMagSumPhi/mesh.V()[maxLabel] << endl;
+	Info << "maxMagSumPhi/Vi = " << maxMagSumPhi << " at cell " << maxLabel << endl;
     
 	ISstream::defaultPrecision(18);
 

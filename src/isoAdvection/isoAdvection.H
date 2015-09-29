@@ -144,7 +144,7 @@ class isoAdvection
     );
 
 	
-	bool limitFluxes
+	void limitFluxes
 	(
 		surfaceScalarField& dVfa,
 		const scalar dt

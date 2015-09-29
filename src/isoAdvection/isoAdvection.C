@@ -504,6 +504,10 @@ void Foam::isoAdvection::quadAreaCoeffs
         //area(t) = A*t^2+B*t
         //integratedArea = A/3+B/2
     }
+	else
+	{
+		Info << "Face " << fLabel << " was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;
+	}
 }
 
 
@@ -533,72 +537,62 @@ void Foam::isoAdvection::subSetExtrema
 }
 
 
-bool Foam::isoAdvection::limitFluxes
+void Foam::isoAdvection::limitFluxes
 (
     surfaceScalarField& dVf,
     const scalar dt
 )
 {
-	{
-		Info << "Checking that sign(dVf) = sign(phi) and  |dVf| <= phi*dt for all faces..." << endl;
-		scalarField dVfi = dVf.internalField();
-		label nProblems = 0;
-		forAll(dVfi,fLabel)
-		{
-			if ( mag(dVfi[fLabel]) > mag(phi_[fLabel]*dt) )
-			{
-				Info << "Warning: mag(dVfi[fLabel]) > mag(phi_[fLabel]*dt) for face " << fLabel << endl; 
-				nProblems++;
-			}
-			if ( sign(dVfi[fLabel]) != sign(phi_[fLabel]) )
-			{
-				Info << "Warning: sign(dVfi[fLabel]) != sign(phi_[fLabel]) for face " << fLabel << endl; 
-				nProblems++;
-			}
-		}
-		if ( nProblems < 1 )
-		{
-			Info << "No problems detected" << endl;
-		}
-	}
-
-	Info << "Bound from above... " << endl;
-	{
-		scalarField dVfcorrected = dVf.internalField();
-		DynamicList<label> correctedFaces;
-		boundFromAbove(alpha1_,dt,dVfcorrected,correctedFaces);
-		forAll(correctedFaces,fi)
-		{
-			label fLabel = correctedFaces[fi];
-			dVf[fLabel] = dVfcorrected[fLabel];
-		}
-	}
-
-	{
-		Info << "Bound from below... " << endl;
-		scalarField alpha2 = 1 - alpha1_.internalField();
-		scalarField dVfcorrected = phi_.internalField()*dt - dVf; //phi_ and dVf have same sign and dVf is the portion of phi_*dt that is water. 
-		//If phi_ > 0 then dVf > 0 and mag(phi_*dt-dVf) < mag(phi_*dt) as it should. 
-		//If phi_ < 0 then dVf < 0 and mag(phi_*dt-dVf) < mag(phi_*dt) as it should. 
-		DynamicList<label> correctedFaces;
-		boundFromAbove(alpha2,dt,dVfcorrected,correctedFaces);
-		forAll(correctedFaces,fi)
-		{
-			label fLabel = correctedFaces[fi];
-			dVf[fLabel] = phi_[fLabel]*dt - dVfcorrected[fLabel];
-		}
-	}
-
-	//Check if still unbounded
 	scalarField alphaNew = alpha1_ - fvc::surfaceIntegrate(dVf); 
-	scalar bTol = 1e-12;
-	scalar nUndershoots = sum(neg(alphaNew+bTol));
-	scalar nOvershoots = sum(pos(alphaNew-1-bTol));
+	scalar aTol = 1.0e-12;
 	scalar maxAlphaMinus1 = max(alphaNew-1);
 	scalar minAlpha = min(alphaNew);
-	Info << "After bounding: nOvershoots = " << nOvershoots << " with max(alphaNew-1) = " << maxAlphaMinus1 << " and nUndershoots = " << nUndershoots << " with min(alphaNew) = " << minAlpha << endl;
-	return ( nUndershoots == 0 && nOvershoots == 0 );
 
+	for ( label n = 0; n < nAlphaBounds_; n++ )
+    {
+		Info << "Running bounding number " << n+1 << " of time " << mesh_.time().value() << endl;
+
+		if ( maxAlphaMinus1 > aTol )
+		{
+			isoDebug(Info << "Bound from above... " << endl;)
+			scalarField alpha1 = alpha1_.internalField();
+//			scalarField dVfcorrected = dVf.internalField();
+			scalarField dVfcorrected = dVf;
+			DynamicList<label> correctedFaces;
+			boundFromAbove(alpha1,dt,dVfcorrected,correctedFaces);
+			forAll(correctedFaces,fi)
+			{
+				label fLabel = correctedFaces[fi];
+				dVf[fLabel] = dVfcorrected[fLabel];
+			}
+		}
+
+		if ( minAlpha < -aTol )
+		{
+			isoDebug(Info << "Bound from below... " << endl;)
+			scalarField alpha2 = 1.0 - alpha1_.internalField();
+			scalarField dVfcorrected = phi_.internalField()*dt - dVf;
+//			dVfcorrected -= dVf; //phi_ and dVf have same sign and dVf is the portion of phi_*dt that is water. 
+			//If phi_ > 0 then dVf > 0 and mag(phi_*dt-dVf) < mag(phi_*dt) as it should. 
+			//If phi_ < 0 then dVf < 0 and mag(phi_*dt-dVf) < mag(phi_*dt) as it should. 
+			DynamicList<label> correctedFaces;
+			boundFromAbove(alpha2,dt,dVfcorrected,correctedFaces);
+			forAll(correctedFaces,fi)
+			{
+				label fLabel = correctedFaces[fi];
+				dVf[fLabel] = phi_[fLabel]*dt - dVfcorrected[fLabel];
+			}
+		}
+
+		//Check if still unbounded
+		alphaNew = alpha1_ - fvc::surfaceIntegrate(dVf); 
+		maxAlphaMinus1 = max(alphaNew-1);
+		minAlpha = min(alphaNew);
+		scalar nUndershoots = sum(neg(alphaNew+aTol));
+		scalar nOvershoots = sum(pos(alphaNew-1-aTol));
+		Info << "After bounding number " << n+1 << " of time " << mesh_.time().value() << ":" << endl;
+		Info << "nOvershoots = " << nOvershoots << " with max(alphaNew-1) = " << maxAlphaMinus1 << " and nUndershoots = " << nUndershoots << " with min(alphaNew) = " << minAlpha << endl;
+	}
 }
 
 
@@ -613,18 +607,39 @@ void Foam::isoAdvection::boundFromAbove
 	correctedFaces.clear();
 	
 	scalar aTol = 1e-12;
-
+//	scalar maxOvershoot = 0.0;
 	forAll(alpha1,ci)
 	{
 		scalar Vi = mesh_.V()[ci];
 		scalar alpha1New = alpha1[ci] - netFlux(dVf,ci)/Vi;
 		scalar alphaOvershoot = alpha1New - 1.0;
+/*		
+		if ( alphaOvershoot > aTol )
+		{
+			scalar fluidToPassOn = alphaOvershoot*Vi;
+			DynamicList<label> outFluxFaces;
+			getOutFluxFaces(ci,outFluxFaces);
+			scalar dVftot = 0.0;
+			forAll(outFluxFaces,fi)
+			{
+				label fLabel = outFluxFaces[fi];
+				dVftot += mag(phi_[fLabel]*dt);
+			}
+			forAll(outFluxFaces,fi)
+			{
+				label fLabel = outFluxFaces[fi];
+				dVf[fLabel] += sign(phi_[fLabel])*fluidToPassOn*mag(phi_[fLabel]*dt)/dVftot;
+				correctedFaces.append(fLabel);
+			}
+		}
+*/		
 		scalar fluidToPassOn = alphaOvershoot*Vi;
 		label nFacesToPassFluidThrough = 1;
-		
+				
+		//First try to pass surplus fluid on to neighbour cells that are not filled and to which dVf < phi*dt
 		while ( alphaOvershoot > aTol && nFacesToPassFluidThrough > 0 )
 		{
-			Info << "\n\nBounding cell " << ci << " with alpha overshooting " << alphaOvershoot << endl;
+			isoDebug(Info << "\n\nBounding cell " << ci << " with alpha overshooting " << alphaOvershoot << endl;)
 			//First find potential neighbour cells to pass surplus water to
 			DynamicList<label> outFluxFaces;
 			getOutFluxFaces(ci,outFluxFaces);
@@ -633,16 +648,17 @@ void Foam::isoAdvection::boundFromAbove
 			scalar dVftot = 0.0;
 			nFacesToPassFluidThrough = 0;
 			
-			Info << "OutFluxFaces: " << outFluxFaces << endl;
+			isoDebug(Info << "OutFluxFaces: " << outFluxFaces << endl;)
 			forAll(outFluxFaces,fi)
 			{
 				label fLabel = outFluxFaces[fi];
 				scalar maxExtraFaceFluidTrans = mag(phi_[fLabel]*dt - dVf[fLabel]);
 				//dVf has same sign as phi and so if phi>0 we have mag(phi_[fLabel]*dt) - mag(dVf[fLabel]) = phi_[fLabel]*dt - dVf[fLabel]
 				//If phi<0 we have mag(phi_[fLabel]*dt) - mag(dVf[fLabel]) = -phi_[fLabel]*dt - (-dVf[fLabel]) > 0 since mag(dVf) < phi*dt
-				Info << "outFluxFace " << fLabel << " has maxExtraFaceFluidTrans = " << maxExtraFaceFluidTrans << endl;
-//				if ( maxExtraFaceFluidTrans/Vi > aTol && mag(dVf[fLabel]) > 0.0 )
+				isoDebug(Info << "outFluxFace " << fLabel << " has maxExtraFaceFluidTrans = " << maxExtraFaceFluidTrans << endl;)
 				if ( maxExtraFaceFluidTrans/Vi > aTol )
+//				if ( maxExtraFaceFluidTrans/Vi > aTol && mag(dVf[fLabel])/Vi > aTol ) //Last condition may be important because without this we will flux through uncut downwind faces
+//				if ( true )
 				{
 					facesToPassFluidThrough.append(fLabel);
 					dVfmax.append(maxExtraFaceFluidTrans);
@@ -650,7 +666,7 @@ void Foam::isoAdvection::boundFromAbove
 				}
 			}
 
-			Info << "\nfacesToPassFluidThrough: " << facesToPassFluidThrough << ", dVftot = " << dVftot << " m3 corresponding to dalpha = " << dVftot/Vi << endl;			
+			isoDebug(Info << "\nfacesToPassFluidThrough: " << facesToPassFluidThrough << ", dVftot = " << dVftot << " m3 corresponding to dalpha = " << dVftot/Vi << endl;)
 			forAll(facesToPassFluidThrough,fi)
 			{
 				label fLabel = facesToPassFluidThrough[fi];
@@ -658,26 +674,33 @@ void Foam::isoAdvection::boundFromAbove
 				nFacesToPassFluidThrough += pos(dVfmax[fi] - fluidToPassThroughFace);
 				fluidToPassThroughFace = min(fluidToPassThroughFace,dVfmax[fi]);
 				label neiCell = otherCell(fLabel,ci);
-				Info << "Passing " << fluidToPassThroughFace << " m3 through face " << fLabel << " to cell " << neiCell << endl; 
-				Info << "This corresponds to lowering alpha of cell " << ci << " by " << fluidToPassThroughFace/Vi << endl;
-				Info << "dVf of face " << fLabel << " before correction: " << dVf[fLabel] << " m3 corresponding to da = " << dVf[fLabel]/Vi << endl;
+				isoDebug(Info << "Passing " << fluidToPassThroughFace << " m3 through face " << fLabel << " to cell " << neiCell << endl;)
+				isoDebug(Info << "This corresponds to lowering alpha of cell " << ci << " by " << fluidToPassThroughFace/Vi << endl;)
+				isoDebug(Info << "dVf of face " << fLabel << " before correction: " << dVf[fLabel] << " m3 corresponding to da = " << dVf[fLabel]/Vi << endl;)
 				dVf[fLabel] += sign(phi_[fLabel])*fluidToPassThroughFace;
-				Info << "dVf of face " << fLabel << " after correction: " << dVf[fLabel] << " m3 corresponding to da = " << dVf[fLabel]/Vi << endl;
-				Info << "New neighbour cell alpha: " << alpha1[neiCell] - netFlux(dVf,neiCell)/mesh_.V()[neiCell] << endl;
+				isoDebug(Info << "dVf of face " << fLabel << " after correction: " << dVf[fLabel] << " m3 corresponding to da = " << dVf[fLabel]/Vi << endl;)
+				isoDebug(Info << "New neighbour cell alpha: " << alpha1[neiCell] - netFlux(dVf,neiCell)/mesh_.V()[neiCell] << endl;)
 				correctedFaces.append(fLabel);
 			}
 			alpha1New = alpha1[ci] - netFlux(dVf,ci)/Vi;
 			alphaOvershoot = alpha1New - 1.0;
 			fluidToPassOn = alphaOvershoot*Vi;
-			Info << "\nNew alpha for cell " << ci << ": " << alpha1New << endl;
+			isoDebug(Info << "\nNew alpha for cell " << ci << ": " << alpha1New << endl;)
 		}
-		
+/*		
+		//Finally if any surplus fluid left pass it on to downwind neighbour cells
 		if ( alphaOvershoot > aTol )
 		{
-			Info << "Could not pass on all surplus fluid from cell " << ci << " because all faces are already at their full flux capacity." << endl;
+			Info << "Could not pass on all surplus fluid from cell " << ci << " because all faces are already at their full flux capacity. Overshoot = " << alphaOvershoot << endl;
 		}	
+		
+		if ( alphaOvershoot > maxOvershoot )
+		{
+			maxOvershoot = alphaOvershoot;
+		}
+*/
 	}
-	Info << "correctedFaces = " << correctedFaces << endl;
+	isoDebug(Info << "correctedFaces = " << correctedFaces << endl;)
 }
 
 
@@ -730,16 +753,7 @@ void Foam::isoAdvection::advect
 		dimensionedScalar("vol", dimVol, 0)
     );
     timeIntegratedFlux(dt, dVf);
-	bool alphaBounded = false;
-    for ( label n = 0; n < nAlphaBounds_; n++ )
-    {
-		Info << "Running bounding number " << n+1 << " of time " << mesh_.time().value() << endl;
-		alphaBounded = limitFluxes(dVf,dt);
-		if ( alphaBounded )
-		{
-			break;
-		}
-    }
+	limitFluxes(dVf,dt);
 	//For each cell sum contributions from faces with pos sign for owner and neg sign for neighbour (as if it is a flux) and divide by cell volume
     alpha1_ -= fvc::surfaceIntegrate(dVf); 
     alpha1_.correctBoundaryConditions();

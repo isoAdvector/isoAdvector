@@ -2,7 +2,7 @@
 
 NzList=(30)
 NxList=(100)
-dtList=(0.02 0.04)
+dtList=(0.02)
 CoList=(04)
 
 export L=5
