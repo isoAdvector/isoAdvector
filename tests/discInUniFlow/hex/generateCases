@@ -14,7 +14,7 @@ export y2=.5
 export Ux=1
 export Uy=0
 export Uz=0.125
-export solver=discMULESAdvector
+export solver=isoAdvect
 
 for n in ${!NzList[*]} 
 do

@@ -259,6 +259,26 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 
     scalar dVf(0.0); //Volume flowing through face in time interval [0,dt] to be calculated below
 
+	if (mag(n0) < .5)
+	{
+		scalar alphaf = 0.0;
+		scalar waterInUpwindCell = 0.0;
+		if ( phi_[fLabel] > 0  || fLabel >= mesh_.nInternalFaces() )
+		{
+			label upwindCell = mesh_.owner()[fLabel];
+			alphaf = alpha1_[upwindCell];
+			waterInUpwindCell = alphaf*mesh_.V()[upwindCell];
+		}
+		else
+		{
+			label upwindCell = mesh_.neighbour()[fLabel];
+			alphaf = alpha1_[upwindCell];
+			waterInUpwindCell = alphaf*mesh_.V()[upwindCell];
+		}
+		dVf = min(alphaf*phi_[fLabel]*dt,waterInUpwindCell);
+		Info << "Warning: mag(n0) = " << mag(n0) << " so timeIntegratedFlux calculates dVf from upwind cell alpha value: " << alphaf << endl;
+		return dVf;
+	}
     //Find sorted list of times where the isoFace will arrive at face points given initial position x0 and velocity Un0*n0
     const labelList& pLabels = mesh_.faces()[fLabel];
     const label nPoints = pLabels.size();
@@ -278,6 +298,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 		scalar alphaf;
 		cutter.subFaceFraction(fLabel,f0,alphaf);
 		dVf = phi_[fLabel]*dt*alphaf;
+		Info << "Warning: Un0 is almost zero (" << Un0 << ") so calculating dVf on face " << fLabel << " using subFaceFraction giving alphaf = " << alphaf << endl;
 		return dVf;
 	}
 
@@ -352,7 +373,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
         nt++;
     }
 
-    if ( faceUncutInLastInterval ) //Special treatment for last time interval if face is uncut during this
+    if ( faceUncutInLastInterval && (nt+1) < t.size() ) //Special treatment for last time interval if face is uncut during this
     {
         isoDebug(Info << "faceUncutInLastInterval, so special treatment for last (" << nt+1 << "'th) time interval: [" << t[nt] << ", " << t[nt+1] << "]" << endl;)
         dVf += phi_[fLabel]*(t[nt+1]-t[nt])*pos(Un0); //If face is cut at some intermediate time but not at last time, then if Un0 > 0 (cell filling up) face must be filled at last time interval.
