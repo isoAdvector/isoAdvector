@@ -193,7 +193,7 @@ void Foam::isoAdvection::calcIsoFace
     cutter.isoFaceCentreAndArea(ci,f0,x0,n0); //Stupid to recalculate this here - should be provided by vofCutCell above
     isoDebug(Info << "f0 = " << f0 << ", x0 = " << x0 << ", n0 = " << n0 << endl;)
 
-    if ( mag(n0) < 1.0e-6 ) //Cell almost full or empty so isoFace is undefined. Calculating normal by going a little into the cell
+    if ( mag(n0) < 1.0e-8 ) //Cell almost full or empty so isoFace is undefined. Calculating normal by going a little into the cell
     {
         scalar aMin(GREAT), aMax(-GREAT);
 		const labelList cellPts = mesh_.cellPoints()[ci];
@@ -234,8 +234,11 @@ void Foam::isoAdvection::calcIsoFace
         isoDebug(Info << "Changing direction of n0 " << n0 << endl;)
     }
 
-    isoDebug(Info << "Normalising n0: " << n0 << endl;)
-    n0 /= mag(n0);
+	if ( mag(n0) > 1.0e-8 )
+	{
+		isoDebug(Info << "Normalising n0: " << n0 << endl;)
+		n0 /= mag(n0);
+	}
 
     //Interpolate velocity to isoFace centre
     vector U0 = UInterp.interpolate(x0,ci);
