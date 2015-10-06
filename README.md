@@ -22,6 +22,8 @@ Contributors:
     - Solves the volume fraction advection equation in either steady flow or periodic flow with the option of changing the flow direction at a specified time.
 - `applications/utilities/preProcessing/isoSurf` 
     - Sets the initial volume fraction field for either a sphere, a cylinder or a plane. 
+- `applications/utilities/postProcessing/uniFlowErrors`
+    - For cases with spheres and discs in steady uniform flow calculates errors relative to exact VOF solution
 
 ## IsoAdvection 
 
@@ -49,15 +51,9 @@ After a few seconds it should finish and inspection of the alpha1 field in Parav
 
 ## Compilation 
 
-1. Source the `etc/bashrc` script to set the `ISOADVECTION` project environment variable. 
+Execute the `Allwmake` script. 
 
-~~~
-    source etc/bashrc
-~~~
-
-2. Execute the `Allwmake` script. 
-
-To avoid the writing of all details from isoAdvect to log file go into Make/applications/isoAdvect/Make/options and remove the line saying -DISODEBUG (and the backslash at the end of the line above it).
+To write (A LOT OF!) debug data to log file write "./Allwmake debug" when compiling.
 
 ## Preprocessing 
 

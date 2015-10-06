@@ -186,35 +186,6 @@ class isoAdvection
     );
 
 	
-	void boundFromAbove
-	(
-		volScalarField& alpha1New,
-		surfaceScalarField& dVf,
-		const scalar dt
-	);
-	
-	bool noUpwindCellsNeedBounding
-	(
-		const label ci,
-		const boolList& cellNeedsBounding
-	);
-
-	void boundCellFromAbove
-	(
-		const label ci,
-		const scalar dt,
-		volScalarField& alpha1New,
-		surfaceScalarField& dVf,
-		boolList& cellNeedsBounding, 
-		label& nCellsToBound
-	);
-
-	void upwindNeighbourCells
-	(
-		const label ci,
-		DynamicList<label>& upwindNeighbours
-	);
-	
     public:
 
     //- Constructor

@@ -1,7 +1,16 @@
 #!/bin/bash
 cd ${0%/*} || exit 1    # run from this directory
 
+if [ "$1" == "debug" ];
+then
+    export ISODEBUGSWITCH=ISODEBUG
+else
+    export ISODEBUGSWITCH=OFF #May be set to anything but ISODEBUG
+fi
+
 . etc/bashrc
 
 src/Allwmake
 applications/Allwmake
+
+unset ISODEBUGSWITCH

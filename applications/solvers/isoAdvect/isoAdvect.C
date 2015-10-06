@@ -22,7 +22,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    isoAdvector
+    isoAdvect
 
 Description
     Advects a volume of fluid across an FVM mesh by fluxing fluid through its
