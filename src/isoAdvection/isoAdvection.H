@@ -110,10 +110,10 @@ class isoAdvection
     );
 
     //- For cell ci return labels of faces fluxing out of this cell (based on sign of phi)
-    void getOutFluxFaces
+    void getDownwindFaces
     (
         const label ci,
-        DynamicList<label>& outFluxingFaces
+        DynamicList<label>& downwindFaces
     );
 
     //- For face fLabel of cell cLabel return label of other cell sharing face fLabel
@@ -159,6 +159,7 @@ class isoAdvection
 		DynamicList<label>& correctedFaces
 	);
 
+
     //- Given the face volume transport dVf calculates the total volume leaving cell cLabel 
     scalar netFlux
     (
@@ -184,7 +185,36 @@ class isoAdvection
         const interpolationCellPoint<vector>& UInterp
     );
 
+	
+	void boundFromAbove
+	(
+		volScalarField& alpha1New,
+		surfaceScalarField& dVf,
+		const scalar dt
+	);
+	
+	bool noUpwindCellsNeedBounding
+	(
+		const label ci,
+		const boolList& cellNeedsBounding
+	);
 
+	void boundCellFromAbove
+	(
+		const label ci,
+		const scalar dt,
+		volScalarField& alpha1New,
+		surfaceScalarField& dVf,
+		boolList& cellNeedsBounding, 
+		label& nCellsToBound
+	);
+
+	void upwindNeighbourCells
+	(
+		const label ci,
+		DynamicList<label>& upwindNeighbours
+	);
+	
     public:
 
     //- Constructor

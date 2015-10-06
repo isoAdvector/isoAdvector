@@ -5,3 +5,4 @@ set -x
 
 wmake all solvers
 wmake all utilities/preProcessing
+wmake all utilities/postProcessing

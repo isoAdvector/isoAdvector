@@ -25,7 +25,7 @@ startTime       0.0;
 
 stopAt          endTime;
 
-endTime         4;
+endTime         8;
 
 writeControl    timeStep;
 
@@ -37,7 +37,7 @@ purgeWrite      0;
 
 writeFormat     ascii;
 
-writePrecision  6;
+writePrecision  12;
 
 writeCompression uncompressed;
 
