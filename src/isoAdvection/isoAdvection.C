@@ -98,7 +98,7 @@ void Foam::isoAdvection::timeIntegratedFlux
     isoCutter cutter(mesh_,ap_);
 
     //Find surface cells
-    DynamicList<label> surfaceCells;
+    DynamicList<label> surfaceCells(ceil(mesh_.nCells()/10));
     findSurfaceCells(surfaceCells);
 
     //Upwinding on all internal faces receiving fluid from a non-surface cell
@@ -125,13 +125,14 @@ void Foam::isoAdvection::timeIntegratedFlux
 
     //Isocutting estimate of water flux from surface cellss
     interpolationCellPoint<vector> UInterp(U_);
+	const cellList& cells = mesh_.cells();
     forAll(surfaceCells,cellI)
     {
         const label ci = surfaceCells[cellI];
         isoDebug(Info << "\n------------ Cell " << ci << " with alpha1 = " << alpha1_[ci] << " and 1-alpha1 = " << 1.0-alpha1_[ci] << " ------------" << endl;)
 
         //Make list of all cell faces out of which fluid is flowing
-        DynamicList<label> downwindFaces;
+        DynamicList<label> downwindFaces((mesh_.cells()[ci]).size());
         getDownwindFaces(ci, downwindFaces);
         isoDebug(Info << "downwindFaces: " << downwindFaces << "\n" << endl;)
 
@@ -324,7 +325,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     }
 
     //Cutting sortedTimes at 0 and dt
-    DynamicList<scalar> t;
+    DynamicList<scalar> t(sortedTimes.size()+2);
     t.append(0.0);
     forAll(sortedTimes,ti)
     {
@@ -449,7 +450,7 @@ void Foam::isoAdvection::quadAreaCoeffs
 {
     isoDebug(Info << "Enter quadAreaCoeffs" << endl;)
     isoCutter cutter(mesh_,ap_);
-    DynamicList<point> pf0, pf1;
+    DynamicList<point> pf0(2), pf1(2);
     cutter.getFaceCutPoints(fLabel,f,f0,pf0);
     cutter.getFaceCutPoints(fLabel,f,f1,pf1);
 
@@ -572,6 +573,8 @@ void Foam::isoAdvection::limitFluxes
 	scalar aTol = 1.0e-12;
 	scalar maxAlphaMinus1 = max(alphaNew-1);
 	scalar minAlpha = min(alphaNew);
+	label nUndershoots = sum(neg(alphaNew+aTol));
+	label nOvershoots = sum(pos(alphaNew-1-aTol));
 
 	for ( label n = 0; n < nAlphaBounds_; n++ )
     {
@@ -583,7 +586,7 @@ void Foam::isoAdvection::limitFluxes
 			scalarField alpha1 = alpha1_.internalField();
 //			scalarField dVfcorrected = dVf.internalField();
 			scalarField dVfcorrected = dVf;
-			DynamicList<label> correctedFaces;
+			DynamicList<label> correctedFaces(3*nOvershoots);
 			boundFromAbove(alpha1,dt,dVfcorrected,correctedFaces);
 			forAll(correctedFaces,fi)
 			{
@@ -600,7 +603,7 @@ void Foam::isoAdvection::limitFluxes
 //			dVfcorrected -= dVf; //phi_ and dVf have same sign and dVf is the portion of phi_*dt that is water. 
 			//If phi_ > 0 then dVf > 0 and mag(phi_*dt-dVf) < mag(phi_*dt) as it should. 
 			//If phi_ < 0 then dVf < 0 and mag(phi_*dt-dVf) < mag(phi_*dt) as it should. 
-			DynamicList<label> correctedFaces;
+			DynamicList<label> correctedFaces(3*nUndershoots);
 			boundFromAbove(alpha2,dt,dVfcorrected,correctedFaces);
 			forAll(correctedFaces,fi)
 			{
@@ -613,8 +616,8 @@ void Foam::isoAdvection::limitFluxes
 		alphaNew = alpha1_ - fvc::surfaceIntegrate(dVf); 
 		maxAlphaMinus1 = max(alphaNew-1);
 		minAlpha = min(alphaNew);
-		scalar nUndershoots = sum(neg(alphaNew+aTol));
-		scalar nOvershoots = sum(pos(alphaNew-1-aTol));
+		nUndershoots = sum(neg(alphaNew+aTol));
+		nOvershoots = sum(pos(alphaNew-1-aTol));
 		Info << "After bounding number " << n+1 << " of time " << mesh_.time().value() << ":" << endl;
 		Info << "nOvershoots = " << nOvershoots << " with max(alphaNew-1) = " << maxAlphaMinus1 << " and nUndershoots = " << nUndershoots << " with min(alphaNew) = " << minAlpha << endl;
 	}
@@ -666,10 +669,10 @@ void Foam::isoAdvection::boundFromAbove
 		{
 			isoDebug(Info << "\n\nBounding cell " << ci << " with alpha overshooting " << alphaOvershoot << endl;)
 			//First find potential neighbour cells to pass surplus water to
-			DynamicList<label> downwindFaces;
+			DynamicList<label> downwindFaces((mesh_.cells()[ci]).size());
 			getDownwindFaces(ci,downwindFaces);
-			DynamicList<label> facesToPassFluidThrough;
-			DynamicList<scalar> dVfmax;
+			DynamicList<label> facesToPassFluidThrough(downwindFaces.size());
+			DynamicList<scalar> dVfmax(downwindFaces.size());
 			scalar dVftot = 0.0;
 			nFacesToPassFluidThrough = 0;
 			

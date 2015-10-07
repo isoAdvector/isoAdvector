@@ -126,7 +126,7 @@ class isoCutter
         const DynamicList<label>& cutEdges,
         const DynamicList<scalar>& cutPoints,
 //        DynamicList<point>& isoPoints
-        pointField& isoPoints
+        DynamicList<point>& isoPoints
     );
 
     //- Return labels of all cell faces with all points strictly below isosurface
@@ -151,7 +151,7 @@ class isoCutter
     //- Calculate face centres and areas from pointFields assumed to represent oriented faces
     void makeFaceCentresAndAreas
     (
-        const List<pointField>& pfList,
+        const List< DynamicList<point> >& pfList,
         vectorField& fCtrs,
         vectorField& fAreas
     );
@@ -196,7 +196,7 @@ class isoCutter
     void getFacePoints
     (
         const labelList& faceLabels,
-        DynamicList<pointField>&
+        DynamicList< DynamicList<point> >&
     );
 
 
@@ -204,7 +204,7 @@ class isoCutter
     void getFacePoints
     (
         const label,
-        pointField&
+        DynamicList<point>&
     );
 
 
@@ -273,7 +273,7 @@ public:
         (
             const label faceLabel,
             const scalar f0,
-            pointField& partSubFacePts
+            DynamicList<point>& partSubFacePts
         );
 
         //- Subface fraction with face label, face vertex values and isovalue specified
@@ -307,7 +307,7 @@ public:
         //  Taken from primitiveMesh
         void makeFaceCentreAndArea
         (
-            const pointField& p,
+            const DynamicList<point>& p,
             vector& fCtr,
             vector& fArea
         );

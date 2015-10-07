@@ -21,7 +21,7 @@ do
     export nx=${NxList[$n]}
     export nz=${NzList[$n]}
     export dt=${dtList[$n]}
-    caseName=N${NzList[$n]}Co${CoList[$n]}
+    caseName=NN${NzList[$n]}Co${CoList[$n]}
     echo $caseName
     cp -r baseCase $caseName
     envsubst < baseCase/constant/polyMesh/blockMeshDict > ${caseName}/constant/polyMesh/blockMeshDict

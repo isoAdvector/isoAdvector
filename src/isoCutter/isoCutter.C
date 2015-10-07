@@ -287,16 +287,14 @@ void Foam::isoCutter::getIsoFace
     const DynamicList<label>& cutFaces,
     const DynamicList<label>& cutEdges,
     const DynamicList<scalar>& cutPoints,
-//    DynamicList<point>& isoPoints
-    pointField& isoPoints
+    DynamicList<point>& isoPoints
 )
 {
     const faceList& faces = mesh_.faces();
     const pointField& points = mesh_.points();
     bool findDuplicates = false;
 
-//    pointField p;
-    DynamicList<point> p;
+    DynamicList<point> p(cutFaces.size());
     forAll(cutFaces,fi)
     {
         labelList pLabels = faces[cutFaces[fi]];
@@ -314,7 +312,7 @@ void Foam::isoCutter::getIsoFace
     //Removing duplicates
     if ( findDuplicates )
     {
-        DynamicList<point> pCleaned;
+        DynamicList<point> pCleaned(p.size());
         label nPoints = p.size();
         forAll(p,pi)
         {
@@ -339,7 +337,7 @@ bool Foam::isoCutter::getSubFace
 (
     const label faceLabel,
     const scalar f0,
-    pointField& partSubFacePts
+    DynamicList<point>& partSubFacePts
 )
 {
     const faceList& faces = mesh_.faces();
@@ -349,20 +347,19 @@ bool Foam::isoCutter::getSubFace
     const labelList pLabels = faces[faceLabel];
     const label nPoints = pLabels.size();
     label pl1 = pLabels[0];
-    DynamicList<point> partSubFacePtList;
     forAll(pLabels,pi)
     {
         label pl2 = pLabels[(pi+1)%nPoints];
         scalar f1(f_[pl1]), f2(f_[pl2]);
         if (f1 >= f0)
         {
-            partSubFacePtList.append(points[pl1]);
+            partSubFacePts.append(points[pl1]);
             if ( f2 < f0 && f1 > f0 )
             {
                 scalar s = (f0-f1)/(f2-f1);
 //                Info << "Face " << faceLabel << ", edge " << pi << ": s = " << s << endl;
                 point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
-                partSubFacePtList.append(pCut);
+                partSubFacePts.append(pCut);
             }
         }
         else if (f1 < f0)
@@ -373,13 +370,12 @@ bool Foam::isoCutter::getSubFace
                 scalar s = (f0-f1)/(f2-f1);
 //                Info << "Face " << faceLabel << ", edge " << pi << ": s = " << s << endl;
                 point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
-                partSubFacePtList.append(pCut);
+                partSubFacePts.append(pCut);
             }
         }
         pl1 = pl2;
     }
 
-    partSubFacePts = partSubFacePtList;
     return fullySubmerged;
 }
 
@@ -397,7 +393,7 @@ Foam::scalar Foam::isoCutter::getSubFaceFraction
     const labelList pLabels = faces[faceLabel];
     const label nPoints = pLabels.size();
 
-    DynamicList<point> partSubFacePtList;
+    DynamicList<point> partSubFacePts(nPoints);
 
     label pl1 = pLabels[0];
     forAll(pLabels,pi)
@@ -406,13 +402,13 @@ Foam::scalar Foam::isoCutter::getSubFaceFraction
         scalar f1(f[pi]), f2(f[(pi+1)%nPoints]);
         if (f1 >= f0)
         {
-            partSubFacePtList.append(points[pl1]);
+            partSubFacePts.append(points[pl1]);
             if ( f2 < f0 && f1 > f0 )
             {
                 scalar s = (f0-f1)/(f2-f1);
 //                Info << "Face " << faceLabel << ", edge " << pi << ": s = " << s << endl;
                 point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
-                partSubFacePtList.append(pCut);
+                partSubFacePts.append(pCut);
             }
         }
         else if (f1 < f0)
@@ -423,14 +419,12 @@ Foam::scalar Foam::isoCutter::getSubFaceFraction
                 scalar s = (f0-f1)/(f2-f1);
 //                Info << "Face " << faceLabel << ", edge " << pi << ": s = " << s << endl;
                 point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
-                partSubFacePtList.append(pCut);
+                partSubFacePts.append(pCut);
             }
         }
         pl1 = pl2;
     }
-    partSubFacePtList.shrink();
-
-    pointField partSubFacePts(partSubFacePtList);
+    partSubFacePts.shrink();
 
     //Calculating subface fraction
     scalar alphaf = 0.0;
@@ -469,19 +463,15 @@ void Foam::isoCutter::getFaceCutPoints
         f1 = f0;
     }
     Info << "face values differences from f0: ";
-//    DynamicList<point> cutPointList;
     forAll(pLabels,pi)
     {
         label pl2 = pLabels[(pi+1)%nPoints];
-//        scalar f1(f_[pl1]), f2(f_[pl2]);
         scalar f2(f_[pl2]);
         if (mag(f2-f0) < 1e-10)
         {
             f2 = f0;
         }
         Info << " " << f1-f0;
-//      bool edgeIsCut = ( (f1 >= f0) && (f2 < f0 && f1 > f0) ) || ( (f1 < f0) && (f2 > f0) );
-//      bool edgeIsCut = ( f1 <= f0 && f0 < f2 ) || ( f2 < f0 && f0 <= f1 );
         bool edgeIsCut = min(f1,f2) < f0 && max(f1,f2) > f0;
         if ( edgeIsCut )
         {
@@ -497,7 +487,6 @@ void Foam::isoCutter::getFaceCutPoints
         f1 = f2;
     }
     Info << "." << endl;
-//    cutPoints = cutPointList;
 }
 
 void Foam::isoCutter::getFaceCutPoints
@@ -653,7 +642,7 @@ void Foam::isoCutter::subFaceFraction
 )
 {
     alphaf = 0;
-    pointField partSubFacePts;
+    DynamicList<point> partSubFacePts((mesh_.faces()[fi]).size());
     bool fullySubmerged = getSubFace(fi,f0,partSubFacePts);
     if (fullySubmerged)
     {
@@ -675,12 +664,12 @@ void Foam::isoCutter::isoFaceCentreAndArea
     vector& faceArea
 )
 {
-    DynamicList<label> cutFaces;
-    DynamicList<label> cutEdges;
-    DynamicList<scalar> cutPoints;
+    DynamicList<label> cutFaces((mesh_.cells()[ci]).size());
+    DynamicList<label> cutEdges(cutFaces.capacity());
+    DynamicList<scalar> cutPoints(cutFaces.capacity());
     bool fullySubmerged(false);
     isoCutCell(ci,f0,cutFaces,cutEdges,cutPoints,fullySubmerged);
-    pointField isoPoints;
+    DynamicList<point> isoPoints(cutFaces.size());
     getIsoFace(cutFaces,cutEdges,cutPoints,isoPoints);
     if (isoPoints.size()>0)
     {
@@ -753,37 +742,38 @@ void Foam::isoCutter::subCellFraction
 {
     alpha1 = 0;
 
-    DynamicList<label> cutFaces;
-    DynamicList<label> cutEdges;
-    DynamicList<scalar> cutPoints;
-    DynamicList<labelList> submergedPoints;
+	DynamicList<label> cutFaces((mesh_.cells()[ci]).size());
+    DynamicList<label> cutEdges(cutFaces.capacity());
+    DynamicList<scalar> cutPoints(cutFaces.capacity());
+
     bool fullySubmerged(false);
     isoCutCell(ci,f0,cutFaces,cutEdges,cutPoints,fullySubmerged);
 
     if ( cutFaces.size() > 0 )
     {
         //Get isoFace points
-        pointField isoPoints;
+        DynamicList<point> isoPoints(cutFaces.size());
         getIsoFace(cutFaces,cutEdges,cutPoints,isoPoints);
 
         //Get points of cut cell face
-        DynamicList<pointField> partSubFacePoints;
+        DynamicList< DynamicList<point> > partSubFacePoints(cutFaces.size());
         forAll(cutFaces,fi)
         {
-            pointField subFacePoints;
-            getSubFace(cutFaces[fi],f0,subFacePoints);
+			const label fLabel = cutFaces[fi];
+            DynamicList<point> subFacePoints((mesh_.faces()[fLabel]).size());
+            getSubFace(fLabel,f0,subFacePoints);
             partSubFacePoints.append(subFacePoints);
         }
 
         //Get points of fully submerged cell face
-        DynamicList<label> fullSubFaces;
+        DynamicList<label> fullSubFaces((mesh_.cells()[ci]).size());
         fullySubmergedFaces(ci,f0,fullSubFaces);
 
-        DynamicList<pointField> fullSubFacePoints;
+        DynamicList< DynamicList<point> > fullSubFacePoints(fullSubFaces.size());
         getFacePoints(fullSubFaces,fullSubFacePoints);
 
         //Gathering all cut cell face points in one list
-        DynamicList<pointField> cutCellFacePoints(partSubFacePoints);
+        DynamicList< DynamicList<point> > cutCellFacePoints(partSubFacePoints);
         cutCellFacePoints.append(isoPoints);
         cutCellFacePoints.append(fullSubFacePoints);
 
@@ -807,12 +797,12 @@ void Foam::isoCutter::subCellFraction
 
 void Foam::isoCutter::makeFaceCentresAndAreas
 (
-    const List<pointField>& pfList,
+    const List< DynamicList<point> >& pfList,
     vectorField& fCtrs,
     vectorField& fAreas
 )
 {
-    DynamicList<vector> fCtrList, fAreaList;
+    DynamicList<vector> fCtrList(pfList.size()), fAreaList(pfList.size());
     forAll(pfList,pi)
     {
         vector fCtr, fArea;
@@ -827,7 +817,7 @@ void Foam::isoCutter::makeFaceCentresAndAreas
 
 void Foam::isoCutter::makeFaceCentreAndArea
 (
-    const pointField& p,
+    const DynamicList<point>& p,
     vector& fCtr,
     vector& fArea
 )
@@ -890,7 +880,7 @@ void Foam::isoCutter::getFaceCentresAndAreas
     vectorField& fAreas
 )
 {
-    DynamicList<vector> fCtrList, fAreaList;
+    DynamicList<vector> fCtrList(faceLabels.size()), fAreaList(faceLabels.size());
     forAll(faceLabels,fi)
     {
         fCtrList.append(mesh_.Cf()[faceLabels[fi]]);
@@ -982,13 +972,14 @@ void Foam::isoCutter::printPoints
 void Foam::isoCutter::getFacePoints
 (
     const labelList& fLabels,
-    DynamicList<pointField>& facePointLists
+    DynamicList< DynamicList<point> >& facePointLists
 )
 {
     forAll(fLabels,fi)
     {
-        pointField fp;
-        getFacePoints(fLabels[fi],fp);
+		const label fLabel = fLabels[fi];
+        DynamicList<point> fp((mesh_.faces()[fLabel]).size());
+        getFacePoints(fLabel,fp);
         facePointLists.append(fp);
     }
 }
@@ -997,17 +988,15 @@ void Foam::isoCutter::getFacePoints
 void Foam::isoCutter::getFacePoints
 (
     const label faceLabel,
-    pointField& fp
+    DynamicList<point>& fp
 )
 {
     const pointField& points = mesh_.points();
-    labelList fpLabels = mesh_.faces()[faceLabel];
-    DynamicList<point> facePoints;
+    const labelList& fpLabels = mesh_.faces()[faceLabel];
     forAll(fpLabels,pi)
     {
-        facePoints.append(points[fpLabels[pi]]);
+        fp.append(points[fpLabels[pi]]);
     }
-    fp = facePoints;
 }
 
 // ************************************************************************* //
