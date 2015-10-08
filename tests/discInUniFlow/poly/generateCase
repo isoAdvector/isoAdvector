@@ -1,0 +1,26 @@
+#!/bin/bash
+
+NzList=(20)
+dtList=(0.025)
+CoList=(04)
+
+export T=4
+export Ux=1
+export Uy=0
+export Uz=0
+series=$1
+export solver=isoAdvect
+
+mkdir $series
+
+for n in ${!NzList[*]} 
+do
+    export dt=${dtList[$n]}
+    caseName=N${NzList[$n]}Co${CoList[$n]}
+    echo $caseName
+    cp -r baseCase ${series}/$caseName
+    cp ../tri/meshes/N${NzList[$n]}/* ${series}/${caseName}/constant/polyMesh/
+    envsubst < baseCase/system/controlDict > ${series}/${caseName}/system/controlDict
+    envsubst < baseCase/0.org/U > ${series}/${caseName}/0.org/U
+    touch ${series}/${caseName}/${caseName}.foam
+done

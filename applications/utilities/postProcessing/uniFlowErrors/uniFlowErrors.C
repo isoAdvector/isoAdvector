@@ -122,9 +122,13 @@ int main(int argc, char *argv[])
     while (runTime.run())
     {
         #include "readTimeControls.H"
-
-        runTime++;
 	
+		Info << "Before runTime++: runTime.timeName() = " << runTime.timeName() << endl;
+		Info << "Before runTime++: runTime.time().value() = " << runTime.time().value() << endl;
+        runTime++;
+		Info << "After runTime++: runTime.timeName() = " << runTime.timeName() << endl;
+		Info << "After runTime++: runTime.time().value() = " << runTime.time().value() << endl;
+
 		volScalarField alpha1
 		(
 			IOobject

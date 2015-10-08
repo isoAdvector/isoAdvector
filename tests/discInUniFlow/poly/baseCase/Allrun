@@ -1,0 +1,19 @@
+#!/bin/sh
+
+application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
+
+mkdir logs
+cp -r 0.org 0
+
+#Convert from tet to poly mesh
+polyDualMesh -overwrite 160
+#Remove backmost  part of cells
+topoSet > logs/topoSet.log
+subsetMesh -overwrite c0 -patch front > subsetMesh.log
+rm -rf *.obj
+
+#Calculate initial vof field
+isoSurf > logs/isoSurf.log 2>&1
+
+$application > logs/${application}.log 2>&1
+

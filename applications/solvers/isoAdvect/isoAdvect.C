@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     while (runTime.run())
     {
 		//Setting velocity field and face fluxes for next time step
-		const scalar t = runTime.time().value();
+		scalar t = runTime.time().value();
 		if ( reverseTime > 0.0 && t > reverseTime )
 		{
 			Info<< "Reversing flow" << endl;
@@ -80,7 +80,8 @@ int main(int argc, char *argv[])
         #include "setDeltaT.H"
         runTime++;
         Info<< "Time = " << runTime.timeName() << nl << endl;
-
+		t = runTime.time().value();
+		
 		//Advance alpha1 from time t to t+dt
         const scalar dt = runTime.deltaT().value();
         advector.advect(dt);
