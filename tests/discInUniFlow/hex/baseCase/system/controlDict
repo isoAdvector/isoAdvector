@@ -56,5 +56,6 @@ maxAlphaCo      0.2;
 
 maxDeltaT       0.2;
 
+libs ( "libVOFInterpolationSchemes.so" );
 
 // ************************************************************************* //
