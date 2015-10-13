@@ -21,7 +21,7 @@ export Uz=0.5
 #Case location
 series=$PWD/$1
 #Solver
-export solver=isoAdvect
+export solver=scalarTransportFoam
 
 
 mkdir $series

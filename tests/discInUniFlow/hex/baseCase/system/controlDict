@@ -29,7 +29,7 @@ endTime         $T;
 
 writeControl    timeStep;
 
-writeInterval   1;
+writeInterval   $wInt;
 
 deltaT          $dt;
 
