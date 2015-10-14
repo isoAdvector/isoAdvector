@@ -1,19 +1,20 @@
 #!/bin/bash
 
-testName=CoScan
+testName=NxScan
 
 #Solver
-SOLVERS=(isoAdvect interFoam scalarTransportFoam scalarTransportFoam)
+#SOLVERS=(isoAdvect interFoam scalarTransportFoam scalarTransportFoam)
+SOLVERS=(isoAdvect)
 VOFSCHEMES=(none none CICSAM HRIC)
 VOFPARMS=(0 0 0.5 0)
-NAMES=(isoAdvect MULES CICSAM HRIC)
+#NAMES=(isoAdvect MULES CICSAM HRIC)
+NAMES=(isoAdvect)
 
-export nz=60
-export nx=100
-
-dtList=(0.001 0.005 0.025)
-CoList=(002 01 05)
-writeIntervalList=(25 5 1)
+NzList=(30 60 120 240)
+NxList=(50 100 200 400)
+dtList=(0.05 0.025 0.0125 0.00625)
+writeIntervalList=(1 2 4 8)
+CoList=(05 05 05 05)
 
 if [ "$1" = "generate" ];
 then
@@ -30,9 +31,9 @@ then
     export Uy=0
     export Uz=0.5
 
-mkdir $testName
+    mkdir $testName
 
-#Making directory for each VOF method
+    #Making directory for each VOF method
     for m in ${!NAMES[*]}
     do
         mkdir ${testName}/${NAMES[$m]}
@@ -42,6 +43,8 @@ fi
 #Constructing cases
 for n in ${!dtList[*]}
 do
+    export nx=${NxList[$n]}
+    export nz=${NzList[$n]}
     export dt=${dtList[$n]}
 	export wInt=${writeIntervalList[$n]}
 
@@ -51,11 +54,11 @@ do
         export VOFSCHEME=${VOFSCHEMES[$m]}
         export VOFPARM=${VOFPARMS[$m]}
         name=${NAMES[$m]}
-        caseName=Co${CoList[$n]}
+        caseName=Nx${NxList[$n]}
         caseDir=${testName}/${name}/$caseName
         if [ "$1" = "generate" ];
         then
-            echo "Generating case " $caseDir
+            echo "Generating case" $caseDir
             cp -r baseCase $caseDir
             envsubst < baseCase/constant/polyMesh/blockMeshDict > ${caseDir}/constant/polyMesh/blockMeshDict
             envsubst < baseCase/system/controlDict > ${caseDir}/system/controlDict
@@ -64,7 +67,7 @@ do
             touch ${caseDir}/case.foam
         elif [ "$1" = "run" ];
         then
-            echo "Running case " $caseDir
+            echo "Running case" $caseDir
             cd $caseDir
             ./Allrun &
             cd -
