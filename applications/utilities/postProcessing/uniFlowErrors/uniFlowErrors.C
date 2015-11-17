@@ -33,6 +33,7 @@ Author
 
 \*---------------------------------------------------------------------------*/
 
+#include "timeSelector.H"
 #include "fvCFD.H"
 #include "isoCutter.H"
 #include "volPointInterpolation.H"
@@ -41,6 +42,8 @@ Author
 
 int main(int argc, char *argv[])
 {
+	timeSelector::addOptions();
+
     #include "setRootCase.H"
     #include "createTime.H"
     #include "readTimeControls.H"
@@ -119,15 +122,18 @@ int main(int argc, char *argv[])
 	volScalarField alpha1Exact99 = alpha1; //Convenience copy: values are overwritten in next line
 
 	//Time loop
-    while (runTime.run())
+    instantList timeDirs = timeSelector::select0(runTime, args);
+
+    forAll(timeDirs, timeI)
     {
-        #include "readTimeControls.H"
+        runTime.setTime(timeDirs[timeI], timeI);
+//        #include "readTimeControls.H"
 	
-		Info << "Before runTime++: runTime.timeName() = " << runTime.timeName() << endl;
-		Info << "Before runTime++: runTime.time().value() = " << runTime.time().value() << endl;
-        runTime++;
-		Info << "After runTime++: runTime.timeName() = " << runTime.timeName() << endl;
-		Info << "After runTime++: runTime.time().value() = " << runTime.time().value() << endl;
+//		Info << "Before runTime++: runTime.timeName() = " << runTime.timeName() << endl;
+//		Info << "Before runTime++: runTime.time().value() = " << runTime.time().value() << endl;
+//        runTime++;
+//		Info << "After runTime++: runTime.timeName() = " << runTime.timeName() << endl;
+//		Info << "After runTime++: runTime.time().value() = " << runTime.time().value() << endl;
 
 		volScalarField alpha1
 		(
@@ -168,9 +174,11 @@ int main(int argc, char *argv[])
 		
 		//Calculating alpha1 volScalarField from f = f0 isosurface
 		Foam::isoCutter cutter(mesh,f);
-		cutter.subCellFractions(f0,alpha1Exact);	
-		scalar E1 = sum(mag(alpha1Exact-alpha1)*mesh.V())/V0;
-			
+		cutter.subCellFractions(f0,alpha1Exact);
+		scalar E1 = sum(mag(alpha1Exact-alpha1)*mesh.V());
+		vector cmExact = sum(alpha1Exact*mesh.V()*mesh.C())/sum(mesh.V());
+		vector cm = sum(alpha1*mesh.V()*mesh.C())/sum(mesh.V());
+		
 		scalarField ap = vpi.interpolate(alpha1);
 		Foam::isoCutter cutter2(mesh,ap);
 		
@@ -193,17 +201,22 @@ int main(int argc, char *argv[])
 		cutter3.subCellFractions(.99,alpha1Exact99);	
 		scalar V99Exact = sum(mesh.V()*alpha1Exact99).value();
 		
-		scalar PI = Foam::constant::mathematical::pi;
-		scalar delta = Foam::pow(3.0/(4.0*PI)*V01,1.0/3.0) - Foam::pow(3.0/(4.0*PI)*V99,1.0/3.0);
-		scalar deltaExact = Foam::pow(3.0/(4.0*PI)*V01Exact,1.0/3.0) - Foam::pow(3.0/(4.0*PI)*V99Exact,1.0/3.0);
+//		scalar PI = Foam::constant::mathematical::pi;
+//		scalar delta = Foam::pow(3.0/(4.0*PI)*V01,1.0/3.0) - Foam::pow(3.0/(4.0*PI)*V99,1.0/3.0);
+//		scalar deltaExact = Foam::pow(3.0/(4.0*PI)*V01Exact,1.0/3.0) - Foam::pow(3.0/(4.0*PI)*V99Exact,1.0/3.0);
+		scalar dVExact = V01Exact - V99Exact;
+		scalar dV = V01 - V99;
 		ISstream::defaultPrecision(18);
 
-		Info << "Time: " << runTime.time().value() << ",\tE1 = " << E1 
-			<< ",\tmax(alpha1)-1 = " << max(alpha1).value()-1.0
-			<< ",\tmin(alpha1) = " << min(alpha1).value()
-			<< ",\t(V-V0)/V0 = " << (sum(mesh.V()*alpha1).value()-V0)/V0 
-			<< ",\td/d0 = " << delta/delta0
-			<< ",\td_Ex/d0 = " << deltaExact/delta0 << endl;
+		Info << "Time: " << runTime.time().value() << endl;
+		Info << "E1 = " << E1 << "m3, E1/V0 = " << E1/V0 << endl;
+		Info << "(V-V0)/V0 = " << (sum(mesh.V()*alpha1).value()-V0)/V0 << endl;
+		Info << "min(alpha1) = " << min(alpha1).value()
+			 << ",\t1-max(alpha1) = " << 1-max(alpha1).value() << endl;
+		Info << "(dV-dVEx)/dVEx = " << (dV-dVExact)/dVExact << ", where dV = " 
+			 << dV << " m3 and dVEx = " << dVExact << " m3" << endl;
+		Info << "dCM = " << mag(cm-cmExact) << endl;
+//			<< ",\td_Ex/d0 = " << deltaExact/delta0 << endl;
 //			<< ",\t(V01-Ex)/Ex = " << (V01-V01Exact)/V01Exact
 //			<< ",\t(V99-Ex)/Ex = " << (V99-V99Exact)/V99Exact << endl;		 
 	}

@@ -48,7 +48,7 @@ solvers
         relTol          0;
     }
 	
-	T
+	alpha1
     {
         solver          PBiCG;
         preconditioner  DILU;
@@ -61,9 +61,9 @@ isoAdvector
 {
     isoFaceTol	1e-8;
     surfCellTol	1e-8;
-    clipAlphaTol 1e-12;
+    clipAlphaTol 0;
     nAlphaBounds 5;
-    snapAlpha	true;
+    snapAlpha	false;
     writeToLog	true;
 }
 

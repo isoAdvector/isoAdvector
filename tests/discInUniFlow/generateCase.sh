@@ -1,8 +1,10 @@
 #!/bin/bash
 
-appList=(isoAdvect interFoam scalarTransportFoam scalarTransportFoam)
-schemeList=(isoAdvector MULES HRIC CICSAM)
-meshList=(tri poly)
+#appList=(passiveAdvectionFoam passiveAdvectionFoam interFoam)
+appList=(isoAdvect)
+#schemeList=(HRIC CICSAM MULES)
+schemeList=(isoAdvector)
+meshList=(hex tri poly)
 CoList=(0.1 0.2 0.5)
 
 #Location of tri meshes
@@ -51,11 +53,11 @@ do
 
 				if [ "$scheme" = "CICSAM" ];
 				then
-					./ofset 'div(phi,T)'  "Gauss $scheme 0.5" $caseDir/system/fvSchemes
+					./ofset 'div(phi,alpha1)'  "Gauss $scheme 0.5" $caseDir/system/fvSchemes
 				fi
 				if [ "$scheme" = "HRIC" ];
 				then
-					./ofset 'div(phi,T)'  "Gauss $scheme" $caseDir/system/fvSchemes
+					./ofset 'div(phi,alpha1)'  "Gauss $scheme" $caseDir/system/fvSchemes
 				fi
 
 				#Generating mesh
