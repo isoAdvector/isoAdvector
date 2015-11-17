@@ -1,0 +1,10 @@
+#!/bin/bash
+
+for n in $(ls "${1}");
+do
+	caseDir=${1}/$n
+	echo $caseDir
+	cd $caseDir
+	./Allrun &
+	cd -
+done

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-NzList=(20)
+NzList=(80)
 dtList=(0.025)
 CoList=(04)
 

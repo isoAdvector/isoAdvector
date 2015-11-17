@@ -37,24 +37,24 @@ purgeWrite      0;
 
 writeFormat     ascii;
 
-writePrecision  6;
+writePrecision  14;
 
 writeCompression uncompressed;
 
 timeFormat      general;
 
-timePrecision   6;
+timePrecision   14;
 
 graphFormat     raw;
 
 runTimeModifiable no;
 
-adjustTimeStep  no;
+adjustTimeStep  yes;
 
-maxCo           0.2;
-maxAlphaCo      0.2;
+maxCo           1e6;
+maxAlphaCo      $CoNum;
 
-maxDeltaT       0.2;
+maxDeltaT       1e6;
 
 libs ( "libVOFInterpolationSchemes.so" );
 

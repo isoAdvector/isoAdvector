@@ -1,0 +1,16 @@
+#!/bin/sh
+
+application=$(sed -ne "s/^application\s*\(.*\);/\1/p" system/controlDict)
+
+isoSurf > logs/isoSurf.log 2>&1
+
+if [ "$application" = "scalarTransportFoam" ];
+then
+    echo "Turning alpha1 into T since solver is scalarTransportFoam"
+    sed -i 's/\[0 0 0 0 0 0 0\];/\[0 0 0 1 0 0 0\];/' 0/alpha1
+    sed -i 's/alpha1/T/' 0/alpha1
+    mv 0/alpha1 0/T
+fi
+
+$application > logs/${application}.log 2>&1
+

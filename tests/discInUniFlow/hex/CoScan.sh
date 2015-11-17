@@ -34,9 +34,9 @@ then
     export Uy=0
     export Uz=0.5
 
-mkdir $testName
+	mkdir $testName
 
-#Making directory for each VOF method
+	#Making directory for each VOF method
     for m in ${!NAMES[*]}
     do
         mkdir ${testName}/${NAMES[$m]}
@@ -59,13 +59,15 @@ do
         caseDir=${testName}/${name}/$caseName
         if [ "$1" = "generate" ];
         then
-            echo "Generating case " $caseDir
+
+    		echo "Generating case " $caseDir
             cp -r baseCase $caseDir
             envsubst < baseCase/constant/polyMesh/blockMeshDict > ${caseDir}/constant/polyMesh/blockMeshDict
             envsubst < baseCase/system/controlDict > ${caseDir}/system/controlDict
             envsubst < baseCase/system/fvSchemes > ${caseDir}/system/fvSchemes
             envsubst < baseCase/0.org/U > ${caseDir}/0.org/U
             touch ${caseDir}/case.foam
+
         elif [ "$1" = "run" ];
         then
             echo "Running case " $caseDir

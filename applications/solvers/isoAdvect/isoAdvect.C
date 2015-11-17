@@ -49,7 +49,9 @@ int main(int argc, char *argv[])
     #include "createFields.H"
     #include "readTimeControls.H"
     #include "CourantNo.H"
-    #include "setInitialDeltaT.H"
+//    #include "setInitialDeltaT.H"
+    #include "alphaCourantNo.H"
+    #include "setDeltaT.H"
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
     

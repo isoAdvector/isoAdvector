@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
-    This file is part of OpenFOAM.
+    This file is not part of OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
@@ -36,8 +36,10 @@ if (adjustTimeStep)
     scalar maxDeltaTFact =
         min(maxCo/(CoNum + SMALL), maxAlphaCo/(alphaCoNum + SMALL));
 
-    scalar deltaTFact = min(min(maxDeltaTFact, 1.0 + 0.1*maxDeltaTFact), 1.2);
-
+//Removing damping of deltaT increases
+//    scalar deltaTFact = min(min(maxDeltaTFact, 1.0 + 0.1*maxDeltaTFact), 1.2);
+    scalar deltaTFact = maxDeltaTFact;
+	
     runTime.setDeltaT
     (
         min

@@ -6,10 +6,10 @@ mkdir logs
 cp -r 0.org 0
 
 #Convert from tet to poly mesh
-polyDualMesh -overwrite 160
+polyDualMesh -overwrite 160 > logs/polyDualMesh.log 2>&1
 #Remove backmost  part of cells
-topoSet > logs/topoSet.log
-subsetMesh -overwrite c0 -patch front > subsetMesh.log
+topoSet > logs/topoSet.log 2>&1
+subsetMesh -overwrite c0 -patch front > subsetMesh.log 2>&1
 rm -rf *.obj
 
 #Calculate initial vof field
