@@ -22,11 +22,11 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    isoSurf
+    uniFlowErrors
 
 Description
-    Uses isoCutter to create a volume fraction field from either a cylinder, 
-    a sphere or a plane.
+    Calculate discrepancy from exact VOF solution for a plane, cylinder or 
+	sphere in a uniform velocity field.
 
 Author
     Johan Roenby, DHI, all rights reserved.
@@ -37,6 +37,8 @@ Author
 #include "fvCFD.H"
 #include "isoCutter.H"
 #include "volPointInterpolation.H"
+using namespace std;
+#include <iomanip>
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -44,18 +46,28 @@ int main(int argc, char *argv[])
 {
 	timeSelector::addOptions();
 
+	Foam::argList::noBanner();
     #include "setRootCase.H"
-    #include "createTime.H"
+    Foam::Time runTime(Foam::Time::controlDictName, args);
     #include "readTimeControls.H"
 	instantList instList = runTime.times();
 	//Setting time to first time which is not 'constant'
 	runTime.setTime(instList[1],0); 	
-    #include "createMesh.H"
+    Foam::fvMesh mesh
+    (
+        Foam::IOobject
+        (
+            Foam::fvMesh::defaultRegion,
+            runTime.timeName(),
+            runTime,
+            Foam::IOobject::MUST_READ
+        )
+    );
 	
-	scalar delta0 = Foam::pow(sum(mesh.V()).value(),1.0/3.0);
+//	scalar delta0 = Foam::pow(sum(mesh.V()).value(),1.0/3.0);
 //	Info << "Average edge lengt = " << delta0 << endl;
 	
-	Info<< "Reading field alpha1\n" << endl;
+//	Info<< "Reading field alpha1\n" << endl;
 	volScalarField alpha1
 	(
 		IOobject
@@ -71,7 +83,7 @@ int main(int argc, char *argv[])
 	scalar V0 = sum(mesh.V()*alpha1).value();
 	Info << "Initial water volume V0 = " << V0 << endl;
 	
-	Info<< "Reading field U\n" << endl;
+//	Info<< "Reading field U\n" << endl;
     volVectorField U
     (
         IOobject
@@ -86,12 +98,11 @@ int main(int argc, char *argv[])
     );
 
 	const vector U0 = U[0];
-	Info << "Velocity U0 = " << U0 << endl;
+//	Info << "Velocity U0 = " << U0 << endl;
 
     volScalarField alpha1Exact = alpha1; //Values are overwritten
 	
-	Info<< "Reading isoSurfDict\n" << endl;
-
+//	Info<< "Reading isoSurfDict\n" << endl;
 	IOdictionary isoSurfDict
 	(
 		IOobject
@@ -176,8 +187,8 @@ int main(int argc, char *argv[])
 		Foam::isoCutter cutter(mesh,f);
 		cutter.subCellFractions(f0,alpha1Exact);
 		scalar E1 = sum(mag(alpha1Exact-alpha1)*mesh.V());
-		vector cmExact = sum(alpha1Exact*mesh.V()*mesh.C())/sum(mesh.V());
-		vector cm = sum(alpha1*mesh.V()*mesh.C())/sum(mesh.V());
+		vector cmExact = (sum(alpha1Exact*mesh.V()*mesh.C())/sum(mesh.V())).value();
+		vector cm = (sum(alpha1*mesh.V()*mesh.C())/sum(mesh.V())).value();
 		
 		scalarField ap = vpi.interpolate(alpha1);
 		Foam::isoCutter cutter2(mesh,ap);
@@ -206,16 +217,52 @@ int main(int argc, char *argv[])
 //		scalar deltaExact = Foam::pow(3.0/(4.0*PI)*V01Exact,1.0/3.0) - Foam::pow(3.0/(4.0*PI)*V99Exact,1.0/3.0);
 		scalar dVExact = V01Exact - V99Exact;
 		scalar dV = V01 - V99;
-		ISstream::defaultPrecision(18);
 
 		Info << "Time: " << runTime.time().value() << endl;
-		Info << "E1 = " << E1 << "m3, E1/V0 = " << E1/V0 << endl;
-		Info << "(V-V0)/V0 = " << (sum(mesh.V()*alpha1).value()-V0)/V0 << endl;
-		Info << "min(alpha1) = " << min(alpha1).value()
-			 << ",\t1-max(alpha1) = " << 1-max(alpha1).value() << endl;
-		Info << "(dV-dVEx)/dVEx = " << (dV-dVExact)/dVExact << ", where dV = " 
-			 << dV << " m3 and dVEx = " << dVExact << " m3" << endl;
-		Info << "dCM = " << mag(cm-cmExact) << endl;
+		int w = 12;	
+		int w2 = 10;
+/*		
+		cout << setw(w) << "E1" 
+			 << setw(w) << "E1/V0" 
+			 << setw(w) << "dVrel" 
+			 << setw(w) << "aMin" 
+			 << setw(w) << "1-aMax" 
+			 << setw(w) << "dWrel" 
+			 << setw(w) << "dW" 
+			 << setw(w) << "dWEx"
+			 << setw(w) << "dCM" << endl;
+
+		cout << setprecision(3) << setw(w) << E1 << " "
+		     << setprecision(3) << setw(w2) << E1/V0 << " "
+		     << setprecision(3) << setw(w2) << (sum(mesh.V()*alpha1).value()-V0)/V0 << " "
+		     << setprecision(3) << setw(w2) << min(alpha1).value() << " "
+			 << setprecision(3) << setw(w2) << 1-max(alpha1).value() << " "
+			 << setprecision(3) << setw(w2) << (dV-dVExact)/dVExact << " "
+			 << setprecision(3) << setw(w2) << dV << " "
+			 << setprecision(3) << setw(w2) << dVExact << " "
+		     << setprecision(3) << setw(w2) << mag(cm-cmExact) << endl;
+*/
+		 
+		cout << "E1 "
+			 << "E1/V0 " 
+			 << "dVrel " 
+			 << "aMin " 
+			 << "1-aMax " 
+			 << "dWrel " 
+			 << "dW " 
+			 << "dWEx "
+			 << "dCM" << endl;
+
+		cout << setprecision(2) << E1 << " "
+			 << setprecision(2) << E1/V0 << " "
+		     << setprecision(2) << (sum(mesh.V()*alpha1).value()-V0)/V0 << " "
+		     << setprecision(2) << min(alpha1).value() << " "
+			 << setprecision(2) << 1-max(alpha1).value() << " "
+			 << setprecision(2) << (dV-dVExact)/dVExact << " "
+			 << setprecision(2) << dV << " "
+			 << setprecision(2) << dVExact << " "
+		     << setprecision(2) << mag(cm-cmExact) << endl;
+			 
 //			<< ",\td_Ex/d0 = " << deltaExact/delta0 << endl;
 //			<< ",\t(V01-Ex)/Ex = " << (V01-V01Exact)/V01Exact
 //			<< ",\t(V99-Ex)/Ex = " << (V99-V99Exact)/V99Exact << endl;		 

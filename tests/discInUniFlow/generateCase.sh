@@ -1,9 +1,9 @@
 #!/bin/bash
 
-#appList=(passiveAdvectionFoam passiveAdvectionFoam interFoam)
-appList=(isoAdvect)
-#schemeList=(HRIC CICSAM MULES)
-schemeList=(isoAdvector)
+appList=(isoAdvect interFoam passiveAdvectionFoam passiveAdvectionFoam)
+#appList=(isoAdvect)
+schemeList=(isoAdvector MULES HRIC CICSAM)
+#schemeList=(isoAdvector)
 meshList=(hex tri poly)
 CoList=(0.1 0.2 0.5)
 

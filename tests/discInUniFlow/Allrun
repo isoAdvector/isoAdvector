@@ -1,10 +1,24 @@
 #!/bin/bash
 
-for n in $(ls "${1}");
+schemeList=(isoAdvector HRIC CICSAM MULES)
+meshList=(hex tri poly)
+
+for nn in ${!schemeList[*]}
 do
-	caseDir=${1}/$n
-	echo $caseDir
-	cd $caseDir
-	./Allrun &
-	cd -
+	scheme=${schemeList[$nn]}
+
+	for mm in ${!meshList[*]}
+	do
+		mesh=${meshList[$mm]}
+		casesDir=$scheme/$mesh
+	
+		for n in $(ls $casesDir)
+		do
+			caseDir=$casesDir/$n
+			echo $caseDir
+			cd $caseDir
+			./Allrun
+			cd -
+		done
+	done
 done
