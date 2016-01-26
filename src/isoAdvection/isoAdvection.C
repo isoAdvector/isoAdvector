@@ -150,6 +150,15 @@ void Foam::isoAdvection::timeIntegratedFlux
             dVf[fLabel] = timeIntegratedFlux(fLabel,x0,n0,Un0,f0,dt);
         }
     }
+	
+	//Setting dVf boundary field 
+	forAll(dVfa.boundaryField(), patchI)
+	{
+		const scalarField& phii = phi_.boundaryField()[patchI];
+		const scalarField& alphai = alpha1_.boundaryField()[patchI];
+		scalarField& dVfi = dVfa.boundaryField()[patchI];
+		dVfi = neg(phii)*phii*alphai*dt;
+	}
 }
 
 void Foam::isoAdvection::findSurfaceCells
@@ -789,5 +798,4 @@ void Foam::isoAdvection::advect
     alpha1_.correctBoundaryConditions();
 }
 
-//GIT TEST: A SMALL CHANGE
 // ************************************************************************* //
