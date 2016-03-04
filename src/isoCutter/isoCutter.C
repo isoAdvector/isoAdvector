@@ -458,16 +458,16 @@ void Foam::isoCutter::getFaceCutPoints
     const label nPoints = pLabels.size();
     label pl1 = pLabels[0];
     scalar f1(f_[pl1]);
-    if (mag(f1-f0) < 1e-10)
-    {
-        f1 = f0;
-    }
+//    if (mag(f1-f0) < 1e-10)
+//    {
+//        f1 = f0;
+//    }
     Info << "face values differences from f0: ";
     forAll(pLabels,pi)
     {
         label pl2 = pLabels[(pi+1)%nPoints];
         scalar f2(f_[pl2]);
-        if (mag(f2-f0) < 1e-10)
+        if (mag(f2-f0) < 1e-12)
         {
             f2 = f0;
         }

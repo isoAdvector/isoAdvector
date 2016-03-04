@@ -203,6 +203,23 @@ class isoAdvection
         const scalar dt
     );
 
+	void getTransportedVolume
+    (
+        const scalar dt,
+        surfaceScalarField& dVf
+    );
+	
+	void getxSnSdotnF
+    (
+        surfaceVectorField& xSnSdotnF
+    );
+	
+	void getIsoCentreAndNormal
+    (
+        volVectorField& Ci,
+        volVectorField& Si
+    );
+
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

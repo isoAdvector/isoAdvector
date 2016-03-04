@@ -789,5 +789,121 @@ void Foam::isoAdvection::advect
     alpha1_.correctBoundaryConditions();
 }
 
+void Foam::isoAdvection::getTransportedVolume
+(
+    const scalar dt,
+	surfaceScalarField& dVf
+)
+{
+    isoDebug(Info << "Enter advect" << endl;)
+
+    timeIntegratedFlux(dt, dVf);
+	
+	//Bounding
+	limitFluxes(dVf,dt);
+}
+
+void Foam::isoAdvection::getxSnSdotnF
+(
+	surfaceVectorField& xSnSdotnF
+)
+{
+    volPointInterpolation vpi(mesh_);
+    ap_ = vpi.interpolate(alpha1_);
+
+	vectorField& xSnSdotnFi = xSnSdotnF.internalField();
+
+    //Construction of isosurface calculator to get access to its functionality
+    isoCutter cutter(mesh_,ap_);
+
+    //Find surface cells
+    DynamicList<label> surfaceCells(ceil(mesh_.nCells()/10));
+    findSurfaceCells(surfaceCells);
+		
+    //Isocutting estimate of water flux from surface cellss
+    interpolationCellPoint<vector> UInterp(U_);
+    forAll(surfaceCells,cellI)
+    {
+        const label ci = surfaceCells[cellI];
+
+        //Make list of all cell faces out of which fluid is flowing
+        DynamicList<label> downwindFaces((mesh_.cells()[ci]).size());
+        getDownwindFaces(ci, downwindFaces);
+
+        //Calculate isoFace0 centre xs0, normal ns0, and velocity U0 = U(xs0)
+        scalar f0(0.0), Un0(0.0);
+        vector x0(vector::zero), n0(vector::zero);
+        calcIsoFace(ci,x0,n0,f0,Un0,UInterp); //This one really also should give us a0 on all faces since it is calculated anyway. Do this with a cutCell structure
+        Info << "calcIsoFace for cell " << ci << " gives initial surface: \nx0 = " << x0 << ", \nn0 = " << n0 << ", \nf0 = " << f0 << ", \nUn0 = " << Un0 << endl;
+//        isoDebug(Info << "calcIsoFace gives initial surface: \nx0 = " << x0 << ", \nn0 = " << n0 << ", \nf0 = " << f0 << ", \nUn0 = " << Un0 << endl;)
+
+        //Estimating time integrated water flux through each downwinding face
+        forAll(downwindFaces,fi)
+        {
+            const label fLabel = downwindFaces[fi];
+			vector nf = mesh_.Sf()[fLabel];
+			nf /= mag(nf);
+			//Finding average point along cutting line
+			DynamicList<point> cutPoints;
+		    cutter.getFaceCutPoints(fLabel,f0,cutPoints);
+			Info << "Cutpoints for face " << fLabel << ": " << cutPoints << endl;
+			vector xs = vector::zero;
+			scalar len = 0.0;
+			
+			if (cutPoints.size() > 0)
+			{
+				forAll(cutPoints,pi) //There will typically only be two cutting points
+				{
+					xs += cutPoints[pi];
+					Info << "xs equals " << xs << endl;
+				}
+				xs /= cutPoints.size();
+				Info << "xs equals " << xs << endl;
+				for(label pi = 0; pi < cutPoints.size()-1; pi++)
+				{
+					len += mag(cutPoints[pi+1]-cutPoints[pi]);
+					Info << "len equals " << len << endl;
+				}
+			}
+			//Finding length of cutting line
+            xSnSdotnFi[fLabel] = xs*(nf & n0/mag(n0))*len;
+        }
+    }
+}
+
+void Foam::isoAdvection::getIsoCentreAndNormal
+(
+	volVectorField& Ci,
+	volVectorField& Si
+)
+{
+	
+    volPointInterpolation vpi(mesh_);
+    ap_ = vpi.interpolate(alpha1_);
+	
+    //Construction of isosurface calculator to get access to its functionality
+    isoCutter cutter(mesh_,ap_);
+
+    //Find surface cells
+    DynamicList<label> surfaceCells(ceil(mesh_.nCells()/10));
+    findSurfaceCells(surfaceCells);
+		
+    //Isocutting estimate of water flux from surface cellss
+	label maxIter(100);
+	vector subCellCtr;
+	
+    forAll(surfaceCells,cellI)
+    {
+        const label ci = surfaceCells[cellI];
+        scalar f0(0.0);
+		cutter.vofCutCell(ci, alpha1_[ci], vof2IsoTol_, maxIter, f0, subCellCtr);
+        vector x0(vector::zero), n0(vector::zero);
+		cutter.isoFaceCentreAndArea(ci,f0,x0,n0); //Stupid to recalculate this here - should be provided by vofCutCell above
+		
+		Ci[ci] = x0;
+		Si[ci] = n0;
+	}
+}
+
 
 // ************************************************************************* //

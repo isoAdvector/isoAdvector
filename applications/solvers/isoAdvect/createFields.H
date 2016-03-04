@@ -27,7 +27,7 @@
         ),
         mesh
     );
-	
+
 	//Initial Volume of Fluid (VOF)
     scalar V0 = sum(mesh.V()*alpha1).value();   
 

@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
-    This file is not part of OpenFOAM.
+    This file is part of OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
@@ -22,21 +22,32 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    isoAdvect
+    interFoam
 
 Description
-    Advects a volume of fluid across an FVM mesh by fluxing fluid through its
-    faces. Fluid transport across faces during a time step is estimated from
-    the cell cutting of isosurfaces of the VOF field.
+    Solver for 2 incompressible, isothermal immiscible fluids using a VOF
+    (volume of fluid) phase-fraction based interface capturing approach.
 
-Author
-    Johan Roenby, DHI, all rights reserved.
+    The momentum and other fluid properties are of the "mixture" and a single
+    momentum equation is solved.
+
+    Turbulence modelling is generic, i.e. laminar, RAS or LES may be selected.
+
+    For a two-fluid approach see twoPhaseEulerFoam.
 
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
+#include "MULES.H"
+#include "subCycle.H"
+#include "interfaceProperties.H"
+#include "twoPhaseMixture.H"
+#include "turbulenceModel.H"
+#include "pimpleControl.H"
+#include "fvIOoptionList.H"
 #include "isoAdvection.H"
 #include "isoCutter.H"
+
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -46,74 +57,44 @@ int main(int argc, char *argv[])
     #include "createTime.H"
     #include "createMesh.H"
 
+    pimpleControl pimple(mesh);
+
+    #include "initContinuityErrs.H"
     #include "createFields.H"
     #include "readTimeControls.H"
+    #include "correctPhi.H"
     #include "CourantNo.H"
-//    #include "setInitialDeltaT.H"
-    #include "alphaCourantNo.H"
-    #include "setDeltaT.H"
+    #include "setInitialDeltaT.H"
+
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-    
+
     Info<< "\nStarting time loop\n" << endl;
     isoAdvection advector(alpha1,phi,U,isoAdvectorDict);
+
     while (runTime.run())
     {
-		//Setting velocity field and face fluxes for next time step
-		scalar t = runTime.time().value();
-		if ( reverseTime > 0.0 && t > reverseTime )
-		{
-			Info<< "Reversing flow" << endl;
-			phi = -phi;
-			phi0 = -phi0;
-			U = -U;
-			U0 = -U0;
-			reverseTime = -1.0;
-		}
-		if ( period > 0.0 )
-		{
-			phi = phi0*Foam::cos(2.0*PI*t/period);
-			U = U0*Foam::cos(2.0*PI*t/period);		
-		}
-		
         #include "readTimeControls.H"
         #include "CourantNo.H"
         #include "alphaCourantNo.H"
         #include "setDeltaT.H"
-        runTime++;
-        Info<< "Time = " << runTime.timeName() << nl << endl;
-		t = runTime.time().value();
-		
-		//Advance alpha1 from time t to t+dt
-        const scalar dt = runTime.deltaT().value();
-        advector.advect(dt);
-		
-		//Write total VOF and discrepancy from original VOF to log
-		label lMin = -1, lMax = -1;
-		scalar aMax = -GREAT, aMin = GREAT;
-		forAll(alpha1,ci)
-		{
-			if ( alpha1[ci] > aMax)
-            {
-				aMax = alpha1[ci];
-				lMax = ci;
-			}
-			else if ( alpha1[ci] < aMin )
-			{
-				aMin = alpha1[ci];
-				lMin = ci;				
-			}
-		}
-		
-		const scalar V = sum(mesh.V()*alpha1).value();
-        Info << "t = " << t << ",\t sum(alpha*V) = " << V
-             << ",\t dev = " << 100*(1.0-V/V0) << "%" 
-             << ",\t 1-max(alpha1) = " << 1-aMax << " at cell " << lMax
-             << ",\t min(alpha1) = " << aMin << " at cell " << lMin << endl;
-        
-        runTime.write();
 
-        //Clip and snap alpha1 to ensure strict boundedness to machine precision
+        runTime++;
+
+        Info<< "Time = " << runTime.timeName() << nl << endl;
+
+        twoPhaseProperties.correct();
+
+
+	    //Advance alpha1 from time t to t+dt
+        const scalar dt = runTime.deltaT().value();
+        advector.getTransportedVolume(dt,dVf);
+		alpha1 -= fvc::surfaceIntegrate(dVf); 
+        alpha1.correctBoundaryConditions();
+
+//       advector.advect(dt);
+		
+	//Clip and snap alpha1 to ensure strict boundedness to machine precision
         if ( clipAlphaTol > 0.0 )
         {
             alpha1 = alpha1*pos(alpha1-clipAlphaTol)*neg(alpha1-(1.0-clipAlphaTol)) + pos(alpha1-(1.0-clipAlphaTol));
@@ -122,8 +103,34 @@ int main(int argc, char *argv[])
         {
             alpha1 = min(1.0,max(0.0,alpha1));
         }
-        
-        
+		
+        rho == alpha1*rho1 + (scalar(1) - alpha1)*rho2;
+        rhoPhi = (rho1-rho2)*dVf/dimensionedScalar("dt", dimTime, dt) + rho2*phi;
+
+//        #include "alphaEqnSubCycle.H"
+        interface.correct();
+
+        // --- Pressure-velocity PIMPLE corrector loop
+        while (pimple.loop())
+        {
+            #include "UEqn.H"
+
+            // --- Pressure corrector loop
+            while (pimple.correct())
+            {
+                #include "pEqn.H"
+            }
+
+            if (pimple.turbCorr())
+            {
+                turbulence->correct();
+            }
+        }
+
+        runTime.write();
+        phi.write();
+        rhoPhi.write();
+
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
             << nl << endl;
