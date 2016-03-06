@@ -128,8 +128,8 @@ int main(int argc, char *argv[])
         }
 
         runTime.write();
-        phi.write();
-        rhoPhi.write();
+//        phi.write();
+//        rhoPhi.write();
 
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"

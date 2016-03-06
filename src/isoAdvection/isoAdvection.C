@@ -293,6 +293,8 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 	if ( mag(Un0) > 1e-12 )
 	{
 		pTimes = ((fPts - x0) & n0)/Un0; //Here we estimate time of arrival to the face points from their normal distance to the initial surface and the surface normal velocity
+		dVf = phi_[fLabel]/mag(mesh_.Sf()[fLabel])*timeIntegratedArea(fLabel,fPts,pTimes,dt,Un0);
+		return dVf;
 	}
 	else //Un0 is almost zero
 	{
@@ -303,7 +305,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 		isoDebug(Info << "Warning: Un0 is almost zero (" << Un0 << ") so calculating dVf on face " << fLabel << " using subFaceFraction giving alphaf = " << alphaf << endl;)
 		return dVf;
 	}
-
+/*
     scalarField sortedTimes(pTimes);
     sort(sortedTimes);
     isoDebug(Info << "sortedTimes = " << sortedTimes << endl;)
@@ -355,9 +357,6 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
         isoDebug(Info << "face is initially cut, so finding initial area, pTimes = " << pTimes << ", Un0 = " << Un0 << endl;)
         isoCutter cutter(mesh_,ap_);
         initialArea = cutter.getSubFaceFraction(fLabel, -sign(Un0)*pTimes, 0.0)*mag(mesh_.Sf()[fLabel]); //does not use ap_
-//        scalar A(0.0), B(0.0);
-//        isoDebug(Info << "Calculating quadCoeffs" << endl;)
-//        quadAreaCoeffs(fLabel,pTimes,t[nt],t[nt+1],A,B);
     }
 
     isoDebug(Info << "InitialArea for next time step corresponds to face phase fraction a0 = " << initialArea/mag(mesh_.Sf()[fLabel]) << " where |Sf| = " << mag(mesh_.Sf()[fLabel]) << " was used." << endl;)
@@ -370,8 +369,6 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
         dVf += Unf*(t[nt+1]-t[nt])*(initialArea + integratedQuadArea);
         initialArea += sign(Un0)*(A + B); //Adding quad area to submerged area
         isoDebug(Info << "Integrating area for " << nt+1 << "'th time interval: [" << t[nt] << ", " << t[nt+1] << "] giving dVf = " << dVf << " and a0 = " << initialArea/mag(mesh_.Sf()[fLabel]) << endl;)
-//      Info << "face owner = " << mesh_.owner()[fLabel] << endl;
-//      scalar newdVf = phi_[fLabel]/mag(mesh_.Sf()[fLabel])*(t1-t0)*(a0*mag(mesh_.Sf()[fLabel]) + sign(Un0)*integratedArea(fLabel,f0,f1));
         nt++;
     }
 
@@ -381,8 +378,101 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
         dVf += phi_[fLabel]*(t[nt+1]-t[nt])*pos(Un0); //If face is cut at some intermediate time but not at last time, then if Un0 > 0 (cell filling up) face must be filled at last time interval.
     }
     return dVf;
+*/
 }
 
+Foam::scalar Foam::isoAdvection::timeIntegratedArea
+(
+	const label fLabel,
+	const pointField& fPts,
+	const scalarField& pTimes,
+	const scalar dt,
+	const scalar Un0
+)
+{
+	scalar tIntArea = 0.0;
+	const label nPoints = fPts.size();
+	scalar magSf;
+	if ( (mesh_.faces()[fLabel]).size() == fPts.size() ) //full face
+	{
+		magSf = mag(mesh_.Sf()[fLabel]);
+	}
+	else //triangular subface
+	{
+		magSf = mag((fPts[1]-fPts[0])^(fPts[2]-fPts[0]));
+	}
+	scalarField sortedTimes(pTimes);
+    sort(sortedTimes);
+    isoDebug(Info << "sortedTimes = " << sortedTimes << endl;)
+
+    //Dealing with case where face is not cut by surface during time interval [0,dt] because face was already passed by surface
+    if ( sortedTimes[nPoints-1] <= 0.0 ) //All cuttings in the past
+    {
+        isoDebug(Info << "All cuttings in the past" << endl;)
+        tIntArea = magSf*dt*pos(Un0); //If all face cuttings were in the past and cell is filling up (Un0>0) then face must be full during whole time interval
+        return tIntArea;
+    }
+
+    //Dealing with case where face is not cut by surface during time interval [0,dt] because dt is too small for surface to reach closest face point
+    if ( sortedTimes[0] >= dt ) //All cuttings in the future
+    {
+        isoDebug(Info << "All cuttings in the future" << endl;)
+        tIntArea = magSf*dt*(1-pos(Un0)); //If all cuttings are in the future but non of them within [0,dt] then if cell is filling up (Un0 > 0) face must be empty during whole time interval
+        return tIntArea;
+    }
+
+    //Cutting sortedTimes at 0 and dt
+    DynamicList<scalar> t(sortedTimes.size()+2);
+    t.append(0.0);
+    forAll(sortedTimes,ti)
+    {
+        if ( 1e-3*dt < sortedTimes[ti] && sortedTimes[ti] < (1-1e-3)*dt )
+        {
+            t.append(sortedTimes[ti]);
+        }
+    }
+    t.append(dt);
+    isoDebug(Info << "Cutting sortedTimes at 0 and dt: t = " << t << endl;)
+
+    bool faceUncutInFirstInterval(sortedTimes[0] > 0.0);
+    bool faceUncutInLastInterval(sortedTimes[nPoints-1] < dt);
+
+    //Dealing with cases where face is cut at least once during time interval [0,dt]
+    label nt = 0; //Time interval counter
+    scalar initialArea(0.0); //Submerged area at time
+    if ( faceUncutInFirstInterval ) //Special treatment for first time interval if face is uncut during this
+    {
+        tIntArea = magSf*(t[nt+1]-t[nt])*(1.0-pos(Un0)); //If Un0 > 0 cell is filling up - hence if face is cut at a later time but not initially it must be initially empty
+        initialArea = magSf*(1.0-pos(Un0));
+        isoDebug(Info << "faceUncutInFirstInterval, so special treatment for first time interval: [" << t[nt] << ", " << t[nt+1] << "] giving tIntArea = " << tIntArea << endl;)
+        nt++;
+    }
+    else //calculate initialArea if face is initially cut
+    {
+        isoDebug(Info << "face is initially cut, so finding initial area, pTimes = " << pTimes << ", Un0 = " << Un0 << endl;)
+        isoCutter cutter(mesh_,ap_);
+        initialArea = cutter.getSubFaceFraction(fLabel, -sign(Un0)*pTimes, 0.0)*magSf; //does not use ap_
+    }
+
+    isoDebug(Info << "InitialArea for next time step corresponds to face phase fraction a0 = " << initialArea/magSf << " where |Sf| = " << magSf << " was used." << endl;)
+    while ( nt < t.size()-(1+faceUncutInLastInterval) ) //
+    {
+        scalar quadArea(0.0), intQuadArea(0.0);
+		getQuadArea(fLabel,fPts,pTimes,t[nt],t[nt+1],quadArea,intQuadArea);
+        scalar integratedQuadArea = sign(Un0)*intQuadArea; //Integration of area(t) = A*t^2+B*t from t = 0 to 1.
+        tIntArea += (t[nt+1]-t[nt])*(initialArea + integratedQuadArea);
+        initialArea += sign(Un0)*quadArea; //Adding quad area to submerged area
+        isoDebug(Info << "Integrating area for " << nt+1 << "'th time interval: [" << t[nt] << ", " << t[nt+1] << "] giving dVf = " << dVf << " and a0 = " << initialArea/magSf << endl;)
+        nt++;
+    }
+
+    if ( faceUncutInLastInterval && (nt+1) < t.size() ) //Special treatment for last time interval if face is uncut during this
+    {
+        isoDebug(Info << "faceUncutInLastInterval, so special treatment for last (" << nt+1 << "'th) time interval: [" << t[nt] << ", " << t[nt+1] << "]" << endl;)
+        tIntArea += magSf*(t[nt+1]-t[nt])*pos(Un0); //If face is cut at some intermediate time but not at last time, then if Un0 > 0 (cell filling up) face must be filled at last time interval.
+    }
+    return tIntArea;
+}
 
 void Foam::isoAdvection::getDownwindFaces
 (
@@ -536,6 +626,119 @@ void Foam::isoAdvection::quadAreaCoeffs
 	}
 }
 
+
+void Foam::isoAdvection::getQuadArea
+(
+	const label fLabel,
+	const pointField& p,
+	const scalarField& f,
+	const scalar f0,
+	const scalar f1,
+	scalar& quadArea,
+	scalar& intQuadArea
+)
+{
+    isoDebug(Info << "Enter getQuadArea" << endl;)
+    isoCutter cutter(mesh_,ap_);
+    DynamicList<point> pf0(2), pf1(2);
+    cutter.getFaceCutPoints(p,f,f0,pf0);
+    cutter.getFaceCutPoints(p,f,f1,pf1);
+
+    label np0(pf0.size()), np1(pf1.size());
+//    isoDebug(Info << "Face " << fLabel << " was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;)
+
+//  scalar area(0.0);
+    scalar alpha = 0.0;
+    scalar beta = 0.0;
+    quadArea = 0.0;
+    intQuadArea = 0.0;
+
+    if ( np0 > 0 && np1 > 0)
+    {
+        //Defining quadrilateral vertices
+        vector A(pf0[0]), C(pf1[0]), B(vector::zero), D(vector::zero);
+
+        //Triangle cases
+        if (np0 == 2)
+        {
+            B = pf0[1];
+        }
+        else if ( np0 == 1 )
+        {
+            B = A + 1e-4*(pf1[1]-pf1[0]);
+        }
+		else
+		{
+			Info << "Warning: Vertex face was cut at " << pf0 << " by f0 = " << f0 << endl;			
+		}
+
+        if (np1 == 2)
+        {
+            D = pf1[1];
+        }
+        else if ( np1 == 1 )
+        {
+            D = C + 1e-4*(A-B);
+        }
+		else
+		{
+			Info << "Warning: Vertex face was cut at " << pf1 << " by f1 = " << f1 << endl;			
+		}
+
+		vector zhat;
+        //Defining local coordinates for area integral calculation
+		if ( (mesh_.faces()[fLabel]).size() == p.size() ) //full face
+		{
+			zhat = mesh_.Sf()[fLabel]/mag(mesh_.Sf()[fLabel]);			
+		}
+		else //triangle subface - make sure that triangle has same orientation as parent face
+		{
+			zhat = (p[1]-p[0])^(p[2]-p[0]);
+			zhat /= mag(zhat);
+		}
+
+        vector xhat = B-A;
+        xhat -= (xhat & zhat)*zhat;
+        xhat /= mag(xhat);
+
+        vector yhat = zhat ^ xhat;
+        yhat /= mag(yhat); //Should not be necessary
+
+//        isoDebug(Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = " << (yhat & zhat) << endl;)
+
+
+        //Swapping pf1 points if pf0 and pf1 point in same general direction (because we want a quadrilateral ABCD where pf0 = AB and pf1 = CD)
+        if ( ((B-A) & (D-C)) > 0 )
+        {
+////            Info << "Swapping C and D" << endl;
+            vector tmp = D;
+            D = C;
+            C = tmp;
+        }
+
+////        Info << "A = " << A << ", B = " << B << ", C = " << C << ", D = " << D << endl;
+        scalar Bx = mag(B-A);
+        scalar Cx = (C-A) & xhat;
+        scalar Cy = mag((C-A) & yhat);
+        scalar Dx = (D-A) & xhat;
+        scalar Dy = mag((D-A) & yhat);
+
+
+//      area = ((Cx-Bx)*Dy-Dx*Cy)/6.0 + 0.25*Bx*(Dy+Cy);
+        alpha = 0.5*((Cx-Bx)*Dy-Dx*Cy);
+        beta = 0.5*Bx*(Dy+Cy);
+		quadArea = alpha + beta;
+		intQuadArea = alpha/3.0 + 0.5*beta;
+
+////        Info << "Bx = " << Bx << ", Cx = " << Cx << ", Cy = " << Cy << ", Dx = " << Dx << ", Dy = " << Dy << ", alpha = " << alpha << ", beta = " << beta << endl;
+        //area(t) = A*t^2+B*t
+        //integratedArea = A/3+B/2
+    }
+	else
+	{
+		Info << "Vertex face was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;
+	}
+}
 
 void Foam::isoAdvection::subSetExtrema
 (

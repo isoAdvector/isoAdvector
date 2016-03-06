@@ -14,7 +14,7 @@
 
     adjustPhi(phiHbyA, U, p_rgh);
     phi = phiHbyA;
-
+/*
 	Info << "Creating xSnSdotnfdl" << endl;
 	surfaceVectorField xSnSdotnfdl
 	(
@@ -71,26 +71,26 @@
 	Info << "max(mag(Si)) = " << max(mag(Si)) << endl;
 	
 	Info << "Using	 xSnSdotnfdl" << endl;
-
+*/
 //	volVectorField Ug('Ug',((Ci & g)*((rho1-rho2)/mesh.V())*Si));
-	volVectorField Ug = (Ci & g)*Si;
-	surfaceScalarField phig2 = ((Ci & g)*(rho1-rho2))*Si;
+//	volVectorField Ug = (Ci & g)*Si;
+//	surfaceScalarField phig2 = ((Ci & g)*(rho1-rho2))*Si;
     surfaceScalarField phig
     (
         (
             fvc::interpolate(interface.sigmaK())*fvc::snGrad(alpha1)
 //            fvc::interpolate(rAU*interface.sigmaK())*fvc::snGrad(alpha1)*mesh.magSf()
 //          - (fvc::interpolate(gh*rAU*fvc::grad(rho)) & mesh.Sf())
-//          - ghf*fvc::snGrad(rho)
+          - ghf*fvc::snGrad(rho)
 //          - fvc::snGrad(gh*rho)
         )*rAUf*mesh.magSf()
 //        - (rho2-rho1)*(g & xSnSdotnfdl)*rAUf
-		- (rho1-rho2)*(fvc::interpolate(Ug) & mesh.Sf())*rAUf
+//		- (rho1-rho2)*(fvc::interpolate(Ug) & mesh.Sf())*rAUf
 //        )*mesh.magSf()
 //        )
     );
 
-	
+/*	
 	surfaceScalarField v1
 	(
 		IOobject
@@ -118,6 +118,7 @@
 	    (rho2-rho1)*(g & xSnSdotnfdl)
 	);
 	v2.write();
+*/
 	
     phiHbyA += phig;
 

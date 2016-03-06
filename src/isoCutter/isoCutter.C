@@ -533,6 +533,46 @@ void Foam::isoCutter::getFaceCutPoints
     }
 }
 
+
+void Foam::isoCutter::getFaceCutPoints
+(
+    const pointField& pts,
+    const scalarField& f,
+    const scalar f0,
+    DynamicList<point>& cutPoints
+)
+{
+	isoDebug(Info << "Enter getFaceCutPoints" << endl;)
+
+    const label nPoints = pts.size();
+    scalar f1(f[0]);
+//    if (mag(f1-f0) < 1e-12)
+//    {
+//        f1 = f0;
+//    }
+    forAll(pts,pi)
+    {
+        label pi2 = (pi+1)%nPoints;
+        scalar f2 = f[pi2];
+        if (mag(f2-f0) < 1e-12)
+        {
+            f2 = f0;
+        }
+        bool edgeIsCut = min(f1,f2) < f0 && max(f1,f2) > f0;
+        if ( edgeIsCut )
+        {
+            scalar s = (f0-f1)/(f2-f1);
+            point pCut = pts[pi] + s*(pts[pi2]-pts[pi]);
+            cutPoints.append(pCut);
+        }
+        else if ( f1 == f0 )
+        {
+            cutPoints.append(pts[pi]);
+        }
+        f1 = f2;
+    }
+}
+
 void Foam::isoCutter::fullySubmergedFaces
 (
     const label cellI,

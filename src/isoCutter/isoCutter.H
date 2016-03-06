@@ -302,6 +302,14 @@ public:
             DynamicList<point>& cutPoints
         );
 
+        //- Return cutPoints for a given defined py its vertices pts as above.
+        void getFaceCutPoints
+        (
+			const pointField& pts,
+			const scalarField& f,
+			const scalar f0,
+			DynamicList<point>& cutPoints
+        );
 
         //- Calculate face centre and area from pointField assumed to represent an oriented face
         //  Taken from primitiveMesh
