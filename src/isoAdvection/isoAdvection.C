@@ -392,6 +392,8 @@ Foam::scalar Foam::isoAdvection::timeIntegratedArea
 {
 	scalar tIntArea = 0.0;
 	const label nPoints = fPts.size();
+	
+	//Face area
 	scalar magSf;
 	if ( (mesh_.faces()[fLabel]).size() == fPts.size() ) //full face
 	{
@@ -401,6 +403,8 @@ Foam::scalar Foam::isoAdvection::timeIntegratedArea
 	{
 		magSf = mag((fPts[1]-fPts[0])^(fPts[2]-fPts[0]));
 	}
+	
+	//Sorting face vertex encounter time list
 	scalarField sortedTimes(pTimes);
     sort(sortedTimes);
     isoDebug(Info << "sortedTimes = " << sortedTimes << endl;)
@@ -462,7 +466,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedArea
         scalar integratedQuadArea = sign(Un0)*intQuadArea; //Integration of area(t) = A*t^2+B*t from t = 0 to 1.
         tIntArea += (t[nt+1]-t[nt])*(initialArea + integratedQuadArea);
         initialArea += sign(Un0)*quadArea; //Adding quad area to submerged area
-        isoDebug(Info << "Integrating area for " << nt+1 << "'th time interval: [" << t[nt] << ", " << t[nt+1] << "] giving dVf = " << dVf << " and a0 = " << initialArea/magSf << endl;)
+        isoDebug(Info << "Integrating area for " << nt+1 << "'th time interval: [" << t[nt] << ", " << t[nt+1] << "] giving tIntArea = " << tIntArea << " and a0 = " << initialArea/magSf << endl;)
         nt++;
     }
 
@@ -645,9 +649,8 @@ void Foam::isoAdvection::getQuadArea
     cutter.getFaceCutPoints(p,f,f1,pf1);
 
     label np0(pf0.size()), np1(pf1.size());
-//    isoDebug(Info << "Face " << fLabel << " was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;)
+    isoDebug(Info << "Face " << fLabel << " was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;)
 
-//  scalar area(0.0);
     scalar alpha = 0.0;
     scalar beta = 0.0;
     quadArea = 0.0;
@@ -659,7 +662,7 @@ void Foam::isoAdvection::getQuadArea
         vector A(pf0[0]), C(pf1[0]), B(vector::zero), D(vector::zero);
 
         //Triangle cases
-        if (np0 == 2)
+        if (np0 == 2 && mag(pf0[0]-pf0[1]) > SMALL)
         {
             B = pf0[1];
         }
@@ -672,7 +675,7 @@ void Foam::isoAdvection::getQuadArea
 			Info << "Warning: Vertex face was cut at " << pf0 << " by f0 = " << f0 << endl;			
 		}
 
-        if (np1 == 2)
+        if (np1 == 2 && mag(pf1[0]-pf1[1]) > SMALL)
         {
             D = pf1[1];
         }
