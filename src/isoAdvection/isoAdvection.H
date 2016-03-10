@@ -155,7 +155,7 @@ class isoAdvection
 	(
 		const scalarField& alpha1,
 		const scalar dt,
-		scalarField& dVfcorrected,
+		surfaceScalarField& dVfcorrected,
 		DynamicList<label>& correctedFaces
 	);
 
@@ -163,7 +163,7 @@ class isoAdvection
     //- Given the face volume transport dVf calculates the total volume leaving cell cLabel 
     scalar netFlux
     (
-        const scalarField& dVf,
+        const surfaceScalarField& dVf,
         const label cLabel
     );
 
