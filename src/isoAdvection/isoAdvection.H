@@ -1,4 +1,3 @@
-
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
@@ -177,7 +176,7 @@ class isoAdvection
 	(
 		const scalarField& alpha1,
 		const scalar dt,
-		surfaceScalarField& dVfcorrected,
+		scalarField& dVfcorrected,
 		DynamicList<label>& correctedFaces
 	);
 
@@ -185,7 +184,7 @@ class isoAdvection
     //- Given the face volume transport dVf calculates the total volume leaving cell cLabel 
     scalar netFlux
     (
-        const surfaceScalarField& dVf,
+        const scalarField& dVf,
         const label cLabel
     );
 

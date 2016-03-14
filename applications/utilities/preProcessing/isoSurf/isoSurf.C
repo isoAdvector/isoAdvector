@@ -77,7 +77,6 @@ int main(int argc, char *argv[])
 	const vector direction = isoSurfDict.lookupOrDefault<vector>("direction",vector::zero);
 	const scalar radius = isoSurfDict.lookupOrDefault<scalar>("radius",0.0);
 
-	Info << "Reading from isoSurfDict: type = " << type << ", centre = " << centre << ", direction = " << direction << ", radius = " << radius << endl;
 	const scalarField x = mesh.points().component(0);
     const scalarField y = mesh.points().component(1);
     const scalarField z = mesh.points().component(2);
@@ -86,7 +85,7 @@ int main(int argc, char *argv[])
 
 	if ( surfType == "plane" )
 	{
-		f = -((mesh.points() - centre) & (direction/mag(direction)));
+		f = -(mesh.points() - centre) & (direction/mag(direction));
 		f0 = 0.0;
 	}
 	else if ( surfType == "sphere" )
