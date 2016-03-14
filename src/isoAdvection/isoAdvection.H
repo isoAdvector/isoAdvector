@@ -1,4 +1,3 @@
-
 /*---------------------------------------------------------------------------*\
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
@@ -110,15 +109,6 @@ class isoAdvection
         const scalar dt
     );
 
-	scalar timeIntegratedArea
-	(
-		const label fLabel,
-		const pointField& fPts,
-		const scalarField& pTimes,
-		const scalar dt,
-		const scalar Un0
-	);
-	
     //- For cell ci return labels of faces fluxing out of this cell (based on sign of phi)
     void getDownwindFaces
     (
@@ -142,18 +132,6 @@ class isoAdvection
         const scalar f1,
         scalar& A,
         scalar& B
-    );
-
-    //- For face with vertices p calculate its area and integrated area between isocutting lines with isovalues f0 and f1 given vertex values f
-    void getQuadArea
-    (
-		const label fLabel,
-        const pointField& p,
-        const scalarField& f,
-        const scalar f0,
-        const scalar f1,
-        scalar& quadArea,
-        scalar& intQuadArea
     );
 
     //- Find min and max of subset of scalarField f defined by labelList label
@@ -230,18 +208,6 @@ class isoAdvection
         const scalar dt,
         surfaceScalarField& dVf
     );
-	
-	void getxSnSdotnF
-    (
-        surfaceVectorField& xSnSdotnF
-    );
-	
-	void getIsoCentreAndNormal
-    (
-        volVectorField& Ci,
-        volVectorField& Si
-    );
-
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

@@ -25,6 +25,7 @@ License
 
 #include "isoAdvection.H"
 #include "isoCutter.H"
+#include "upwind.H"
 #include "volPointInterpolation.H"
 #include "interpolationCellPoint.H"
 #include "fvcSurfaceIntegrate.H"
@@ -69,6 +70,7 @@ void Foam::isoAdvection::timeIntegratedFlux
 {
     isoDebug(Info << "Enter timeIntegratedFlux" << endl;)
 
+	//Estimated total water volume transported across mesh faces during time interval dt. The sign convenctino is like the flux phi, i.e. positive means out of owner cell.
 
     //Interpolating VOF field to mesh points
 /*  
@@ -140,8 +142,15 @@ void Foam::isoAdvection::timeIntegratedFlux
                 patchdVF[pFaceI] = patchPhi[pFaceI]*
                     Foam::max(Foam::min(scalar(1), alphaIn[fc[pFaceI]]), scalar(0))*dt;
             }
+			else //Added by JRO
+			{
+                patchdVF[pFaceI] = 0;
+			}
         }
     }
+
+	//surfaceScalarField phiBD(upwind<scalar>(psi_.mesh(), phi_).flux(psi_));
+//	dVf = (upwind<scalar>(alpha1_.mesh(), phi_).flux(alpha1_))*dimensionedScalar("dt", dimTime, dt);
 
     // Isocutting estimate of water flux from surface cells
     interpolationCellPoint<vector> UInterp(U_);
@@ -176,7 +185,7 @@ void Foam::isoAdvection::timeIntegratedFlux
             else
             {
                 // Boundary face.  Find out which face of which patch
-                scalar patchI = mesh_.boundaryMesh().whichPatch(fLabel);
+                label patchI = mesh_.boundaryMesh().whichPatch(fLabel);
 
                 if (patchI < 0 || patchI >= mesh_.boundaryMesh().size())
                 {
@@ -187,7 +196,7 @@ void Foam::isoAdvection::timeIntegratedFlux
                         << abort(FatalError);
                 }
 
-                scalar faceI =
+                label faceI =
                     mesh_.boundaryMesh()[patchI].whichFace
                     (
                         fLabel
@@ -208,8 +217,18 @@ void Foam::isoAdvection::timeIntegratedFlux
     // will be swapped.  If the neighbour flux is positive (exiting cell on the
     // other side), use its negative value: face normals are opposing
 
+    //This is extremely similar to Foam::syncTools::syncBoundaryFaceList
+	//Could we just use 
+	//syncBoundaryFaceList(mesh_,faceValues??,maxOp<s>(),dummyTransform())
+	//This would make the code work both with foam and OF
+
+	PstreamBuffers pBufs(Pstream::nonBlocking);
+
+	// Send
+	
     forAll (dVf.boundaryField(), patchI)
     {
+		
         if (isA<processorFvsPatchScalarField>(dVf.boundaryField()[patchI]))
         {
             const processorFvPatch& procPatch =
@@ -220,17 +239,24 @@ void Foam::isoAdvection::timeIntegratedFlux
                 << " to " << procPatch.neighbProcNo()
                 << endl;
 
+/*
             OPstream toNeighbour
             (
                 Pstream::blocking,
                 procPatch.neighbProcNo()
             );
+*/
+            UOPstream toNeighbour(procPatch.neighbProcNo(), pBufs);
 
             const scalarField& pFlux = dVf.boundaryField()[patchI];
 
-            toNeighbour<< pFlux;
+            toNeighbour << pFlux;
         }
     }
+
+    pBufs.finishedSends();
+
+    // Receive and combine.
 
     forAll (dVf.boundaryField(), patchI)
     {
@@ -244,28 +270,39 @@ void Foam::isoAdvection::timeIntegratedFlux
                 << " from " << procPatch.neighbProcNo()
                 << endl;
 
+			scalarField nbrdVf(procPatch.size());			
+/*
             IPstream fromNeighbour
             (
                 Pstream::blocking,
                 procPatch.neighbProcNo()
             );
+*/
+			UIPstream fromNeighbour(procPatch.neighbProcNo(), pBufs);
+			fromNeighbour >> nbrdVf;
 
-            scalarField nbrFlux(fromNeighbour);
+//            scalarField nbrdVf(fromNeighbour);
+			
+			//This reveals that nbrdVf is always ~10e-40.
+			Info << "max(abs(nbrdVf)) = " << max(mag(nbrdVf)) << ", max(abs(dVf)) = " << max(mag(phi_*dt)) << endl;
 
             // Combine fluxes
 
-            scalarField& localFlux = dVf.boundaryField()[patchI];
+            scalarField& localdVf = dVf.boundaryField()[patchI];
+            const scalarField& localFlux = phi_.boundaryField()[patchI];
 
-            forAll (nbrFlux, faceI)
+            forAll (nbrdVf, faceI)
             {
-                if (nbrFlux[faceI] > 0)
+                if (localFlux[faceI] < 0)
                 {
-                    localFlux[faceI] = -nbrFlux[faceI];
+                    localdVf[faceI] = -nbrdVf[faceI];
                 }
             }
-		}
+        }
     }
+
 }
+
 
 void Foam::isoAdvection::findSurfaceCells
 (
@@ -410,8 +447,6 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 	if ( mag(Un0) > 1e-12 )
 	{
 		pTimes = ((fPts - x0) & n0)/Un0; //Here we estimate time of arrival to the face points from their normal distance to the initial surface and the surface normal velocity
-		dVf = phi_[fLabel]/mag(mesh_.Sf()[fLabel])*timeIntegratedArea(fLabel,fPts,pTimes,dt,Un0);
-		return dVf;
 	}
 	else //Un0 is almost zero
 	{
@@ -422,7 +457,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 		isoDebug(Info << "Warning: Un0 is almost zero (" << Un0 << ") so calculating dVf on face " << fLabel << " using subFaceFraction giving alphaf = " << alphaf << endl;)
 		return dVf;
 	}
-/*
+
     scalarField sortedTimes(pTimes);
     sort(sortedTimes);
     isoDebug(Info << "sortedTimes = " << sortedTimes << endl;)
@@ -474,6 +509,9 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
         isoDebug(Info << "face is initially cut, so finding initial area, pTimes = " << pTimes << ", Un0 = " << Un0 << endl;)
         isoCutter cutter(mesh_,ap_);
         initialArea = cutter.getSubFaceFraction(fLabel, -sign(Un0)*pTimes, 0.0)*mag(mesh_.Sf()[fLabel]); //does not use ap_
+//        scalar A(0.0), B(0.0);
+//        isoDebug(Info << "Calculating quadCoeffs" << endl;)
+//        quadAreaCoeffs(fLabel,pTimes,t[nt],t[nt+1],A,B);
     }
 
     isoDebug(Info << "InitialArea for next time step corresponds to face phase fraction a0 = " << initialArea/mag(mesh_.Sf()[fLabel]) << " where |Sf| = " << mag(mesh_.Sf()[fLabel]) << " was used." << endl;)
@@ -486,6 +524,8 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
         dVf += Unf*(t[nt+1]-t[nt])*(initialArea + integratedQuadArea);
         initialArea += sign(Un0)*(A + B); //Adding quad area to submerged area
         isoDebug(Info << "Integrating area for " << nt+1 << "'th time interval: [" << t[nt] << ", " << t[nt+1] << "] giving dVf = " << dVf << " and a0 = " << initialArea/mag(mesh_.Sf()[fLabel]) << endl;)
+//      Info << "face owner = " << mesh_.owner()[fLabel] << endl;
+//      scalar newdVf = phi_[fLabel]/mag(mesh_.Sf()[fLabel])*(t1-t0)*(a0*mag(mesh_.Sf()[fLabel]) + sign(Un0)*integratedArea(fLabel,f0,f1));
         nt++;
     }
 
@@ -495,105 +535,8 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
         dVf += phi_[fLabel]*(t[nt+1]-t[nt])*pos(Un0); //If face is cut at some intermediate time but not at last time, then if Un0 > 0 (cell filling up) face must be filled at last time interval.
     }
     return dVf;
-*/
 }
 
-Foam::scalar Foam::isoAdvection::timeIntegratedArea
-(
-	const label fLabel,
-	const pointField& fPts,
-	const scalarField& pTimes,
-	const scalar dt,
-	const scalar Un0
-)
-{
-	scalar tIntArea = 0.0;
-	const label nPoints = fPts.size();
-	
-	//Face area
-	scalar magSf;
-	if ( (mesh_.faces()[fLabel]).size() == fPts.size() ) //full face
-	{
-		magSf = mag(mesh_.Sf()[fLabel]);
-	}
-	else //triangular subface
-	{
-		magSf = mag((fPts[1]-fPts[0])^(fPts[2]-fPts[0]));
-	}
-	
-	//Sorting face vertex encounter time list
-	scalarField sortedTimes(pTimes);
-    sort(sortedTimes);
-    isoDebug(Info << "sortedTimes = " << sortedTimes << endl;)
-
-    //Dealing with case where face is not cut by surface during time interval [0,dt] because face was already passed by surface
-    if ( sortedTimes[nPoints-1] <= 0.0 ) //All cuttings in the past
-    {
-        isoDebug(Info << "All cuttings in the past" << endl;)
-        tIntArea = magSf*dt*pos(Un0); //If all face cuttings were in the past and cell is filling up (Un0>0) then face must be full during whole time interval
-        return tIntArea;
-    }
-
-    //Dealing with case where face is not cut by surface during time interval [0,dt] because dt is too small for surface to reach closest face point
-    if ( sortedTimes[0] >= dt ) //All cuttings in the future
-    {
-        isoDebug(Info << "All cuttings in the future" << endl;)
-        tIntArea = magSf*dt*(1-pos(Un0)); //If all cuttings are in the future but non of them within [0,dt] then if cell is filling up (Un0 > 0) face must be empty during whole time interval
-        return tIntArea;
-    }
-
-    //Cutting sortedTimes at 0 and dt
-    DynamicList<scalar> t(sortedTimes.size()+2);
-    t.append(0.0);
-    forAll(sortedTimes,ti)
-    {
-        if ( 1e-3*dt < sortedTimes[ti] && sortedTimes[ti] < (1-1e-3)*dt )
-        {
-            t.append(sortedTimes[ti]);
-        }
-    }
-    t.append(dt);
-    isoDebug(Info << "Cutting sortedTimes at 0 and dt: t = " << t << endl;)
-
-    bool faceUncutInFirstInterval(sortedTimes[0] > 0.0);
-    bool faceUncutInLastInterval(sortedTimes[nPoints-1] < dt);
-
-    //Dealing with cases where face is cut at least once during time interval [0,dt]
-    label nt = 0; //Time interval counter
-    scalar initialArea(0.0); //Submerged area at time
-    if ( faceUncutInFirstInterval ) //Special treatment for first time interval if face is uncut during this
-    {
-        tIntArea = magSf*(t[nt+1]-t[nt])*(1.0-pos(Un0)); //If Un0 > 0 cell is filling up - hence if face is cut at a later time but not initially it must be initially empty
-        initialArea = magSf*(1.0-pos(Un0));
-        isoDebug(Info << "faceUncutInFirstInterval, so special treatment for first time interval: [" << t[nt] << ", " << t[nt+1] << "] giving tIntArea = " << tIntArea << endl;)
-        nt++;
-    }
-    else //calculate initialArea if face is initially cut
-    {
-        isoDebug(Info << "face is initially cut, so finding initial area, pTimes = " << pTimes << ", Un0 = " << Un0 << endl;)
-        isoCutter cutter(mesh_,ap_);
-        initialArea = cutter.getSubFaceFraction(fLabel, -sign(Un0)*pTimes, 0.0)*magSf; //does not use ap_
-    }
-
-    isoDebug(Info << "InitialArea for next time step corresponds to face phase fraction a0 = " << initialArea/magSf << " where |Sf| = " << magSf << " was used." << endl;)
-    while ( nt < t.size()-(1+faceUncutInLastInterval) ) //
-    {
-        scalar quadArea(0.0), intQuadArea(0.0);
-		getQuadArea(fLabel,fPts,pTimes,t[nt],t[nt+1],quadArea,intQuadArea);
-        scalar integratedQuadArea = sign(Un0)*intQuadArea; //Integration of area(t) = A*t^2+B*t from t = 0 to 1.
-        tIntArea += (t[nt+1]-t[nt])*(initialArea + integratedQuadArea);
-        initialArea += sign(Un0)*quadArea; //Adding quad area to submerged area
-        isoDebug(Info << "Integrating area for " << nt+1 << "'th time interval: [" << t[nt] << ", " << t[nt+1] << "] giving tIntArea = " << tIntArea << " and a0 = " << initialArea/magSf << endl;)
-        nt++;
-    }
-
-    if ( faceUncutInLastInterval && (nt+1) < t.size() ) //Special treatment for last time interval if face is uncut during this
-    {
-        isoDebug(Info << "faceUncutInLastInterval, so special treatment for last (" << nt+1 << "'th) time interval: [" << t[nt] << ", " << t[nt+1] << "]" << endl;)
-        tIntArea += magSf*(t[nt+1]-t[nt])*pos(Un0); //If face is cut at some intermediate time but not at last time, then if Un0 > 0 (cell filling up) face must be filled at last time interval.
-    }
-    return tIntArea;
-}
 
 void Foam::isoAdvection::getDownwindFaces
 (
@@ -631,10 +574,11 @@ void Foam::isoAdvection::getDownwindFaces
                 }
             }
         }
-        else
+//JRO: Temp outcomment boundary treatment
+/*        else
         {
             // Boundary face.  Find out which face of which patch
-            scalar patchI = mesh_.boundaryMesh().whichPatch(fLabel);
+            label patchI = mesh_.boundaryMesh().whichPatch(fLabel);
 
             if (patchI < 0 || patchI >= mesh_.boundaryMesh().size())
             {
@@ -645,7 +589,7 @@ void Foam::isoAdvection::getDownwindFaces
                     << abort(FatalError);
             }
 
-            scalar faceI =
+            label faceI =
                 mesh_.boundaryMesh()[patchI].whichFace
                 (
                     fLabel
@@ -672,10 +616,13 @@ void Foam::isoAdvection::getDownwindFaces
                 downwindFaces.append(fLabel);
             }
         }
+*/
     }
 
     downwindFaces.shrink();
 }
+
+
 
 Foam::label Foam::isoAdvection::otherCell
 (
@@ -798,118 +745,6 @@ void Foam::isoAdvection::quadAreaCoeffs
 }
 
 
-void Foam::isoAdvection::getQuadArea
-(
-	const label fLabel,
-	const pointField& p,
-	const scalarField& f,
-	const scalar f0,
-	const scalar f1,
-	scalar& quadArea,
-	scalar& intQuadArea
-)
-{
-    isoDebug(Info << "Enter getQuadArea" << endl;)
-    isoCutter cutter(mesh_,ap_);
-    DynamicList<point> pf0(2), pf1(2);
-    cutter.getFaceCutPoints(p,f,f0,pf0);
-    cutter.getFaceCutPoints(p,f,f1,pf1);
-
-    label np0(pf0.size()), np1(pf1.size());
-    isoDebug(Info << "Face " << fLabel << " was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;)
-
-    scalar alpha = 0.0;
-    scalar beta = 0.0;
-    quadArea = 0.0;
-    intQuadArea = 0.0;
-
-    if ( np0 > 0 && np1 > 0)
-    {
-        //Defining quadrilateral vertices
-        vector A(pf0[0]), C(pf1[0]), B(vector::zero), D(vector::zero);
-
-        //Triangle cases
-        if (np0 == 2 && mag(pf0[0]-pf0[1]) > SMALL)
-        {
-            B = pf0[1];
-        }
-        else if ( np0 == 1 )
-        {
-            B = A + 1e-4*(pf1[1]-pf1[0]);
-        }
-		else
-		{
-			Info << "Warning: Vertex face was cut at " << pf0 << " by f0 = " << f0 << endl;			
-		}
-
-        if (np1 == 2 && mag(pf1[0]-pf1[1]) > SMALL)
-        {
-            D = pf1[1];
-        }
-        else if ( np1 == 1 )
-        {
-            D = C + 1e-4*(A-B);
-        }
-		else
-		{
-			Info << "Warning: Vertex face was cut at " << pf1 << " by f1 = " << f1 << endl;			
-		}
-
-		vector zhat;
-        //Defining local coordinates for area integral calculation
-		if ( (mesh_.faces()[fLabel]).size() == p.size() ) //full face
-		{
-			zhat = mesh_.Sf()[fLabel]/mag(mesh_.Sf()[fLabel]);			
-		}
-		else //triangle subface - make sure that triangle has same orientation as parent face
-		{
-			zhat = (p[1]-p[0])^(p[2]-p[0]);
-			zhat /= mag(zhat);
-		}
-
-        vector xhat = B-A;
-        xhat -= (xhat & zhat)*zhat;
-        xhat /= mag(xhat);
-
-        vector yhat = zhat ^ xhat;
-        yhat /= mag(yhat); //Should not be necessary
-
-//        isoDebug(Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = " << (yhat & zhat) << endl;)
-
-
-        //Swapping pf1 points if pf0 and pf1 point in same general direction (because we want a quadrilateral ABCD where pf0 = AB and pf1 = CD)
-        if ( ((B-A) & (D-C)) > 0 )
-        {
-////            Info << "Swapping C and D" << endl;
-            vector tmp = D;
-            D = C;
-            C = tmp;
-        }
-
-////        Info << "A = " << A << ", B = " << B << ", C = " << C << ", D = " << D << endl;
-        scalar Bx = mag(B-A);
-        scalar Cx = (C-A) & xhat;
-        scalar Cy = mag((C-A) & yhat);
-        scalar Dx = (D-A) & xhat;
-        scalar Dy = mag((D-A) & yhat);
-
-
-//      area = ((Cx-Bx)*Dy-Dx*Cy)/6.0 + 0.25*Bx*(Dy+Cy);
-        alpha = 0.5*((Cx-Bx)*Dy-Dx*Cy);
-        beta = 0.5*Bx*(Dy+Cy);
-		quadArea = alpha + beta;
-		intQuadArea = alpha/3.0 + 0.5*beta;
-
-////        Info << "Bx = " << Bx << ", Cx = " << Cx << ", Cy = " << Cy << ", Dx = " << Dx << ", Dy = " << Dy << ", alpha = " << alpha << ", beta = " << beta << endl;
-        //area(t) = A*t^2+B*t
-        //integratedArea = A/3+B/2
-    }
-	else
-	{
-		Info << "Vertex face was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;
-	}
-}
-
 void Foam::isoAdvection::subSetExtrema
 (
     const scalarField& f,
@@ -952,7 +787,6 @@ void Foam::isoAdvection::limitFluxes
     const scalarField& phiIn = phi_.internalField();
     scalarField& dVfIn = dVf.internalField();
 
-	
 	for ( label n = 0; n < nAlphaBounds_; n++ )
     {
 		Info << "Running bounding number " << n+1 << " of time " << mesh_.time().value() << endl;
@@ -982,7 +816,7 @@ void Foam::isoAdvection::limitFluxes
 			//If phi_ < 0 then dVf < 0 and mag(phi_*dt-dVf) < mag(phi_*dt) as it should. 
 			DynamicList<label> correctedFaces(3*nUndershoots);
 			boundFromAbove(alpha2, dt, dVfcorrected, correctedFaces);
-			
+
 			forAll (correctedFaces, fi)
 			{
 				label fLabel = correctedFaces[fi];
@@ -994,8 +828,8 @@ void Foam::isoAdvection::limitFluxes
                 else
                 {
                     // Boundary face.  Find out which face of which patch
-                    scalar patchI = mesh_.boundaryMesh().whichPatch(fLabel);
-                    scalar faceI =
+                    label patchI = mesh_.boundaryMesh().whichPatch(fLabel);
+                    label faceI =
                         mesh_.boundaryMesh()[patchI].whichFace
                         (
                             fLabel
@@ -1031,16 +865,16 @@ void Foam::isoAdvection::boundFromAbove
 	scalar aTol = 1e-12;
 //	scalar maxOvershoot = 0.0;
 
-    const scalarField& phiIn = phi_.internalField();
-    scalarField& dVfIn = dVf.internalField();
+//    const scalarField& phiIn = phi_.internalField();
+//    scalarField& dVfIn = dVf.internalField();
 
-	forAll (alpha1, ci)
+	forAll(alpha1,ci)
 	{
 		scalar Vi = mesh_.V()[ci];
 		scalar alpha1New = alpha1[ci] - netFlux(dVf, ci)/Vi;
 		scalar alphaOvershoot = alpha1New - 1.0;
-		
-/*
+
+/*		
 		if ( alphaOvershoot > aTol )
 		{
 			scalar fluidToPassOn = alphaOvershoot*Vi;
@@ -1059,8 +893,8 @@ void Foam::isoAdvection::boundFromAbove
                 else
                 {
                     // Boundary face.  Find out which face of which patch
-                    scalar patchI = mesh_.boundaryMesh().whichPatch(fLabel);
-                    scalar faceI =
+                    label patchI = mesh_.boundaryMesh().whichPatch(fLabel);
+                    label faceI =
                         mesh_.boundaryMesh()[patchI].whichFace
                         (
                             fLabel
@@ -1082,15 +916,14 @@ void Foam::isoAdvection::boundFromAbove
                 else
                 {
                     // Boundary face.  Find out which face of which patch
-                    scalar patchI = mesh_.boundaryMesh().whichPatch(fLabel);
-                    scalar faceI =
+                    label patchI = mesh_.boundaryMesh().whichPatch(fLabel);
+                    label faceI =
                         mesh_.boundaryMesh()[patchI].whichFace
                         (
                             fLabel
                         );
 
                     dVf.boundaryField()[patchI][faceI] += sign(phi_.boundaryField()[patchI][faceI])*fluidToPassOn*mag(phi_.boundaryField()[patchI][faceI]*dt)/dVftot;
-
                     correctedFaces.append(fLabel);
                 }
 			}
@@ -1116,19 +949,22 @@ void Foam::isoAdvection::boundFromAbove
 			forAll (downwindFaces, fi)
 			{
 				const label fLabel = downwindFaces[fi];
-				scalar maxExtraFaceFluidTrans = mag(phi_[fLabel]*dt - dVf[fLabel]);
-                scalar phiFDt;
+
+                scalar maxExtraFaceFluidTrans = 0;
+                scalar phiFDt = 0;
+
                 if (mesh_.isInternalFace(fLabel))
                 {
                     phiFDt = phi_[fLabel]*dt;
 
                     maxExtraFaceFluidTrans = mag(phiFDt - dVf[fLabel]);
                 }
-                else
+				//JRO: Temp outcomment boundary treatmen
+/*                else
                 {
                     // Boundary face.  Find out which face of which patch
-                    scalar patchI = mesh_.boundaryMesh().whichPatch(fLabel);
-                    scalar faceI =
+                    label patchI = mesh_.boundaryMesh().whichPatch(fLabel);
+                    label faceI =
                         mesh_.boundaryMesh()[patchI].whichFace
                         (
                             fLabel
@@ -1138,22 +974,21 @@ void Foam::isoAdvection::boundFromAbove
 
                     maxExtraFaceFluidTrans = mag(phiFDt - dVf.boundaryField()[patchI][faceI]);
                 }
-				//dVf has same sign as phi and so if phi>0 we have mag(phi_[fLabel]*dt) - mag(dVf[fLabel]) = phi_[fLabel]*dt - dVf[fLabel]
-				//If phi<0 we have mag(phi_[fLabel]*dt) - mag(dVf[fLabel]) = -phi_[fLabel]*dt - (-dVf[fLabel]) > 0 since mag(dVf) < phi*dt
-				isoDebug(Info << "downwindFace " << fLabel << " has maxExtraFaceFluidTrans = " << maxExtraFaceFluidTrans << endl;)
-				if ( maxExtraFaceFluidTrans/Vi > aTol )
-//				if ( maxExtraFaceFluidTrans/Vi > aTol && mag(dVf[fLabel])/Vi > aTol ) //Last condition may be important because without this we will flux through uncut downwind faces
-//				if ( true )
-				{
-					facesToPassFluidThrough.append(fLabel);
-					dVfmax.append(maxExtraFaceFluidTrans);
+*/
+                isoDebug(Info << "downwindFace " << fLabel << " has maxExtraFaceFluidTrans = " << maxExtraFaceFluidTrans << endl;)
+                if ( maxExtraFaceFluidTrans/Vi > aTol )
+                {
+                    facesToPassFluidThrough.append(fLabel);
+                    dVfmax.append(maxExtraFaceFluidTrans);
                     dVftot += mag(phiFDt);
-				}
+                }
 			}
 
 			isoDebug(Info << "\nfacesToPassFluidThrough: " << facesToPassFluidThrough << ", dVftot = " << dVftot << " m3 corresponding to dalpha = " << dVftot/Vi << endl;)
-            //HJ FIX THIS ONE YOURSELF!
-			forAll (facesToPassFluidThrough, fi)
+
+                //HJ FIX THIS ONE YOURSELF!
+
+			forAll(facesToPassFluidThrough, fi)
 			{
 				label fLabel = facesToPassFluidThrough[fi];
 				scalar fluidToPassThroughFace = fluidToPassOn*mag(phi_[fLabel]*dt)/dVftot;
@@ -1161,7 +996,7 @@ void Foam::isoAdvection::boundFromAbove
 				fluidToPassThroughFace = min(fluidToPassThroughFace,dVfmax[fi]);
 				label neiCell = otherCell(fLabel,ci);
 				isoDebug(Info << "Passing " << fluidToPassThroughFace << " m3 through face " << fLabel << " to cell " << neiCell << endl;)
-				isoDebug(Info << "This corresponds to lowering alpha of cell " << ci << " by " << fluidToPassThroughFace/Vi << endl;)
+                isoDebug(Info << "This corresponds to lowering alpha of cell " << ci << " by " << fluidToPassThroughFace/Vi << endl;)
 				isoDebug(Info << "dVf of face " << fLabel << " before correction: " << dVf[fLabel] << " m3 corresponding to da = " << dVf[fLabel]/Vi << endl;)
 				dVf[fLabel] += sign(phi_[fLabel])*fluidToPassThroughFace;
 				isoDebug(Info << "dVf of face " << fLabel << " after correction: " << dVf[fLabel] << " m3 corresponding to da = " << dVf[fLabel]/Vi << endl;)
@@ -1193,7 +1028,6 @@ void Foam::isoAdvection::boundFromAbove
 Foam::scalar Foam::isoAdvection::netFlux
 (
     const surfaceScalarField& dVf,
-
     const label cLabel
 )
 {
@@ -1207,10 +1041,8 @@ Foam::scalar Foam::isoAdvection::netFlux
         const label fLabel = fLabels[fi];
 
         if (mesh_.isInternalFace(fLabel))
-
         {
             if (mesh_.owner()[fLabel] == cLabel)
-
             {
                 dV += dVf[fLabel];
             }
@@ -1219,10 +1051,11 @@ Foam::scalar Foam::isoAdvection::netFlux
                 dV -= dVf[fLabel];
             }
         }
-        else
+//JRO: Temp outcomment boundary treatment
+/*        else
         {
             // Boundary face.  Find out which face of which patch
-            scalar patchI = mesh_.boundaryMesh().whichPatch(fLabel);
+            label patchI = mesh_.boundaryMesh().whichPatch(fLabel);
 
             // Handle empty patches
             if (mesh_.boundary()[patchI].size() == 0)
@@ -1230,7 +1063,7 @@ Foam::scalar Foam::isoAdvection::netFlux
                 continue;
             }
 
-            scalar faceI =
+            label faceI =
                 mesh_.boundaryMesh()[patchI].whichFace
                 (
                     fLabel
@@ -1238,10 +1071,13 @@ Foam::scalar Foam::isoAdvection::netFlux
 
             dV += dVf.boundaryField()[patchI][faceI];
         }
+*/
     }
 
     return dV;
 }
+
+
 void Foam::isoAdvection::advect
 (
     const scalar dt
@@ -1284,108 +1120,5 @@ void Foam::isoAdvection::getTransportedVolume
 	//Bounding
 	limitFluxes(dVf,dt);
 }
-
-void Foam::isoAdvection::getxSnSdotnF
-(
-	surfaceVectorField& xSnSdotnF
-)
-{
-    volPointInterpolation vpi(mesh_);
-    ap_ = vpi.interpolate(alpha1_);
-
-	vectorField& xSnSdotnFi = xSnSdotnF.internalField();
-
-    //Construction of isosurface calculator to get access to its functionality
-    isoCutter cutter(mesh_,ap_);
-
-    //Find surface cells
-    DynamicList<label> surfaceCells(ceil(mesh_.nCells()/10));
-    findSurfaceCells(surfaceCells);
-		
-    //Isocutting estimate of water flux from surface cellss
-    interpolationCellPoint<vector> UInterp(U_);
-    forAll(surfaceCells,cellI)
-    {
-        const label ci = surfaceCells[cellI];
-
-        //Make list of all cell faces out of which fluid is flowing
-        DynamicList<label> downwindFaces((mesh_.cells()[ci]).size());
-        getDownwindFaces(ci, downwindFaces);
-
-        //Calculate isoFace0 centre xs0, normal ns0, and velocity U0 = U(xs0)
-        scalar f0(0.0), Un0(0.0);
-        vector x0(vector::zero), n0(vector::zero);
-        calcIsoFace(ci,x0,n0,f0,Un0,UInterp); //This one really also should give us a0 on all faces since it is calculated anyway. Do this with a cutCell structure
-        Info << "calcIsoFace for cell " << ci << " gives initial surface: \nx0 = " << x0 << ", \nn0 = " << n0 << ", \nf0 = " << f0 << ", \nUn0 = " << Un0 << endl;
-//        isoDebug(Info << "calcIsoFace gives initial surface: \nx0 = " << x0 << ", \nn0 = " << n0 << ", \nf0 = " << f0 << ", \nUn0 = " << Un0 << endl;)
-
-        //Estimating time integrated water flux through each downwinding face
-        forAll(downwindFaces,fi)
-        {
-            const label fLabel = downwindFaces[fi];
-			vector nf = mesh_.Sf()[fLabel];
-			nf /= mag(nf);
-			//Finding average point along cutting line
-			DynamicList<point> cutPoints;
-		    cutter.getFaceCutPoints(fLabel,f0,cutPoints);
-			Info << "Cutpoints for face " << fLabel << ": " << cutPoints << endl;
-			vector xs = vector::zero;
-			scalar len = 0.0;
-			
-			if (cutPoints.size() > 0)
-			{
-				forAll(cutPoints,pi) //There will typically only be two cutting points
-				{
-					xs += cutPoints[pi];
-					Info << "xs equals " << xs << endl;
-				}
-				xs /= cutPoints.size();
-				Info << "xs equals " << xs << endl;
-				for(label pi = 0; pi < cutPoints.size()-1; pi++)
-				{
-					len += mag(cutPoints[pi+1]-cutPoints[pi]);
-					Info << "len equals " << len << endl;
-				}
-			}
-			//Finding length of cutting line
-            xSnSdotnFi[fLabel] = xs*(nf & n0/mag(n0))*len;
-        }
-    }
-}
-
-void Foam::isoAdvection::getIsoCentreAndNormal
-(
-	volVectorField& Ci,
-	volVectorField& Si
-)
-{
-	
-    volPointInterpolation vpi(mesh_);
-    ap_ = vpi.interpolate(alpha1_);
-	
-    //Construction of isosurface calculator to get access to its functionality
-    isoCutter cutter(mesh_,ap_);
-
-    //Find surface cells
-    DynamicList<label> surfaceCells(ceil(mesh_.nCells()/10));
-    findSurfaceCells(surfaceCells);
-		
-    //Isocutting estimate of water flux from surface cellss
-	label maxIter(100);
-	vector subCellCtr;
-	
-    forAll(surfaceCells,cellI)
-    {
-        const label ci = surfaceCells[cellI];
-        scalar f0(0.0);
-		cutter.vofCutCell(ci, alpha1_[ci], vof2IsoTol_, maxIter, f0, subCellCtr);
-        vector x0(vector::zero), n0(vector::zero);
-		cutter.isoFaceCentreAndArea(ci,f0,x0,n0); //Stupid to recalculate this here - should be provided by vofCutCell above
-		
-		Ci[ci] = x0;
-		Si[ci] = n0;
-	}
-}
-
 
 // ************************************************************************* //
