@@ -1,4 +1,4 @@
-EXE_INC = \
+EXE_INC = $(ISODBUG) \
     -I$(ISOADVECTION)/src/lnInclude \
     -I$(LIB_SRC)/transportModels \
     -I$(LIB_SRC)/transportModels/incompressible/lnInclude \

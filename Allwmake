@@ -3,9 +3,14 @@ cd ${0%/*} || exit 1    # run from this directory
 
 if [ "$1" == "debug" ];
 then
-    export ISODEBUGSWITCH=ISODEBUG
+    export ISODEBUG="-g -DFULL_DEBUG"
+fi
+
+if [ "$1" == "log" ];
+then
+    export DETAILSTOLOGSWITCH=DETAILSTOLOG
 else
-    export ISODEBUGSWITCH=OFF #May be set to anything but ISODEBUG
+    export DETAILSTOLOGSWITCH=OFF
 fi
 
 . etc/bashrc
@@ -13,4 +18,5 @@ fi
 src/Allwmake
 applications/Allwmake
 
-unset ISODEBUGSWITCH
+unset ISODEBUG 
+unset DETAILSTOLOGSWITCH

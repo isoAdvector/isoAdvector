@@ -28,7 +28,7 @@ License
 #include "interpolationCellPoint.H"
 //#include "isoSubCell.H"
 
-#ifdef ISODEBUG
+#ifdef DETAILS2LOG
 #define isoDebug(x) x
 #else
 #define isoDebug(x) 
@@ -557,25 +557,25 @@ void Foam::isoCutter::getFaceCutPoints
         scalar f2 = f[pi2];
         if (mag(f2-f0) < 1e-12)
         {
-			Info << "Warning: mag(f2-f0) < 1e-12: f2 = " << f2 << ", f1 = " << f1 << ", f0 = " << f0 << endl;
+//			Info << "Warning: mag(f2-f0) < 1e-12: f2 = " << f2 << ", f1 = " << f1 << ", f0 = " << f0 << endl;
 //            f2 = f0;
         }
 
-//        bool edgeIsCut = min(f1,f2) < f0 && max(f1,f2) > f0;
-//        if ( edgeIsCut )
-        if ( (f1 <= f0 && f2 > f0 ) || (f1 >= f0 && f2 < f0) )
+        bool edgeIsCut = min(f1,f2) < f0 && max(f1,f2) > f0;
+        if ( edgeIsCut )
+//        if ( (f1 <= f0 && f2 > f0 ) || (f1 >= f0 && f2 < f0) )
         {
-			Info << "Calculating s" << endl;
+//			Info << "Calculating s" << endl;
             scalar s = (f0-f1)/(f2-f1);
-			Info << "s = " << s << endl;
+//			Info << "s = " << s << endl;
             point pCut = pts[pi] + s*(pts[pi2]-pts[pi]);
             cutPoints.append(pCut);
         }
-/*        else if ( f1 == f0 )
+        else if ( f1 == f0 )
         {
             cutPoints.append(pts[pi]);
         }
-*/
+
         f1 = f2;
     }
 }
@@ -770,8 +770,8 @@ void Foam::isoCutter::vofCutCells
 
 void Foam::isoCutter::subCellFraction
 (
-    const label& ci,
-    const scalar& f0,
+    const label ci,
+    const scalar f0,
     scalar& alpha1
 )
 {
@@ -781,8 +781,8 @@ void Foam::isoCutter::subCellFraction
 
 void Foam::isoCutter::subCellFraction
 (
-    const label& ci,
-    const scalar& f0,
+    const label ci,
+    const scalar f0,
     scalar& alpha1,
     vector& cellCtr
 )

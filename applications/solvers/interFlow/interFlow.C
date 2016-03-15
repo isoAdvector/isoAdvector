@@ -88,6 +88,7 @@ int main(int argc, char *argv[])
 
 	    //Advance alpha1 from time t to t+dt
         const scalar dt = runTime.deltaT().value();
+		dVf *= 0.0;
         advector.getTransportedVolume(dt,dVf);
 		alpha1 -= fvc::surfaceIntegrate(dVf); 
         alpha1.correctBoundaryConditions();

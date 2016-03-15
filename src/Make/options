@@ -1,7 +1,7 @@
-EXE_INC = \
+EXE_INC = $(ISODEBUG) \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/meshTools/lnInclude \
-    -D$(ISODEBUGSWITCH)
+    -D$(DETAILSTOLOGSWITCH)
 
 EXE_LIBS = \
     -lfiniteVolume \

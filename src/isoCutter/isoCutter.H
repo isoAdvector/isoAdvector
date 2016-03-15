@@ -233,15 +233,15 @@ public:
 
         void subCellFraction
         (
-            const label&,
-            const scalar&,
+            const label,
+            const scalar,
             scalar&
         );
 
         void subCellFraction
         (
-            const label&,
-            const scalar&,
+            const label,
+            const scalar,
             scalar&,
             vector&
         );

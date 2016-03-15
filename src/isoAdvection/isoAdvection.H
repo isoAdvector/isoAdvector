@@ -65,6 +65,9 @@ class isoAdvection
     //- VOF field
     volScalarField& alpha1_;
 
+	//- volPointInterpolation from cell centres to points
+	volPointInterpolation vpi_;
+	
     //- VOF field interpolated to mesh points
     scalarField ap_;
 
@@ -125,23 +128,6 @@ class isoAdvection
         DynamicList<label>& downwindFaces
     );
 
-    //- For face fLabel of cell cLabel return label of other cell sharing face fLabel
-    label otherCell
-    (
-        const label fLabel,
-        const label cLabel
-    );
-
-    //- For face fLabel calculate polynomial coefficients A and B for time integrated area between isocutting lines with isovalues f0 and f1 given vertex values f
-    void quadAreaCoeffs
-    (
-        const label fLabel,
-        const scalarField& f,
-        const scalar f0,
-        const scalar f1,
-        scalar& A,
-        scalar& B
-    );
 
     //- For face with vertices p calculate its area and integrated area between isocutting lines with isovalues f0 and f1 given vertex values f
     void getQuadArea
@@ -174,9 +160,9 @@ class isoAdvection
 	
 	void boundFromAbove
 	(
-		const scalarField& alpha1,
+		const volScalarField& alpha1,
 		const scalar dt,
-		scalarField& dVfcorrected,
+		surfaceScalarField& dVfcorrected,
 		DynamicList<label>& correctedFaces
 	);
 
@@ -184,7 +170,7 @@ class isoAdvection
     //- Given the face volume transport dVf calculates the total volume leaving cell cLabel 
     scalar netFlux
     (
-        const scalarField& dVf,
+        const surfaceScalarField& dVf,
         const label cLabel
     );
 
@@ -206,7 +192,21 @@ class isoAdvection
         const interpolationCellPoint<vector>& UInterp
     );
 
+	//- Return face value of a surfaceScalarField
+	scalar faceValue
+	(
+		const surfaceScalarField& f,
+		const label fLabel
+	);
 	
+	//- Set face value of a surfaceScalarField
+	void faceValue
+	(
+		surfaceScalarField& f,
+		const label fLabel,
+		const scalar value
+	);
+
     public:
 
     //- Constructor
