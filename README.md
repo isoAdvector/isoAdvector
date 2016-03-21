@@ -4,10 +4,11 @@ This is the repository of the IsoAdvection project.
 
 Developed by Johan Roenby <jro@dhigroup.com>  
 
-Contributors:  
+Contributors:
 
-* Tomislav Maric <tomislav@sourceflux.de>
-* Vuko Vukcevic <vuko.vukcevic@fsb.hr>
+* Hrvoje Jasak <hrvoje.jasak@fsb.hr> (Code clean up, consistent treatment of boundary faces including processor boundaries)
+* Vuko Vukcevic <vuko.vukcevic@fsb.hr> (Code review and profiling)
+* Tomislav Maric <tomislav@sourceflux.de> (Source file rearrangement)
 
 # Project structure 
 
@@ -71,5 +72,3 @@ Add feature and improvement ideas/requests here. Some of them will be taken over
 - Setup notchedDisk/Zalesak test case (Remember stream function approach to calculating fluxes from analytical velocity field)
 - Setup filling tank case
 - Setup standing wave test case 
-- Develop and implement consistent boundary conditions for isosurface reconstruction step.
-- Setup scalarTransportFoam cases with HRIC, CICSAM, upwind, vanLeer01 (get setups from navalFoam cases)
