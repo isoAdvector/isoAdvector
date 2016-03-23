@@ -326,7 +326,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     if ( mag(Un0) > 1e-12 )
     {
         pTimes = ((fPts - x0) & n0)/Un0; //Here we estimate time of arrival to the face points from their normal distance to the initial surface and the surface normal velocity
-        dVf = phi/mag(mesh_.Sf()[fLabel])*timeIntegratedArea(fLabel,fPts,pTimes,dt,Un0);
+        dVf = phi/faceValue(mesh_.magSf(),fLabel)*timeIntegratedArea(fLabel,fPts,pTimes,dt,Un0);
         return dVf;
     }
     else //Un0 is almost zero
@@ -358,7 +358,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedArea
     scalar magSf;
     if ( (mesh_.faces()[fLabel]).size() == fPts.size() ) //full face
     {
-        magSf = mag(mesh_.Sf()[fLabel]);
+        magSf = faceValue(mesh_.magSf(),fLabel);
     }
     else //triangular subface
     {
@@ -532,7 +532,8 @@ void Foam::isoAdvection::getQuadArea
         //Defining local coordinates for area integral calculation
         if ( (mesh_.faces()[fLabel]).size() == p.size() ) //full face
         {
-            zhat = mesh_.Sf()[fLabel]/mag(mesh_.Sf()[fLabel]);
+            zhat = faceValue(mesh_.Sf(),fLabel);
+			zhat /= mag(zhat);
         }
         else //triangle subface - make sure that triangle has same orientation as parent face
         {
@@ -870,6 +871,90 @@ void Foam::isoAdvection::faceValue
 }
 
 
+Foam::vector Foam::isoAdvection::faceValue
+(
+    const surfaceVectorField& f,
+    const label fLabel
+)
+{
+    if (mesh_.isInternalFace(fLabel))
+    {
+        return vector(f.internalField()[fLabel]);
+    }
+    else
+    {
+        // Boundary face.  Find out which face of which patch
+        const label patchI = mesh_.boundaryMesh().whichPatch(fLabel);
+
+        // Handle empty patches
+        if (mesh_.boundary()[patchI].size() == 0)
+        {
+            return vector::zero;
+        }
+
+        if (patchI < 0 || patchI >= mesh_.boundaryMesh().size())
+        {
+            FatalErrorIn
+            (
+                "void isoAdvection::getDownwindFaces(...)"
+            )   << "Cannot find patch for face " << fLabel
+                << abort(FatalError);
+        }
+
+        const label faceI =
+            mesh_.boundaryMesh()[patchI].whichFace
+            (
+                fLabel
+            );
+
+        ;
+        return f.boundaryField()[patchI][faceI];
+    }
+}
+
+
+void Foam::isoAdvection::faceValue
+(
+    surfaceVectorField& f,
+    const label fLabel,
+    const vector value
+)
+{
+    if (mesh_.isInternalFace(fLabel))
+    {
+        f.internalField()[fLabel] = value;
+    }
+    else
+    {
+        // Boundary face.  Find out which face of which patch
+        const label patchI = mesh_.boundaryMesh().whichPatch(fLabel);
+
+        // Handle empty patches
+        if (mesh_.boundary()[patchI].size() == 0)
+        {
+            return;
+        }
+
+        if (patchI < 0 || patchI >= mesh_.boundaryMesh().size())
+        {
+            FatalErrorIn
+            (
+                "void isoAdvection::getDownwindFaces(...)"
+            )   << "Cannot find patch for face " << fLabel
+                << abort(FatalError);
+        }
+
+        const label faceI =
+            mesh_.boundaryMesh()[patchI].whichFace
+            (
+                fLabel
+            );
+
+        f.boundaryField()[patchI][faceI] = value;
+    }
+}
+
+
 void Foam::isoAdvection::advect
 (
     const scalar dt
@@ -953,7 +1038,7 @@ void Foam::isoAdvection::getxSnSdotnF
         forAll(downwindFaces,fi)
         {
             const label fLabel = downwindFaces[fi];
-            vector nf = mesh_.Sf()[fLabel];
+            vector nf = faceValue(mesh_.Sf(),fLabel);
             nf /= mag(nf);
             //Finding average point along cutting line
             DynamicList<point> cutPoints;

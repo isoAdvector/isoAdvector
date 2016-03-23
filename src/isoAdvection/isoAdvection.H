@@ -192,13 +192,15 @@ class isoAdvection
         const interpolationCellPoint<vector>& UInterp
     );
 
+	
 	//- Return face value of a surfaceScalarField
 	scalar faceValue
 	(
-		const surfaceScalarField& f,
+		const  surfaceScalarField& f,
 		const label fLabel
 	);
 	
+
 	//- Set face value of a surfaceScalarField
 	void faceValue
 	(
@@ -207,6 +209,23 @@ class isoAdvection
 		const scalar value
 	);
 
+
+	//- Return face value of a surfaceScalarField
+	vector faceValue
+	(
+		const  surfaceVectorField& f,
+		const label fLabel
+	);
+	
+
+	//- Set face value of a surfaceScalarField
+	void faceValue
+	(
+		surfaceVectorField& f,
+		const label fLabel,
+		const vector value
+	);
+	
     public:
 
     //- Constructor
