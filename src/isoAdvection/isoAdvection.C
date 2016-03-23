@@ -191,9 +191,11 @@ void Foam::isoAdvection::findSurfaceCells
     isoDebug(Info << "Enter findSurfaceCells" << endl;)
 
     isSurfaceCell_ = false;
-    forAll(alpha1_,ci)
+    const scalarField& alphaIn = alpha1_.internalField();
+
+    forAll(alphaIn,ci)
     {
-        if ( ( surfCellTol_ < alpha1_[ci] && alpha1_[ci] < 1.0-surfCellTol_ ) )
+        if ( ( surfCellTol_ < alphaIn[ci] && alphaIn[ci] < 1 - surfCellTol_ ) )
         {
             isSurfaceCell_[ci] = true;
             surfaceCells.append(ci);
