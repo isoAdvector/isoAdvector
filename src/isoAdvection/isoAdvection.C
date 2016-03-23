@@ -24,7 +24,6 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "isoAdvection.H"
-#include "isoCutter.H"
 #include "volPointInterpolation.H"
 #include "interpolationCellPoint.H"
 #include "fvcSurfaceIntegrate.H"
@@ -55,8 +54,7 @@ Foam::isoAdvection::isoAdvection
     isSurfaceCell_(mesh_.nCells(),false),
     nAlphaBounds_(dict.lookupOrDefault<label>("nAlphaBounds", 1)),
     vof2IsoTol_(dict.lookupOrDefault<scalar>("vof2IsoTol", 1e-8)),
-    surfCellTol_(dict.lookupOrDefault<scalar>("surfCellTol", 1e-8)),
-    writeToLog_(dict.lookupOrDefault<bool>("writeToLog", true))
+    surfCellTol_(dict.lookupOrDefault<scalar>("surfCellTol", 1e-8))
 {}
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
@@ -90,7 +88,7 @@ void Foam::isoAdvection::timeIntegratedFlux
 //  isoDebug(Info << "Using cell volume weighted cell-point interpolation" << endl;)
 */
 
-//    volPointInterpolation vpi(mesh_);
+	//Interpolating alpha1_ cell centre values to mesh points (vertices)
     ap_ = vpi_.interpolate(alpha1_);
 
     //Construction of isosurface calculator to get access to its functionality
@@ -100,7 +98,11 @@ void Foam::isoAdvection::timeIntegratedFlux
     DynamicList<label> surfaceCells(ceil(mesh_.nCells()/10));
     findSurfaceCells(surfaceCells);
 
-    //Estimated total water volume transported across mesh faces during time interval dt. The sign convenctino is like the flux phi, i.e. positive means out of owner cell.
+    //For downwind faces of surface cells, we now estimate the water volume, dVf, 
+	//transported across the face during the time interval dt. 
+	//The sign convenction for dVf is like the flux, phi, i.e. positive means out of owner cell.
+	
+    //First we initialise dVf for all faces using upwinding
     scalarField& dVfIn = dVf.internalField();
     const scalarField& phiIn = phi_.internalField();
     const scalarField& alphaIn = alpha1_.internalField();
@@ -108,7 +110,7 @@ void Foam::isoAdvection::timeIntegratedFlux
     const unallocLabelList& own = mesh_.owner();
     const unallocLabelList& nei = mesh_.neighbour();
 
-    //Upwinding on all internal faces receiving fluid from a non-surface cell
+	//Internal faces
     forAll (dVfIn, faceI)
     {
         dVfIn[faceI] = 0;
@@ -126,6 +128,7 @@ void Foam::isoAdvection::timeIntegratedFlux
         dVf[faceI] = phiIn[faceI]*max(min(1, alphaIn[donorCell]), 0)*dt;
     }
 
+	//Boundary faces
     forAll (dVf.boundaryField(), patchI)
     {
         if (mesh_.boundary()[patchI].size() > 0)
@@ -152,9 +155,10 @@ void Foam::isoAdvection::timeIntegratedFlux
         }
     }
 
-    //Isocutting estimate of water flux from surface cellss
+    //Calculating interpolation weights for interpolation of U to the isoface face centre
     interpolationCellPoint<vector> UInterp(U_);
 
+    //For each downwind face of each surface cell we do the isoadvector magic to find dVf
     forAll(surfaceCells,cellI)
     {
         const label ci = surfaceCells[cellI];
@@ -168,10 +172,15 @@ void Foam::isoAdvection::timeIntegratedFlux
         //Calculate isoFace0 centre xs0, normal ns0, and velocity U0 = U(xs0)
         scalar f0(0.0), Un0(0.0);
         vector x0(vector::zero), n0(vector::zero);
-        calcIsoFace(ci,x0,n0,f0,Un0,UInterp); //This one really also should give us a0 on all faces since it is calculated anyway. Do this with a cutCell structure
+        calcIsoFace(ci,x0,n0,f0); //This one really also should give us a0 on all faces since it is calculated anyway. Do this with a cutCell structure
+		
+		//Interpolate velocity to isoFace centre
+        vector U0 = UInterp.interpolate(x0,ci);
+        Un0 = (U0 & n0);
+
         isoDebug(Info << "calcIsoFace gives initial surface: \nx0 = " << x0 << ", \nn0 = " << n0 << ", \nf0 = " << f0 << ", \nUn0 = " << Un0 << endl;)
 
-        //Estimating time integrated water flux through each downwinding face
+        //Estimating time integrated water flux through each downwind face
         forAll(downwindFaces,fi)
         {
             const label fLabel = downwindFaces[fi];
@@ -211,9 +220,7 @@ void Foam::isoAdvection::calcIsoFace
     const label ci,
     vector& x0,
     vector& n0,
-    scalar& f0,
-    scalar& Un0,
-    const interpolationCellPoint<vector>& UInterp
+    scalar& f0
 )
 {
     isoDebug(Info << "Enter calcIsoFace" << endl;)
@@ -271,10 +278,6 @@ void Foam::isoAdvection::calcIsoFace
         isoDebug(Info << "Normalising n0: " << n0 << endl;)
         n0 /= mag(n0);
     }
-
-    //Interpolate velocity to isoFace centre
-    vector U0 = UInterp.interpolate(x0,ci);
-    Un0 = (U0 & n0);
 }
 
 
@@ -1030,7 +1033,12 @@ void Foam::isoAdvection::getxSnSdotnF
         //Calculate isoFace0 centre xs0, normal ns0, and velocity U0 = U(xs0)
         scalar f0(0.0), Un0(0.0);
         vector x0(vector::zero), n0(vector::zero);
-        calcIsoFace(ci,x0,n0,f0,Un0,UInterp); //This one really also should give us a0 on all faces since it is calculated anyway. Do this with a cutCell structure
+        calcIsoFace(ci,x0,n0,f0); //This one really also should give us a0 on all faces since it is calculated anyway. Do this with a cutCell structure
+
+		//Interpolate velocity to isoFace centre
+        vector U0 = UInterp.interpolate(x0,ci);
+        Un0 = (U0 & n0);
+
         Info << "calcIsoFace for cell " << ci << " gives initial surface: \nx0 = " << x0 << ", \nn0 = " << n0 << ", \nf0 = " << f0 << ", \nUn0 = " << Un0 << endl;
 //        isoDebug(Info << "calcIsoFace gives initial surface: \nx0 = " << x0 << ", \nn0 = " << n0 << ", \nf0 = " << f0 << ", \nUn0 = " << Un0 << endl;)
 

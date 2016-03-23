@@ -43,6 +43,7 @@ SourceFiles
 #ifndef isoAdvection_H
 #define isoAdvection_H
 
+#include "isoCutter.H"
 #include "fvMesh.H"
 #include "volFields.H"
 #include "surfaceFields.H"
@@ -64,7 +65,7 @@ class isoAdvection
 
     //- VOF field
     volScalarField& alpha1_;
-
+	
 	//- volPointInterpolation from cell centres to points
 	volPointInterpolation vpi_;
 	
@@ -89,16 +90,13 @@ class isoAdvection
     //- Cells with surfCellTol_ < alpha1 < surfCellTol_ are treated as surface cells
     const scalar surfCellTol_;
 
-    //- Control to switch detailed writing to log file on and off
-    const bool writeToLog_;
-
     // Private Member Functions
 
     //- For each face calculate volumetric face transport during dt
     void timeIntegratedFlux
     (
         const scalar dt,
-        surfaceScalarField& dVfa
+        surfaceScalarField& dVf
     );
 
     //- For face fLabel calculate volumetric face transport during dt given the isoFace data provided as input
@@ -181,15 +179,12 @@ class isoAdvection
     );
 
     //- For cell ci calculate the isoFace centre x0, normal n0, and isovalue f0, of the isosurface cutting it at to the right volume fractions. 
-    //- Also calculates and returns the isoFace velocity normal to itself.
     void calcIsoFace
     (
         const label ci,
         vector& x0,
         vector& n0,
-        scalar& f0,
-        scalar& Un0,
-        const interpolationCellPoint<vector>& UInterp
+        scalar& f0
     );
 
 	
