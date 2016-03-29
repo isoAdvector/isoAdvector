@@ -1,0 +1,11 @@
+#!/bin/bash
+
+application=$(sed -ne "s/^application\s*\(.*\);/\1/p" system/controlDict)
+
+cp -r 0.org 0
+
+mkdir logs
+
+isoSurf > logs/isoSurf.log 2>&1
+
+$application > logs/${application}.log 2>&1

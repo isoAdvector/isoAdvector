@@ -60,9 +60,12 @@ It will also work with other OpenFOAM/foam-extend versions with minor adjustment
 - `applications/utilities/postProcessing/uniFlowErrors`
     - For cases with spheres and discs in steady uniform flow calculates errors relative to exact VOF solution.
 
-`applications/`
+`run/`
 
-* Contains a series of test cases
+- `isoAdvect/` 
+    - Contains test cases using isoAdvect to move a volume of fluid in a predescribed velocity field.
+- `interFlow/` 
+    - Contains test cases using interFlow coupling IsoAdvector with the PIMPLE algorithm for the pressure-velocity coupling.
 	
 #Classes
 	
