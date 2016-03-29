@@ -296,6 +296,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     scalar dVf(0.0); //Volume flowing through face in time interval [0,dt] to be calculated below
     const scalar phi = faceValue(phi_,fLabel);
 
+	//Treating rare cases where isoface normal is not calculated properly
     if (mag(n0) < .5)
     {
         scalar alphaf = 0.0;
@@ -332,7 +333,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
         dVf = phi/faceValue(mesh_.magSf(),fLabel)*timeIntegratedArea(fLabel,fPts,pTimes,dt,Un0);
         return dVf;
     }
-    else //Un0 is almost zero
+    else //Un0 is almost zero and isoFace is treated as stationary
     {
         isoCutter cutter(mesh_,ap_);
         scalar alphaf;
@@ -358,15 +359,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedArea
     const label nPoints = fPts.size();
 
     //Face area
-    scalar magSf;
-    if ( (mesh_.faces()[fLabel]).size() == fPts.size() ) //full face
-    {
-        magSf = faceValue(mesh_.magSf(),fLabel);
-    }
-    else //triangular subface
-    {
-        magSf = mag((fPts[1]-fPts[0])^(fPts[2]-fPts[0]));
-    }
+    scalar magSf = faceValue(mesh_.magSf(),fLabel);
 
     //Sorting face vertex encounter time list
     scalarField sortedTimes(pTimes);
@@ -391,7 +384,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedArea
 
     //Cutting sortedTimes at 0 and dt
     DynamicList<scalar> t(sortedTimes.size()+2);
-    t.append(0.0);
+    t.append(0);
     forAll(sortedTimes,ti)
     {
         if ( 1e-3*dt < sortedTimes[ti] && sortedTimes[ti] < (1-1e-3)*dt )
@@ -406,7 +399,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedArea
     bool faceUncutInLastInterval(sortedTimes[nPoints-1] < dt);
 
     //Dealing with cases where face is cut at least once during time interval [0,dt]
-    label nt = 0; //Time interval counter
+    label nt = 0; //sub time interval counter
     scalar initialArea(0.0); //Submerged area at time
     if ( faceUncutInFirstInterval ) //Special treatment for first time interval if face is uncut during this
     {
@@ -421,7 +414,6 @@ Foam::scalar Foam::isoAdvection::timeIntegratedArea
         isoCutter cutter(mesh_,ap_);
         initialArea = cutter.getSubFaceFraction(fLabel, -sign(Un0)*pTimes, 0.0)*magSf; //does not use ap_
     }
-
     isoDebug(Info << "InitialArea for next time step corresponds to face phase fraction a0 = " << initialArea/magSf << " where |Sf| = " << magSf << " was used." << endl;)
     while ( nt < t.size()-(1+faceUncutInLastInterval) ) //
     {
@@ -498,7 +490,43 @@ void Foam::isoAdvection::getQuadArea
     scalar beta = 0.0;
     quadArea = 0.0;
     intQuadArea = 0.0;
+	
+	//Treating special case where face is cut more than twice.
+	//In this case we triangulate the face with its face centre.
+	//We then calculate the area and integrated area for each triangle separately and add the results
+	if (np0 > 2 || np1 > 2)
+	{ 
+		pointField subPoints(3,vector::zero);
+		scalarField subValues(3,0);
+		subPoints[0] = faceValue(mesh_.Cf(),fLabel);
+		forAll(f,fi)
+		{
+			subPoints[0] += p[fi];
+		}
+		label nPoints = p.size();
+		subPoints[0] /= nPoints;
+		forAll (p, pi)
+		{
+			subPoints[1] = p[pi];
+			subPoints[2] = p[(pi+1)%nPoints];
+			subValues[1] = f[pi];
+			subValues[2] = f[(pi+1)%nPoints];
+			scalar subQuadArea(0), subIntQuadArea(0);
+			getQuadArea(fLabel,subPoints,subValues,f0,f1,subQuadArea,subIntQuadArea);
+			quadArea += subQuadArea;
+			intQuadArea += subIntQuadArea;
+		}
+		return;
+	}
 
+	//When the input to getQuadArea is a triangle from a decomposition
+	//it may happen that the triangle is either not cut by any of f0 or f1 or only by one of them.
+	//If it is not cut by any of them it either has already been passed - if max(f) < f0 - 
+	//in which case quadArea is just the triangle area and intQuadArea is this area times f1-f0.
+	//Or it is not cut because cuttings are in the future in which case the area and integrated area are both zero.
+	//If the triangle is cut by f0 but not by f1 then we calculate quadArea and intQuadArea from f0 to max(f) 
+	//and set quadArea equal to triangle area and add the triangle area times (f1-max(f)) to intQuadArea.
+	//If the triangle is not cut by f0 but by f1 then we calculate quadArea and intQuadArea from min(f) to f1.
     if ( np0 > 0 && np1 > 0)
     {
         //Defining quadrilateral vertices
