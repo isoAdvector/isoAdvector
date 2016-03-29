@@ -1,38 +1,78 @@
-# IsoAdvection Project  
+Welcome to the IsoAdvector project
 
-This is the repository of the IsoAdvection project. 
+# What is IsoAdvector?
 
-Developed by Johan Roenby <jro@dhigroup.com>  
+IsoAdvector is a geometric Volume-of-Fluid method for advection of a sharp interface between two incompressible fluids.
+It works on both structured and unstructured meshes with no requirements on cell shapes.
+IsoAdvector is meant as a replacement for the MULES scheme implemented in the interFoam family of solvers.
 
-Contributors:
+# Contributors:
 
-* Hrvoje Jasak <hrvoje.jasak@fsb.hr> (Code clean up, consistent treatment of boundary faces including processor boundaries)
+* Johan Roenby <jro@dhigroup.com> (Inventor and main developer)
+* Hrvoje Jasak <hrvoje.jasak@fsb.hr> (Consistent treatment of boundary faces including processor boundaries, code clean up)
 * Vuko Vukcevic <vuko.vukcevic@fsb.hr> (Code review and profiling)
 * Tomislav Maric <tomislav@sourceflux.de> (Source file rearrangement)
 
-# Project structure 
+# Requirement:
+
+IsoAdvector is implemented with OpenFOAM-2.2.0. 
+It will also work with other OpenFOAM/foam-extend versions with minor adjustments by the user.
+
+# Installation:
+
+1.  In a linux terminal download the package with git by typing:
+
+        git clone https://bitbucket.org/dhifoam/isoadvector.git
+
+2.  Execute the Allwmake script by typing (will finish in a ~1 min):
+
+        ./Allwmake
+
+    (To write A LOT OF debug data do ./Allwmake debug)
+	
+3.  Test the installation with a simple test case by typing (will finish in seconds):
+    
+	    cd tests/discInUniFlow
+		./makeAndRunTestCase
+	
+    Open Paraview and color the mesh by alpha1.
+
+# Code structure:
 
 `src/` 
 
 * Contains a single library : `libIsoAdvection`. 
-* Two classes implement the advection scheme: `isoAdvection` and `isoCutter`. 
+* Two classes implement the IsoAdvector advection scheme: `isoAdvection` and `isoCutter`. 
+* For comparison the library includes HRIC, CICSAM and other algebraic VOF scheme in `finiteVolume` directory. 
 
 `applications/` 
 
 - `applications/solvers/isoAdvect` 
-    - Solves the volume fraction advection equation in either steady flow or periodic flow with the option of changing the flow direction at a specified time.
+    - Solves the volume fraction advection equation in either steady flow or periodic predefined flow with the option of changing the flow direction at a specified time.
+- `applications/solvers/mulesFoam`
+    - This is like isoAdvect, but using MULES instead of isoAdvector. Based on interFoam.
+- `applications/solvers/passiveAdvectionFoam` 
+    - This is essentially scalarTransportFoam but using alpha1 instead of T and without diffusion term. Used to run test cases with predefined velocity field using the CICSAM and HRIC schemes.
+- `applications/solvers/interFlow` 
+    - This is essentially the original interFoam solver with MULES replaced by isoAdvector for interface advection. No changes to PIMPLE loop.
 - `applications/utilities/preProcessing/isoSurf` 
-    - Sets the initial volume fraction field for either a sphere, a cylinder or a plane. 
+    - Sets the initial volume fraction field for either a sphere, a cylinder or a plane. See isoSurfDict for usage.
 - `applications/utilities/postProcessing/uniFlowErrors`
-    - For cases with spheres and discs in steady uniform flow calculates errors relative to exact VOF solution
+    - For cases with spheres and discs in steady uniform flow calculates errors relative to exact VOF solution.
 
+`applications/`
+
+* Contains a series of test cases
+	
+#Classes
+	
 ## IsoAdvection 
 
-- Calculates the total volume of water crossing each face in the mesh during the time interval from time t to time t + dt.
+- Calculates the total volume of water, dVf, crossing each face in the mesh during the time interval from time t to time t + dt.
 
 ## IsoCutter
 
-- This OpenFOAM code calculates an isosurface from a function f and a function value f0.
+- Calculates an isosurface from a function f and a function value f0.
 - The function is defined in all vertex points of an fvMesh.
 - The routine travels throug all cells and looks at each cell face edge.
 - If the f is above f0 at one vertex and below f0 at the other vertex of an edge, the edge is cut at a position determined by linear interpolation.
@@ -42,25 +82,6 @@ Contributors:
 So far the routine assumes that a cut face is cut at two edges. For n-gons with n > 3 there will in general be special situations where this is not the case. The function should then triangulate such faces interpolating the function to the face centre and do the face cutting on the triangular faces.
 
 The routine was deliberately build to travel through all cells instead of all faces or edges to obtain its results. The downside of this strategy is that the number of times an edge is visited is equal to twice the number of faces to which it belongs.  The advantage is that parallelisation is trivial. It should be noted that the operation performed on each edge is extremely simple.
-
-# Usage  
-
-See the tests directory for examples of usage.
-For instance go to tests/discInUniFlow/hex and execute the generateCase script to make a simple case.
-Go to the newly created case folder and execute the Allrun script.
-After a few seconds it should finish and inspection of the alpha1 field in Paraview will show a circular water volume going from lower left to upper right corner of the domain.
-
-## Compilation 
-
-Execute the `Allwmake` script. 
-
-To write (A LOT OF!) debug data to log file write "./Allwmake debug" when compiling.
-
-## Preprocessing 
-
-## Running 
-
-## Postprocessing 
 
 # Ongoing work 
 
