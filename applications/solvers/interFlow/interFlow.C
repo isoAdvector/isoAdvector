@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
-    This file is part of OpenFOAM.
+    This file is not part of OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    interFoam
+    interFlow
 
 Description
     Solver for 2 incompressible, isothermal immiscible fluids using a VOF
@@ -34,6 +34,12 @@ Description
     Turbulence modelling is generic, i.e. laminar, RAS or LES may be selected.
 
     For a two-fluid approach see twoPhaseEulerFoam.
+	
+	This solver is essentially the interFoam solver with MULES replaced by
+	IsoAdvector for the interface advection step.
+	
+Author
+    Johan Roenby, DHI
 
 \*---------------------------------------------------------------------------*/
 
@@ -92,10 +98,8 @@ int main(int argc, char *argv[])
         advector.getTransportedVolume(dt,dVf);
 		alpha1 -= fvc::surfaceIntegrate(dVf); 
         alpha1.correctBoundaryConditions();
-
-//       advector.advect(dt);
 		
-	//Clip and snap alpha1 to ensure strict boundedness to machine precision
+        //Clip and snap alpha1 to ensure strict boundedness to machine precision
         if ( clipAlphaTol > 0.0 )
         {
             alpha1 = alpha1*pos(alpha1-clipAlphaTol)*neg(alpha1-(1.0-clipAlphaTol)) + pos(alpha1-(1.0-clipAlphaTol));
