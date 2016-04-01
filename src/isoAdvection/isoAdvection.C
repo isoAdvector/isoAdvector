@@ -650,10 +650,10 @@ void Foam::isoAdvection::limitFluxes
 {
     scalarField alphaNew = alpha1_ - fvc::surfaceIntegrate(dVf);
     scalar aTol = 1.0e-12;
-    scalar maxAlphaMinus1 = max(alphaNew-1);
-    scalar minAlpha = min(alphaNew);
-    label nUndershoots = sum(neg(alphaNew+aTol));
-    label nOvershoots = sum(pos(alphaNew-1-aTol));
+    scalar maxAlphaMinus1 = gMax(alphaNew-1);
+    scalar minAlpha = gMin(alphaNew);
+    label nUndershoots = gSum(neg(alphaNew+aTol));
+    label nOvershoots = gSum(pos(alphaNew-1-aTol));
 
     for ( label n = 0; n < nAlphaBounds_; n++ )
     {
@@ -673,6 +673,7 @@ void Foam::isoAdvection::limitFluxes
                 //Change to treat boundaries consistently
                 faceValue(dVf,fLabel,faceValue(dVfcorrected,fLabel));
             }
+			syncProcPatches(dVf,phi_);
         }
 
         if ( minAlpha < -aTol )
@@ -693,12 +694,13 @@ void Foam::isoAdvection::limitFluxes
                 scalar dVcorr = faceValue(dVfcorrected,fLabel);
                 faceValue(dVf,fLabel,phi*dt - dVcorr);
             }
+			syncProcPatches(dVf,phi_);
         }
 
         //Check if still unbounded
         alphaNew = alpha1_ - fvc::surfaceIntegrate(dVf);
-        maxAlphaMinus1 = max(alphaNew-1);
-        minAlpha = min(alphaNew);
+        maxAlphaMinus1 = gMax(alphaNew-1);
+        minAlpha = gMin(alphaNew);
         nUndershoots = sum(neg(alphaNew+aTol));
         nOvershoots = sum(pos(alphaNew-1-aTol));
         Info << "After bounding number " << n+1 << " of time " << mesh_.time().value() << ":" << endl;
@@ -986,6 +988,79 @@ void Foam::isoAdvection::faceValue
 }
 
 
+void Foam::isoAdvection::syncProcPatches
+(
+	surfaceScalarField& dVf,
+	const surfaceScalarField& phi
+)
+{
+	const polyBoundaryMesh& patches = mesh_.boundaryMesh();
+
+    if (Pstream::parRun())
+    {
+        PstreamBuffers pBufs(Pstream::nonBlocking);
+
+        // Send
+
+        forAll(patches, patchI)
+        {
+            if
+            (
+                isA<processorPolyPatch>(patches[patchI])
+             && patches[patchI].size() > 0
+            )
+            {
+                const processorPolyPatch& procPatch =
+                    refCast<const processorPolyPatch>(patches[patchI]);
+
+                UOPstream toNbr(procPatch.neighbProcNo(), pBufs);
+				
+	            const scalarField& pFlux = dVf.boundaryField()[patchI];
+
+				toNbr << pFlux;
+
+            }
+        }
+
+
+        pBufs.finishedSends();
+
+
+        // Receive and combine.
+
+        forAll(patches, patchI)
+        {
+            if
+            (
+                isA<processorPolyPatch>(patches[patchI])
+             && patches[patchI].size() > 0
+            )
+            {
+                const processorPolyPatch& procPatch =
+                    refCast<const processorPolyPatch>(patches[patchI]);
+
+                scalarField nbrFlux(procPatch.size());
+
+                UIPstream fromNeighb(procPatch.neighbProcNo(), pBufs);
+                fromNeighb >> nbrFlux;
+
+				// Combine fluxes
+			    scalarField& localFlux = dVf.boundaryField()[patchI];
+			    const scalarField& phib = phi.boundaryField()[patchI];
+
+	            forAll (nbrFlux, faceI)
+				{
+					if (phib[faceI] < 0)
+					{
+						localFlux[faceI] = -nbrFlux[faceI];
+					}
+				}
+            }
+        }
+    }
+}
+
+
 void Foam::isoAdvection::advect
 (
     const scalar dt
@@ -1025,6 +1100,8 @@ void Foam::isoAdvection::getTransportedVolume
     isoDebug(Info << "Enter advect" << endl;)
 
     timeIntegratedFlux(dt, dVf);
+
+	syncProcPatches(dVf,phi_);
 
     //Bounding
     limitFluxes(dVf,dt);

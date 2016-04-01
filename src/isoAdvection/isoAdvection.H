@@ -221,6 +221,13 @@ class isoAdvection
 		const vector value
 	);
 	
+    //- Syncronize dVf across processor boundaries using upwind value
+    void syncProcPatches
+	(
+	    surfaceScalarField& dVf,
+		const surfaceScalarField& phi
+	);
+
     public:
 
     //- Constructor

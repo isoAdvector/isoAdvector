@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 			}
 		}
 		
-		const scalar V = sum(mesh.V()*alpha1).value();
+		const scalar V = gSum(mesh.V()*alpha1).value();
         Info << "t = " << t << ",\t sum(alpha*V) = " << V
              << ",\t dev = " << 100*(1.0-V/V0) << "%" 
              << ",\t 1-max(alpha1) = " << 1-aMax << " at cell " << lMax
