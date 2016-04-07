@@ -26,7 +26,6 @@ License
 #include "isoCutter.H"
 #include "volPointInterpolation.H" //Is this used at all?
 #include "interpolationCellPoint.H"
-//#include "isoSubCell.H"
 
 #ifdef DETAILS2LOG
 #define isoDebug(x) x
@@ -39,14 +38,13 @@ License
 Foam::isoCutter::isoCutter
 (
     const fvMesh& mesh,
-    const scalarField& f//,
-//    const scalar& f0
+    scalarField& f
 )
 :
     mesh_(mesh),
-    f_(f)//,
-//    f0_(f0)
+    f_(f)
 {}
+
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
@@ -458,22 +456,11 @@ void Foam::isoCutter::getFaceCutPoints
     const label nPoints = pLabels.size();
     label pl1 = pLabels[0];
     scalar f1(f_[pl1]);
-//    if (mag(f1-f0) < 1e-10)
-//    {
-//        f1 = f0;
-//    }
-    Info << "face values differences from f0: ";
     forAll(pLabels,pi)
     {
         label pl2 = pLabels[(pi+1)%nPoints];
         scalar f2(f_[pl2]);
-        if (mag(f2-f0) < 1e-12)
-        {
-            f2 = f0;
-        }
-        Info << " " << f1-f0;
-        bool edgeIsCut = min(f1,f2) < f0 && max(f1,f2) > f0;
-        if ( edgeIsCut )
+        if ( (f1 < f0 && f2 > f0 ) || (f1 > f0 && f2 < f0) )
         {
             scalar s = (f0-f1)/(f2-f1);
             point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
@@ -486,7 +473,6 @@ void Foam::isoCutter::getFaceCutPoints
         pl1 = pl2;
         f1 = f2;
     }
-    Info << "." << endl;
 }
 
 void Foam::isoCutter::getFaceCutPoints
@@ -505,21 +491,11 @@ void Foam::isoCutter::getFaceCutPoints
     const label nPoints = pLabels.size();
     label pl1 = pLabels[0];
     scalar f1(f[0]);
-//    if (mag(f1-f0) < 1e-12)
-//    {
-//        f1 = f0;
-//    }
     forAll(pLabels,pi)
     {
         label pl2 = pLabels[(pi+1)%nPoints];
         scalar f2(f[(pi+1)%nPoints]);
-        if (mag(f2-f0) < 1e-12)
-        {
-            f2 = f0;
-        }
-
-        bool edgeIsCut = min(f1,f2) < f0 && max(f1,f2) > f0;
-        if ( edgeIsCut )
+        if ( (f1 < f0 && f2 > f0 ) || (f1 > f0 && f2 < f0) )
         {
             scalar s = (f0-f1)/(f2-f1);
             point pCut = points[pl1] + s*(points[pl2]-points[pl1]);
@@ -547,27 +523,13 @@ void Foam::isoCutter::getFaceCutPoints
 
     const label nPoints = pts.size();
     scalar f1(f[0]);
-//    if (mag(f1-f0) < 1e-12)
-//    {
-//        f1 = f0;
-//    }
     forAll(pts,pi)
     {
         label pi2 = (pi+1)%nPoints;
         scalar f2 = f[pi2];
-        if (mag(f2-f0) < 1e-12)
+        if ( (f1 < f0 && f2 > f0 ) || (f1 > f0 && f2 < f0) )
         {
-//			Info << "Warning: mag(f2-f0) < 1e-12: f2 = " << f2 << ", f1 = " << f1 << ", f0 = " << f0 << endl;
-//            f2 = f0;
-        }
-
-        bool edgeIsCut = min(f1,f2) < f0 && max(f1,f2) > f0;
-        if ( edgeIsCut )
-//        if ( (f1 <= f0 && f2 > f0 ) || (f1 >= f0 && f2 < f0) )
-        {
-//			Info << "Calculating s" << endl;
             scalar s = (f0-f1)/(f2-f1);
-//			Info << "s = " << s << endl;
             point pCut = pts[pi] + s*(pts[pi2]-pts[pi]);
             cutPoints.append(pCut);
         }
@@ -575,7 +537,6 @@ void Foam::isoCutter::getFaceCutPoints
         {
             cutPoints.append(pts[pi]);
         }
-
         f1 = f2;
     }
 }

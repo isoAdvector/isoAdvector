@@ -8,7 +8,7 @@ fi
 
 if [ "$1" == "log" ];
 then
-    export DETAILSTOLOGSWITCH=DETAILSTOLOG
+    export DETAILSTOLOGSWITCH=DETAILS2LOG
 else
     export DETAILSTOLOGSWITCH=OFF
 fi

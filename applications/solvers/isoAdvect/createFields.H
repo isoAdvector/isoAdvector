@@ -28,6 +28,21 @@
         mesh
     );
 
+	//Volume of water transported across faces in time dt
+	surfaceScalarField dVf
+	(
+		IOobject
+		(
+			"dVf",
+			mesh.time().timeName(),
+			mesh,
+			IOobject::NO_READ,
+			IOobject::NO_WRITE
+		),
+		mesh,
+		dimensionedScalar("vol", dimVol, 0)
+    );	
+
 	//Initial Volume of Fluid (VOF)
     scalar V0 = sum(mesh.V()*alpha1).value();   
 

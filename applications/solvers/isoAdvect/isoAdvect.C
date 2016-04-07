@@ -56,7 +56,9 @@ int main(int argc, char *argv[])
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
     
     Info<< "\nStarting time loop\n" << endl;
-    isoAdvection advector(alpha1,phi,U,isoAdvectorDict);
+	
+	isoAdvection advector(alpha1,phi,U,isoAdvectorDict);
+	
     while (runTime.run())
     {
 		//Setting velocity field and face fluxes for next time step
@@ -85,9 +87,11 @@ int main(int argc, char *argv[])
 		t = runTime.time().value();
 		
 		//Advance alpha1 from time t to t+dt
-        const scalar dt = runTime.deltaT().value();
-        advector.advect(dt);
-		
+        const scalar dt = runTime.deltaT().value();		
+        advector.getTransportedVolume(dt,dVf);
+		alpha1 -= fvc::surfaceIntegrate(dVf); 
+//        alpha1.correctBoundaryConditions();
+	
 		//Write total VOF and discrepancy from original VOF to log
 		label lMin = -1, lMax = -1;
 		scalar aMax = -GREAT, aMin = GREAT;
@@ -105,7 +109,7 @@ int main(int argc, char *argv[])
 			}
 		}
 		
-		const scalar V = gSum(mesh.V()*alpha1).value();
+		const scalar V = sum(mesh.V()*alpha1).value();
         Info << "t = " << t << ",\t sum(alpha*V) = " << V
              << ",\t dev = " << 100*(1.0-V/V0) << "%" 
              << ",\t 1-max(alpha1) = " << 1-aMax << " at cell " << lMax

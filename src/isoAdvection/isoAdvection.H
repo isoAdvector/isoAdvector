@@ -78,9 +78,6 @@ class isoAdvection
     //- Velocity field
     const volVectorField& U_;
 
-    //- For each cell weather it qualifies as a surface cell
-    boolList isSurfaceCell_;
-
     //- How many iterations of the alpha bounding function
     const label nAlphaBounds_;
 
@@ -90,6 +87,8 @@ class isoAdvection
     //- Cells with surfCellTol_ < alpha1 < surfCellTol_ are treated as surface cells
     const scalar surfCellTol_;
 
+	isoCutter cutter_;
+	
     // Private Member Functions
 
     //- For each face calculate volumetric face transport during dt
@@ -126,6 +125,13 @@ class isoAdvection
         DynamicList<label>& downwindFaces
     );
 
+	
+	//Return true if faceI is downwind to cellI (baseds on phi_)
+	bool isADownwindFace
+	(
+		const label faceI,
+		const label cellI
+	);
 
     //- For face with vertices p calculate its area and integrated area between isocutting lines with isovalues f0 and f1 given vertex values f
     void getQuadArea
@@ -172,11 +178,13 @@ class isoAdvection
         const label cLabel
     );
 
-    //- Find all surface cells
-    void findSurfaceCells
+
+    //- Determine if a cell is a surface cell
+    bool isASurfaceCell
     (
-        DynamicList<label>& surfaceCells
+        const label cellI
     );
+
 
     //- For cell ci calculate the isoFace centre x0, normal n0, and isovalue f0, of the isosurface cutting it at to the right volume fractions. 
     void calcIsoFace
@@ -221,16 +229,10 @@ class isoAdvection
 		const vector value
 	);
 	
-    //- Syncronize dVf across processor boundaries using upwind value
-    void syncProcPatches
-	(
-	    surfaceScalarField& dVf,
-		const surfaceScalarField& phi
-	);
-
     public:
 
-    //- Constructor
+    //- Constructors
+
     isoAdvection
     (
         volScalarField& alpha1,
@@ -239,22 +241,27 @@ class isoAdvection
         const dictionary& dict
     );
 
-    //- Update the alpha1 field to the next time step
-    void advect
-    (
-        const scalar dt
-    );
 
 	void getTransportedVolume
     (
         const scalar dt,
         surfaceScalarField& dVf
     );
+
+
+    //- Syncronize dVf across processor boundaries using upwind value
+    void syncProcPatches
+	(
+	    surfaceScalarField& dVf,
+		const surfaceScalarField& phi
+	);
+
 	
 	void getxSnSdotnF
     (
         surfaceVectorField& xSnSdotnF
     );
+
 	
 	void getIsoCentreAndNormal
     (

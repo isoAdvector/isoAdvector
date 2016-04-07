@@ -69,7 +69,7 @@ class isoCutter
         const fvMesh& mesh_;
 
         //- Function to take isosurface from. f_.size() should be equal to mesh_.nPoints().
-        const scalarField& f_;
+        scalarField& f_;
 
         //- Isovalue
 //      const scalar& f0_;
@@ -212,15 +212,14 @@ public:
 
     // Constructors
 
-        //- Construct from fvMesh, scalarField and an isovalue
+        //- Construct from fvMesh and a scalarField
         //  Length of scalarField should equal number of mesh points
-
         isoCutter
         (
             const fvMesh&,
-            const scalarField&//,
-//            const scalar&
+            scalarField&
         );
+
 
         //Member functions
 
