@@ -6,7 +6,8 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
-    This file is not part of OpenFOAM.
+    This file is part of the IsoAdvector source code library, which is an 
+	unofficial extension to OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
@@ -39,7 +40,7 @@ Description
 	IsoAdvector for the interface advection step.
 	
 Author
-    Johan Roenby, DHI
+    Johan Roenby, DHI, all rights reserved
 
 \*---------------------------------------------------------------------------*/
 

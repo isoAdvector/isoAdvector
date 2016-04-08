@@ -6,7 +6,8 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
-    This file is not part of OpenFOAM.
+    This file is part of the IsoAdvector source code library, which is an 
+	unofficial extension to OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
@@ -58,7 +59,8 @@ int main(int argc, char *argv[])
     Info<< "\nStarting time loop\n" << endl;
 	
 	isoAdvection advector(alpha1,phi,U,isoAdvectorDict);
-	
+	scalar executionTime = runTime.elapsedCpuTime();
+
     while (runTime.run())
     {
 		//Setting velocity field and face fluxes for next time step
@@ -90,7 +92,7 @@ int main(int argc, char *argv[])
         const scalar dt = runTime.deltaT().value();		
         advector.getTransportedVolume(dt,dVf);
 		alpha1 -= fvc::surfaceIntegrate(dVf); 
-//        alpha1.correctBoundaryConditions();
+        alpha1.correctBoundaryConditions();
 	
 		//Write total VOF and discrepancy from original VOF to log
 		label lMin = -1, lMax = -1;
@@ -127,10 +129,12 @@ int main(int argc, char *argv[])
             alpha1 = min(1.0,max(0.0,alpha1));
         }
         
-        
-        Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
+        scalar newExecutionTime = runTime.elapsedCpuTime();
+        Info<< "ExecutionTime = " << newExecutionTime << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
             << nl << endl;
+        Info<< "dT_exec = " << newExecutionTime - executionTime << " s" << endl;
+        executionTime = runTime.elapsedCpuTime();
     }
 
     Info<< "End\n" << endl;

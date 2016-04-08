@@ -6,7 +6,8 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
-    This file is not part of OpenFOAM.
+    This file is part of the IsoAdvector source code library, which is an 
+	unofficial extension to OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
@@ -87,7 +88,16 @@ class isoAdvection
     //- Cells with surfCellTol_ < alpha1 < surfCellTol_ are treated as surface cells
     const scalar surfCellTol_;
 
+    //- The isoCutter doing the geometric cutting of face edges and cell edges
 	isoCutter cutter_;
+	
+	//- List of processor patch labels
+	labelList procPatchLabels_;
+	
+    //- For each patch if it is a processor patch this is a list of the face labels
+	//  on this patch that are downwind to a surface cell.
+	//  For non-processor patches the list will be empty.
+	List< DynamicList<label> > surfaceCellFacesOnProcPatches_;
 	
     // Private Member Functions
 
@@ -228,6 +238,21 @@ class isoAdvection
 		const label fLabel,
 		const vector value
 	);
+
+	
+    //- Syncronize dVf across processor boundaries using upwind value
+    void syncProcPatches
+	(
+	    surfaceScalarField& dVf,
+		const surfaceScalarField& phi
+	);
+
+	
+	void checkIfOnProcPatch
+	(
+		const label faceI
+	);
+
 	
     public:
 
@@ -247,14 +272,6 @@ class isoAdvection
         const scalar dt,
         surfaceScalarField& dVf
     );
-
-
-    //- Syncronize dVf across processor boundaries using upwind value
-    void syncProcPatches
-	(
-	    surfaceScalarField& dVf,
-		const surfaceScalarField& phi
-	);
 
 	
 	void getxSnSdotnF

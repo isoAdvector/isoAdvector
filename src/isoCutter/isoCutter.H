@@ -6,7 +6,8 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
-    This file is not part of OpenFOAM.
+    This file is part of the IsoAdvector source code library, which is an 
+	unofficial extension to OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
@@ -70,9 +71,6 @@ class isoCutter
 
         //- Function to take isosurface from. f_.size() should be equal to mesh_.nPoints().
         scalarField& f_;
-
-        //- Isovalue
-//      const scalar& f0_;
 
     // Private Member Functions
 
