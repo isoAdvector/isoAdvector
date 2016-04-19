@@ -6,8 +6,8 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
-    This file is part of the IsoAdvector source code library, which is an 
-	unofficial extension to OpenFOAM.
+    This file is part of the IsoAdvector source code library, which is an
+    unofficial extension to OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
@@ -35,10 +35,10 @@ Description
     Turbulence modelling is generic, i.e. laminar, RAS or LES may be selected.
 
     For a two-fluid approach see twoPhaseEulerFoam.
-	
-	This solver is essentially the interFoam solver with MULES replaced by
-	IsoAdvector for the interface advection step.
-	
+
+    This solver is essentially the interFoam solver with MULES replaced by
+    IsoAdvector for the interface advection step.
+
 Author
     Johan Roenby, DHI, all rights reserved
 
@@ -93,13 +93,14 @@ int main(int argc, char *argv[])
         twoPhaseProperties.correct();
 
 
-	    //Advance alpha1 from time t to t+dt
+        //Advance alpha1 from time t to t+dt
         const scalar dt = runTime.deltaT().value();
-		dVf *= 0.0;
         advector.getTransportedVolume(dt,dVf);
-		alpha1 -= fvc::surfaceIntegrate(dVf); 
+        alpha1 -= fvc::surfaceIntegrate(dVf);
         alpha1.correctBoundaryConditions();
-		
+
+        Info << "1-max(alpha1) = " << 1-max(alpha1).value() << " and min(alpha1) = " << min(alpha1).value() << endl;
+
         //Clip and snap alpha1 to ensure strict boundedness to machine precision
         if ( clipAlphaTol > 0.0 )
         {
@@ -109,7 +110,7 @@ int main(int argc, char *argv[])
         {
             alpha1 = min(1.0,max(0.0,alpha1));
         }
-		
+
         rho == alpha1*rho1 + (scalar(1) - alpha1)*rho2;
         rhoPhi = (rho1-rho2)*dVf/dimensionedScalar("dt", dimTime, dt) + rho2*phi;
 

@@ -6,8 +6,8 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
-    This file is part of the IsoAdvector source code library, which is an 
-	unofficial extension to OpenFOAM.
+    This file is part of the IsoAdvector source code library, which is an
+    unofficial extension to OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
@@ -69,8 +69,18 @@ class isoCutter
         //- Mesh whose cells and faces to cut at their intersection with an isoface
         const fvMesh& mesh_;
 
-        //- Function to take isosurface from. f_.size() should be equal to mesh_.nPoints().
+        //- Isofunction values at mesh points. f_size() = mesh_.nPoints().
         scalarField& f_;
+
+        //- Storage for list of face labels for cut faces of a given cell
+        DynamicList<label> cutFaces_;
+
+        //- For each face in cutFaces_ cutEdges_ holds the label of the edge which is cut
+        DynamicList<label> cutEdges_;
+
+        //- For each edge in cutEdges_ cutPoints_ holds the point along the edge where it is cut
+        DynamicList<scalar> cutPoints_;
+
 
     // Private Member Functions
 
@@ -82,9 +92,6 @@ class isoCutter
     (
         const label,
         const scalar,
-        DynamicList<label>&,
-        DynamicList<label>&,
-        DynamicList<scalar>&,
         bool&
     );
 
@@ -120,10 +127,6 @@ class isoCutter
     //- Construct "isoFace" point list representing the union of a cell with the isosurface
     void getIsoFace
     (
-        const DynamicList<label>& cutFaces,
-        const DynamicList<label>& cutEdges,
-        const DynamicList<scalar>& cutPoints,
-//        DynamicList<point>& isoPoints
         DynamicList<point>& isoPoints
     );
 
@@ -168,8 +171,8 @@ class isoCutter
     //  Taken from primitiveMesh
     void makeCellCentreAndVol
     (
-        const vectorField& fCtrs,
-        const vectorField& fAreas,
+        const List<point>& fCtrs,
+        const List<vector>& fAreas,
         vector& cellCtr,
         scalar& cellVol
     );
@@ -194,7 +197,7 @@ class isoCutter
     void getFacePoints
     (
         const labelList& faceLabels,
-        DynamicList< DynamicList<point> >&
+        List< DynamicList<point> >&
     );
 
 
@@ -302,10 +305,10 @@ public:
         //- Return cutPoints for a given defined py its vertices pts as above.
         void getFaceCutPoints
         (
-			const pointField& pts,
-			const scalarField& f,
-			const scalar f0,
-			DynamicList<point>& cutPoints
+            const pointField& pts,
+            const scalarField& f,
+            const scalar f0,
+            DynamicList<point>& cutPoints
         );
 
         //- Calculate face centre and area from pointField assumed to represent an oriented face

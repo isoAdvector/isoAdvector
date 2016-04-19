@@ -3,7 +3,7 @@ cd ${0%/*} || exit 1    # run from this directory
 
 set -x 
 
-#wmake all solvers
-wmake solvers/isoAdvect
+wmake all solvers
+#wmake solvers/isoAdvect
 wmake all utilities/preProcessing
 wmake all utilities/postProcessing

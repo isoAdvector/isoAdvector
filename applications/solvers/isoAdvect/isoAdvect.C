@@ -6,8 +6,8 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
-    This file is part of the IsoAdvector source code library, which is an 
-	unofficial extension to OpenFOAM.
+    This file is part of the IsoAdvector source code library, which is an
+    unofficial extension to OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
@@ -55,68 +55,68 @@ int main(int argc, char *argv[])
     #include "setDeltaT.H"
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-    
+
     Info<< "\nStarting time loop\n" << endl;
-	
-	isoAdvection advector(alpha1,phi,U,isoAdvectorDict);
-	scalar executionTime = runTime.elapsedCpuTime();
+
+    isoAdvection advector(alpha1,phi,U,isoAdvectorDict);
+    scalar executionTime = runTime.elapsedCpuTime();
 
     while (runTime.run())
     {
-		//Setting velocity field and face fluxes for next time step
-		scalar t = runTime.time().value();
-		if ( reverseTime > 0.0 && t > reverseTime )
-		{
-			Info<< "Reversing flow" << endl;
-			phi = -phi;
-			phi0 = -phi0;
-			U = -U;
-			U0 = -U0;
-			reverseTime = -1.0;
-		}
-		if ( period > 0.0 )
-		{
-			phi = phi0*Foam::cos(2.0*PI*t/period);
-			U = U0*Foam::cos(2.0*PI*t/period);		
-		}
-		
+        //Setting velocity field and face fluxes for next time step
+        scalar t = runTime.time().value();
+        if ( reverseTime > 0.0 && t > reverseTime )
+        {
+            Info<< "Reversing flow" << endl;
+            phi = -phi;
+            phi0 = -phi0;
+            U = -U;
+            U0 = -U0;
+            reverseTime = -1.0;
+        }
+        if ( period > 0.0 )
+        {
+            phi = phi0*Foam::cos(2.0*PI*t/period);
+            U = U0*Foam::cos(2.0*PI*t/period);
+        }
+
         #include "readTimeControls.H"
         #include "CourantNo.H"
         #include "alphaCourantNo.H"
         #include "setDeltaT.H"
         runTime++;
         Info<< "Time = " << runTime.timeName() << nl << endl;
-		t = runTime.time().value();
-		
-		//Advance alpha1 from time t to t+dt
-        const scalar dt = runTime.deltaT().value();		
+        t = runTime.time().value();
+
+        //Advance alpha1 from time t to t+dt
+        const scalar dt = runTime.deltaT().value();
         advector.getTransportedVolume(dt,dVf);
-		alpha1 -= fvc::surfaceIntegrate(dVf); 
+        alpha1 -= fvc::surfaceIntegrate(dVf);
         alpha1.correctBoundaryConditions();
-	
-		//Write total VOF and discrepancy from original VOF to log
-		label lMin = -1, lMax = -1;
-		scalar aMax = -GREAT, aMin = GREAT;
-		forAll(alpha1,ci)
-		{
-			if ( alpha1[ci] > aMax)
+
+        //Write total VOF and discrepancy from original VOF to log
+        label lMin = -1, lMax = -1;
+        scalar aMax = -GREAT, aMin = GREAT;
+        forAll(alpha1,ci)
+        {
+            if ( alpha1[ci] > aMax)
             {
-				aMax = alpha1[ci];
-				lMax = ci;
-			}
-			else if ( alpha1[ci] < aMin )
-			{
-				aMin = alpha1[ci];
-				lMin = ci;				
-			}
-		}
-		
-		const scalar V = sum(mesh.V()*alpha1).value();
+                aMax = alpha1[ci];
+                lMax = ci;
+            }
+            else if ( alpha1[ci] < aMin )
+            {
+                aMin = alpha1[ci];
+                lMin = ci;
+            }
+        }
+
+        const scalar V = sum(mesh.V()*alpha1).value();
         Info << "t = " << t << ",\t sum(alpha*V) = " << V
-             << ",\t dev = " << 100*(1.0-V/V0) << "%" 
+             << ",\t dev = " << 100*(1.0-V/V0) << "%"
              << ",\t 1-max(alpha1) = " << 1-aMax << " at cell " << lMax
              << ",\t min(alpha1) = " << aMin << " at cell " << lMin << endl;
-        
+
         runTime.write();
 
         //Clip and snap alpha1 to ensure strict boundedness to machine precision
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
         {
             alpha1 = min(1.0,max(0.0,alpha1));
         }
-        
+
         scalar newExecutionTime = runTime.elapsedCpuTime();
         Info<< "ExecutionTime = " << newExecutionTime << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"

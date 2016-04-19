@@ -6,8 +6,8 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
-    This file is part of the IsoAdvector source code library, which is an 
-	unofficial extension to OpenFOAM.
+    This file is part of the IsoAdvector source code library, which is an
+    unofficial extension to OpenFOAM.
 
     OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
@@ -66,10 +66,10 @@ class isoAdvection
 
     //- VOF field
     volScalarField& alpha1_;
-	
-	//- volPointInterpolation from cell centres to points
-	volPointInterpolation vpi_;
-	
+
+    //- volPointInterpolation from cell centres to points
+    volPointInterpolation vpi_;
+
     //- VOF field interpolated to mesh points
     scalarField ap_;
 
@@ -89,16 +89,16 @@ class isoAdvection
     const scalar surfCellTol_;
 
     //- The isoCutter doing the geometric cutting of face edges and cell edges
-	isoCutter cutter_;
-	
-	//- List of processor patch labels
-	labelList procPatchLabels_;
-	
+    isoCutter cutter_;
+
+    //- List of processor patch labels
+    labelList procPatchLabels_;
+
     //- For each patch if it is a processor patch this is a list of the face labels
-	//  on this patch that are downwind to a surface cell.
-	//  For non-processor patches the list will be empty.
-	List< DynamicList<label> > surfaceCellFacesOnProcPatches_;
-	
+    //  on this patch that are downwind to a surface cell.
+    //  For non-processor patches the list will be empty.
+    List< DynamicList<label> > surfaceCellFacesOnProcPatches_;
+
     // Private Member Functions
 
     //- For each face calculate volumetric face transport during dt
@@ -119,15 +119,15 @@ class isoAdvection
         const scalar dt
     );
 
-	scalar timeIntegratedArea
-	(
-		const label fLabel,
-		const pointField& fPts,
-		const scalarField& pTimes,
-		const scalar dt,
-		const scalar Un0
-	);
-	
+    scalar timeIntegratedArea
+    (
+        const label fLabel,
+        const pointField& fPts,
+        const scalarField& pTimes,
+        const scalar dt,
+        const scalar Un0
+    );
+
     //- For cell ci return labels of faces fluxing out of this cell (based on sign of phi)
     void getDownwindFaces
     (
@@ -135,18 +135,18 @@ class isoAdvection
         DynamicList<label>& downwindFaces
     );
 
-	
-	//Return true if faceI is downwind to cellI (baseds on phi_)
-	bool isADownwindFace
-	(
-		const label faceI,
-		const label cellI
-	);
+
+    //Return true if faceI is downwind to cellI (baseds on phi_)
+    bool isADownwindFace
+    (
+        const label faceI,
+        const label cellI
+    );
 
     //- For face with vertices p calculate its area and integrated area between isocutting lines with isovalues f0 and f1 given vertex values f
     void getQuadArea
     (
-		const label fLabel,
+        const label fLabel,
         const pointField& p,
         const scalarField& f,
         const scalar f0,
@@ -164,24 +164,24 @@ class isoAdvection
         scalar& fMax
     );
 
-	
-	void limitFluxes
-	(
-		surfaceScalarField& dVfa,
-		const scalar dt
-	);
 
-	
-	void boundFromAbove
-	(
-		const volScalarField& alpha1,
-		const scalar dt,
-		surfaceScalarField& dVfcorrected,
-		DynamicList<label>& correctedFaces
-	);
+    void limitFluxes
+    (
+        surfaceScalarField& dVfa,
+        const scalar dt
+    );
 
 
-    //- Given the face volume transport dVf calculates the total volume leaving cell cLabel 
+    void boundFromAbove
+    (
+        const volScalarField& alpha1,
+        const scalar dt,
+        surfaceScalarField& dVfcorrected,
+        DynamicList<label>& correctedFaces
+    );
+
+
+    //- Given the face volume transport dVf calculates the total volume leaving cell cLabel
     scalar netFlux
     (
         const surfaceScalarField& dVf,
@@ -196,7 +196,7 @@ class isoAdvection
     );
 
 
-    //- For cell ci calculate the isoFace centre x0, normal n0, and isovalue f0, of the isosurface cutting it at to the right volume fractions. 
+    //- For cell ci calculate the isoFace centre x0, normal n0, and isovalue f0, of the isosurface cutting it at to the right volume fractions.
     void calcIsoFace
     (
         const label ci,
@@ -205,55 +205,55 @@ class isoAdvection
         scalar& f0
     );
 
-	
-	//- Return face value of a surfaceScalarField
-	scalar faceValue
-	(
-		const  surfaceScalarField& f,
-		const label fLabel
-	);
-	
 
-	//- Set face value of a surfaceScalarField
-	void faceValue
-	(
-		surfaceScalarField& f,
-		const label fLabel,
-		const scalar value
-	);
+    //- Return face value of a surfaceScalarField
+    scalar faceValue
+    (
+        const  surfaceScalarField& f,
+        const label fLabel
+    );
 
 
-	//- Return face value of a surfaceScalarField
-	vector faceValue
-	(
-		const  surfaceVectorField& f,
-		const label fLabel
-	);
-	
+    //- Set face value of a surfaceScalarField
+    void faceValue
+    (
+        surfaceScalarField& f,
+        const label fLabel,
+        const scalar value
+    );
 
-	//- Set face value of a surfaceScalarField
-	void faceValue
-	(
-		surfaceVectorField& f,
-		const label fLabel,
-		const vector value
-	);
 
-	
+    //- Return face value of a surfaceScalarField
+    vector faceValue
+    (
+        const  surfaceVectorField& f,
+        const label fLabel
+    );
+
+
+    //- Set face value of a surfaceScalarField
+    void faceValue
+    (
+        surfaceVectorField& f,
+        const label fLabel,
+        const vector value
+    );
+
+
     //- Syncronize dVf across processor boundaries using upwind value
     void syncProcPatches
-	(
-	    surfaceScalarField& dVf,
-		const surfaceScalarField& phi
-	);
+    (
+        surfaceScalarField& dVf,
+        const surfaceScalarField& phi
+    );
 
-	
-	void checkIfOnProcPatch
-	(
-		const label faceI
-	);
 
-	
+    void checkIfOnProcPatch
+    (
+        const label faceI
+    );
+
+
     public:
 
     //- Constructors
@@ -267,25 +267,25 @@ class isoAdvection
     );
 
 
-	void getTransportedVolume
+    void getTransportedVolume
     (
         const scalar dt,
         surfaceScalarField& dVf
     );
 
-	
-	void getxSnSdotnF
+/*
+    void getxSnSdotnF
     (
         surfaceVectorField& xSnSdotnF
     );
 
-	
-	void getIsoCentreAndNormal
+
+    void getIsoCentreAndNormal
     (
         volVectorField& Ci,
         volVectorField& Si
     );
-
+*/
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
