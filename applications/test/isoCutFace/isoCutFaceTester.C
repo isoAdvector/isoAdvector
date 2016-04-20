@@ -34,7 +34,6 @@ Author
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
-#include "isoCutter.H"
 #include "isoCutFace.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -44,20 +43,6 @@ int main(int argc, char *argv[])
     #include "setRootCase.H"
     #include "createTime.H"
     #include "createMesh.H"
-
-    Info<< "Reading field alpha1\n" << endl;
-    volScalarField alpha1
-    (
-        IOobject
-        (
-            "alpha1",
-            runTime.timeName(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh
-    );
 
 	Info<< "Reading isoSurfDict\n" << endl;
 
@@ -106,15 +91,7 @@ int main(int argc, char *argv[])
 	}
 
     //Define function on mesh points and isovalue
-	
-	//Calculating alpha1 volScalarField from f = f0 isosurface
-    Foam::isoCutter cutter(mesh,f);
-    cutter.subCellFractions(f0,alpha1);
-	
-	ISstream::defaultPrecision(18);
-	
-    alpha1.write(); //Writing volScalarField alpha1
-    
+	    
     isoCutFace icf(mesh,f);
 
     DynamicList< List<point> > subFaces(mesh.nFaces());
@@ -126,6 +103,16 @@ int main(int argc, char *argv[])
             List<point> sfpi = icf.subFacePoints();
             subFaces.append(sfpi);
             Info << "subfacepoints for face " << fi << ": " << sfpi << endl;
+            label nPoints = sfpi.size();
+            forAll(sfpi,pi)
+            {
+                if (mag(sfpi[pi] - sfpi[(pi + 1) % nPoints]) < 1e-10)
+                {
+                    Info << "Warning: Possible dublicate points for subface "
+                        << "of face " << fi << ": " << sfpi[pi] << " and " 
+                        << sfpi[(pi + 1) % nPoints] << endl;
+                }
+            }
         }
     }
     

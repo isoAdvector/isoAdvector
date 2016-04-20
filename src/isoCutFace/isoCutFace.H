@@ -52,7 +52,7 @@ namespace Foam
 {
 
 /*---------------------------------------------------------------------------*\
-            Class isoCutter Declaration
+            Class isoCutFaces Declaration
 \*---------------------------------------------------------------------------*/
 
 class isoCutFace
@@ -93,6 +93,18 @@ class isoCutFace
         //- Storage for "area of fluid" for subface
         scalar AreaOfFluid_;
 
+        //- Storage for subFacePoints
+        DynamicList<point> subFacePoints_;
+
+        //- Storage for subFacePoints
+        DynamicList<point> surfacePoints_;
+
+        //- A label taking one of the values -1 (if face is fully below the 
+        //  isosurface), 0 (if face is cut, i.e. it has values both larger and 
+        //  smaller than isoValue_), or +1 (if the face is fully above the 
+        //  isosurface). 
+        label faceStatus_;
+
     // Private Member Functions
 
     void calcSubFaceCentreAndArea();
@@ -122,9 +134,9 @@ public:
 
         vector subFaceArea();
 
-        List<point> subFacePoints();
+        DynamicList<point> subFacePoints();
 
-        List<point> surfacePoints();
+        DynamicList<point> surfacePoints();
 
         scalar areaOfFluid();
 
