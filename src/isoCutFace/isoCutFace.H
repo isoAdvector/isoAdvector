@@ -99,10 +99,11 @@ class isoCutFace
         //- Storage for subFacePoints
         DynamicList<point> surfacePoints_;
 
-        //- A label taking one of the values -1 (if face is fully below the 
-        //  isosurface), 0 (if face is cut, i.e. it has values both larger and 
-        //  smaller than isoValue_), or +1 (if the face is fully above the 
-        //  isosurface). 
+        //- A face status label taking one of the values:
+        //
+        //  - -1: face is fully below the isosurface
+        //  -  0: face is cut, i.e. has values larger and smaller than isoValue_
+        //  - +1: face is fully above the isosurface 
         label faceStatus_;
 
     // Private Member Functions

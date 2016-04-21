@@ -53,7 +53,7 @@ Foam::isoCutFace::isoCutFace
     AreaOfFluid_(-1),
     subFacePoints_(10),
     surfacePoints_(4),
-    faceStatus_(-2)
+    faceStatus_(-1)
 {}
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
@@ -134,22 +134,33 @@ Foam::label Foam::isoCutFace::calcSubFace
     const label nPoints = pLabels.size();
     label pl1 = pLabels[0];
     scalar f1 = f_[pl1];
+    
+    if (f1 == isoValue)
+    {
+        f1 += SMALL;
+    }
 
     forAll(pLabels, pi)
     {
         label pl2 = pLabels[(pi + 1) % nPoints];
         scalar f2 = f_[pl2];
+        if (f2 == isoValue)
+        {
+            f2 += SMALL;
+        }
 
         if (f1 > isoValue_)
         {
             nFullySubmergedPoints_ += 1;
             
-            if (f2 <= isoValue_)
+//            if (f2 <= isoValue_)
+            if (f2 < isoValue_)
             {
                 lastEdgeCut_ = (isoValue_ - f1)/(f2 - f1);
             }
         }
-        else if (f1 <= isoValue_ && f2 > isoValue_)
+//        else if (f1 <= isoValue_ && f2 > isoValue_)
+        else if (f1 < isoValue_ && f2 > isoValue_)
         {
             if (firstFullySubmergedPoint_ == -1)
             {
@@ -172,6 +183,7 @@ Foam::label Foam::isoCutFace::calcSubFace
 
     if (firstFullySubmergedPoint_!=-1)
     {
+        faceStatus_ = 0;
         Info << "f = [";
         forAll(pLabels, pi)
         {
@@ -182,8 +194,14 @@ Foam::label Foam::isoCutFace::calcSubFace
             << ", nFullySubmergedPoints_: " << nFullySubmergedPoints_ 
             << " with isoValue_: " << isoValue_ << endl;
     }
+    else if (f1 < isoValue_ ) //firstFullySubmergedPoint_ mans no cuttings
+    {
+        faceStatus_ = 1; //face entirely above isosurface
+    } 
+    //else if (f1 > isoValue_) {face below isosurface, faceStatus_ = -1
+    //which is its default value, so no action required here
     
-    return firstFullySubmergedPoint_;
+    return faceStatus_;
 }
 
 
@@ -291,7 +309,8 @@ void Foam::isoCutFace::clearStorage()
     lastEdgeCut_ = -1;
     firstFullySubmergedPoint_ = -1;
     nFullySubmergedPoints_ = 0;
-
+    faceStatus_ = -1;
+    
     subFacePoints_.clear();
     surfacePoints_.clear();
     subFaceCentre_ = vector::zero;
