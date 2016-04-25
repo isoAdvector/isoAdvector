@@ -143,7 +143,7 @@ void Foam::isoCutCell::calcSubCellCentreAndVolume()
 }
 
 
-void Foam::isoCutCell::calcIsoFaceCentreAndNormal()
+void Foam::isoCutCell::calcIsoFaceCentreAndArea()
 {
     //Initial guess of face centre from edge points
     point fCentre = vector::zero;
@@ -193,7 +193,24 @@ void Foam::isoCutCell::calcIsoFaceCentreAndNormal()
         isoFaceCentre_ = (1.0/3.0)*sumAc/sumA;
         isoFaceArea_ = 0.5*sumN;
     }
-    
+
+/*    
+    //Check isoFaceArea_ direction
+    const labelList& cellPts = mesh_.cellPoints()[cellI_];
+    bool goToNextPoint = true;
+    label np = -1;
+    while(goToNextPoint)
+    {
+        np++;
+        if (f_[cellPts[np]] > isoValue_ + 1e-8)
+            
+    }
+    if (mag(isoFaceArea_) < 1e-10)
+    {
+        Info << "Warning: mag(isoFaceAre_) = " << mag(isoFaceArea_) << " for cell " 
+            << cellI_ << endl;
+    }
+*/
     //Here test that isoFaceArea_ has magnitude larger than precision.
     //If this is not the case store isoFaceCentre_ and recalculate isoFaceArea_
     //with an isoValue slightly more into the cell so that the normal is well-
@@ -208,36 +225,49 @@ void Foam::isoCutCell::calcIsoFaceCentreAndNormal()
 
 void Foam::isoCutCell::calcIsoFacePointsFromEdges()
 {
-    
+    //Defining local coordinates with zhat along isoface normal and xhat from 
+    //isoface centre to first point in isoFaceEdges_
+    const vector zhat = isoFaceArea_/mag(isoFaceArea_);
+    vector xhat = isoFaceEdges_[0][0]-isoFaceCentre_;
+    xhat = (xhat - (xhat & zhat)*zhat);
+    xhat /= mag(xhat);
+    vector yhat = zhat^xhat;
+    yhat /= mag(yhat);
+
+    //Calculating isoface point angles in local coordinates
+    DynamicList<point> unsortedIsoFacePoints(3*isoFaceEdges_.size());
+    DynamicList<scalar> unsortedIsoFacePointAngles(3*isoFaceEdges_.size());
     forAll(isoFaceEdges_, ei)
     {
-
         const DynamicList<point>& edgePoints = isoFaceEdges_[ei];
-        const label nPoints = edgePoints.size();
-        label edgeOrientation = 0;
-        if (nPoints == 2)
+        forAll(edgePoints,pi)
         {
-            const point& P1 = edgePoints[0];
-            const point& P2 = edgePoints[1];
-            edgeOrientation = 
-                sign(isoFaceArea_ & ((P1-isoFaceCentre_)^(P2-isoFaceCentre_)));
-            if ( edgeOrientation == -1 )
-            {
-                isoFacePoints_.append(P1);
-            }
-            else
-            {
-                isoFacePoints_.append(P2);                
-            }
+            const point p = edgePoints[pi];
+            unsortedIsoFacePoints.append(p);
+            unsortedIsoFacePointAngles.append
+            (
+                Foam::atan2
+                (
+                    ((p-isoFaceCentre_) & yhat), 
+                    ((p-isoFaceCentre_) & xhat)
+                )
+            );
         }
-        else if (nPoints == 1)
+    }
+    
+    //Sorting isoface points by angle and inserting into isoFacePoints_
+    labelList order(unsortedIsoFacePointAngles.size());
+    Foam::sortedOrder(unsortedIsoFacePointAngles, order);
+    isoFacePoints_.append(unsortedIsoFacePoints[order[0]]);
+    for(label pi = 1; pi < order.size(); pi++)
+    {
+        if 
+        (
+            mag(unsortedIsoFacePointAngles[order[pi]]
+                -unsortedIsoFacePointAngles[order[pi-1]]) > 1e-8
+        )
         {
-            isoFacePoints_.append(edgePoints[0]);
-        }
-        else if (nPoints > 2)
-        {
-            Info << "Warning: A face of cell " << cellI_ << " has " << nPoints 
-                << " cut points." << endl;
+            isoFacePoints_.append(unsortedIsoFacePoints[order[pi]]);
         }
     }
 }
@@ -255,7 +285,7 @@ Foam::label Foam::isoCutCell::calcSubCell
     clearStorage();
     cellI_ = cellI;
     isoValue_ = isoValue;
-    const labelList& faces = mesh_.faces()[cellI];
+    const labelList& faces = mesh_.cells()[cellI];
     
     forAll(faces,fi)
     {
@@ -276,7 +306,7 @@ Foam::label Foam::isoCutCell::calcSubCell
     if (isoCutFacePoints_.size() > 0) //cell cut at least at one face
     {
         cellStatus_ = 0;
-        calcIsoFaceCentreAndNormal();
+        calcIsoFaceCentreAndArea();
     }
     else if (fullySubFaces_.size() == 0) //cell fully above isosurface
     {
@@ -313,6 +343,10 @@ Foam::scalar Foam::isoCutCell::subCellVolume()
 
 Foam::DynamicList<Foam::point> Foam::isoCutCell::isoFacePoints()
 {
+    if (cellStatus_ == 0 && isoFacePoints_.size() == 0)
+    {
+        calcIsoFacePointsFromEdges();
+    }
     return isoFacePoints_;
 }
 
@@ -350,6 +384,7 @@ void Foam::isoCutCell::clearStorage()
     fullySubFaces_.clear();
     VOF_ = -10;
     cellStatus_ = -1;
+    isoCutFace_.clearStorage();
 }
 
 

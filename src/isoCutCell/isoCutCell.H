@@ -126,7 +126,7 @@ class isoCutCell
 
     void calcSubCellCentreAndVolume();
 
-    void calcIsoFaceCentreAndNormal();
+    void calcIsoFaceCentreAndArea();
     
     void calcIsoFacePointsFromEdges();
 

@@ -181,7 +181,7 @@ Foam::label Foam::isoCutFace::calcSubFace
         f1 = f2;
     }
 
-    if (firstFullySubmergedPoint_!=-1)
+    if (firstFullySubmergedPoint_ != -1)
     {
         faceStatus_ = 0;
         Info << "f = [";
@@ -237,8 +237,6 @@ Foam::DynamicList<Foam::point> Foam::isoCutFace::subFacePoints()
         const label nPoints = pLabels.size();
         
         DynamicList<point> surfPts = surfacePoints();
-        const label nSurfPts = surfPts.size();
-        const label nSubFacePoints = nSurfPts + nFullySubmergedPoints_;
 
         forAll(surfPts, pi)
         {

@@ -23,10 +23,10 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    isoCutFaceTester
+    isoCutCellTester
 
 Description
-    Testing functions of the isoCutFace class.
+    Testing functions of the isoCutCell class.
 
 Author
     Johan Roenby, DHI, all rights reserved.
@@ -34,7 +34,7 @@ Author
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
-#include "isoCutFace.H"
+#include "isoCutCell.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -92,40 +92,36 @@ int main(int argc, char *argv[])
 
     //Define function on mesh points and isovalue
 	    
-    isoCutFace icf(mesh,f);
-
-    DynamicList< List<point> > subFaces(mesh.nFaces());
-    forAll(mesh.faces(),fi)
+    isoCutCell icc(mesh,f);
+        
+    DynamicList< List<point> > isoFaces(mesh.nCells());
+    forAll(mesh.cells(),ci)
     {
-        label faceStatus = icf.calcSubFace(fi,f0);
-        if (faceStatus == 0)
+        label cellStatus = icc.calcSubCell(ci,f0);
+        Info << "Cell status for cell " << ci << " is " << cellStatus << endl;
+        if (cellStatus == 0)
         {
-            List<point> sfpi = icf.subFacePoints();
-            subFaces.append(sfpi);
-            Info << "subfacepoints for face " << fi << ": " << sfpi << endl;
-            label nPoints = sfpi.size();
-            forAll(sfpi,pi)
+            List<point> ifpi = icc.isoFacePoints();
+            Info << "Cell " << ci << " is cut with isoFace centre: "
+                << icc.isoFaceCentre() << " and isoFace area: "
+                << icc.isoFaceArea() << " and isoFace points: " << ifpi
+                << endl;
+            isoFaces.append(ifpi);
+            label nPoints = ifpi.size();
+            forAll(ifpi,pi)
             {
-                if (mag(sfpi[pi] - sfpi[(pi + 1) % nPoints]) < 1e-10)
+                if (mag(ifpi[pi] - ifpi[(pi + 1) % nPoints]) < 1e-10)
                 {
-                    Info << "Warning: Possible dublicate points for subface "
-                        << "of face " << fi << " with owner " 
-                        << mesh.owner()[fi] << ". Diff = " 
-                        << sfpi[(pi + 1) % nPoints] - sfpi[pi] << endl;
-                }
-                if (mag(mag(sfpi[pi]-centre) - radius) > .1)
-                {
-                    Info << "Warning: A point is far from isoface"
-                        << " for face " << fi << " with owner " 
-                        << mesh.owner()[fi] << ". |r-r0| = " 
-                        << mag(mag(sfpi[pi]-centre) - radius) << endl;                    
+                    Info << "Warning: Possible dublicate points for isoface "
+                        << " of cell " << ci << ": " << ifpi[pi] << " and " 
+                        << ifpi[(pi + 1) % nPoints] << endl;
                 }
             }
         }
     }
     
-    //Writing subfaces to ply file for inspection in paraview
-    word fileName = "subFaces";
+    //Writing isofaces to ply file for inspection in paraview
+    word fileName = "isoFaces";
     word fileDir = ".";
     
     autoPtr<OFstream> plyFilePtr;
@@ -134,21 +130,21 @@ int main(int argc, char *argv[])
     plyFilePtr() << "format ascii 1.0" << endl;
     plyFilePtr() << "comment " << fileName << endl;
     label nPoints(0);
-    forAll(subFaces,fi)
+    forAll(isoFaces,fi)
     {
-        nPoints += subFaces[fi].size();
+        nPoints += isoFaces[fi].size();
     }
 
     plyFilePtr() << "element vertex " << nPoints << endl;
     plyFilePtr() << "property float32 x" << endl;
     plyFilePtr() << "property float32 y" << endl;
     plyFilePtr() << "property float32 z" << endl;
-    plyFilePtr() << "element face " << subFaces.size() << endl;
+    plyFilePtr() << "element face " << isoFaces.size() << endl;
     plyFilePtr() << "property list uint8 int32 vertex_index" << endl;
     plyFilePtr() << "end_header" << endl;
-    forAll(subFaces,fi)
+    forAll(isoFaces,fi)
     {
-        List<point> pf = subFaces[fi];
+        List<point> pf = isoFaces[fi];
         forAll(pf,pi)
         {
             point p = pf[pi];
@@ -156,9 +152,9 @@ int main(int argc, char *argv[])
         }
     }
     label np = 0;
-    forAll(subFaces,fi)
+    forAll(isoFaces,fi)
     {
-        nPoints = subFaces[fi].size();
+        nPoints = isoFaces[fi].size();
         plyFilePtr() << nPoints;
         for (label pi = np; pi < np + nPoints; pi++ )
         {
