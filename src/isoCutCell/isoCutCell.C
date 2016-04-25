@@ -193,6 +193,16 @@ void Foam::isoCutCell::calcIsoFaceCentreAndNormal()
         isoFaceCentre_ = (1.0/3.0)*sumAc/sumA;
         isoFaceArea_ = 0.5*sumN;
     }
+    
+    //Here test that isoFaceArea_ has magnitude larger than precision.
+    //If this is not the case store isoFaceCentre_ and recalculate isoFaceArea_
+    //with an isoValue slightly more into the cell so that the normal is well-
+    //defined.
+
+    //Here make sure that isoFaceArea points in the right direction, which is by
+    //convention from large values towards smalle values. i.e. opposite of the
+    //gradient.
+    
 }
 
 
@@ -336,11 +346,68 @@ void Foam::isoCutCell::clearStorage()
     isoCutFaceCentres_.clear();
     isoCutFaceAreas_.clear();
     isoFacePoints_.clear();
-    isoFaceEdges_.celar();
+    isoFaceEdges_.clear();
     fullySubFaces_.clear();
     VOF_ = -10;
     cellStatus_ = -1;
 }
 
+
+Foam::scalar Foam::isoCutCell::vofCutCell
+(
+    const label cellI,
+    const scalar alpha1,
+    const scalar tol,
+    const label maxIter
+)
+{
+    //Finding cell vertex extremum values
+    scalar fMin(GREAT), fMax(-GREAT);
+    const labelList& pLabels = mesh_.cellPoints(cellI);
+    forAll(pLabels,pi)
+    {
+        scalar fp = f_[pLabels[pi]];
+        if (fp > fMax)
+        {
+            fMax = fp;
+        }
+        if (fp < fMin)
+        {
+            fMin = fp;
+        }
+    }
+
+    //Initial guess of isovalue
+    scalar aMin(0), aMax(1);
+    scalar f0 = (alpha1 - aMin)/(aMax-aMin)*(fMin-fMax) + fMax;
+
+    calcSubCell(cellI,f0);
+    scalar alpha0 = VolumeOfFluid();
+
+    //Bisection method to find root.
+    //Since function is monotonically increasing and only piecewise smooth 
+    //derivative based root finding algorithms should not be used here.
+    label nIter = 0;
+    while ( mag(alpha1-alpha0) > tol && nIter < maxIter )
+    {
+        if ( alpha0 > alpha1 )
+        {
+            aMax = alpha0;
+            fMin = f0;
+        }
+        else
+        {
+            aMin = alpha0;
+            fMax = f0;
+        }
+        f0 = 0.5*(fMin + fMax);
+        calcSubCell(cellI,f0);
+        alpha0 = VolumeOfFluid();
+//      Info << nIter << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
+        nIter++;
+    }
+//  Info << nIter-1 << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
+    return f0;
+}
 
 // ************************************************************************* //
