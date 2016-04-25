@@ -170,7 +170,7 @@ void Foam::isoAdvection::calcIsoFace
     if ( mag(n0) < 1.0e-8 ) //Cell almost full or empty so isoFace is undefined. Calculating normal by going a little into the cell
     {
         scalar aMin(GREAT), aMax(-GREAT);
-        const labelList cellPts = mesh_.cellPoints()[ci];
+        const labelList& cellPts = mesh_.cellPoints()[ci];
         subSetExtrema(ap_,cellPts,aMin,aMax);
         if (mag(f0-aMin) < mag(f0-aMax)) //f0 almost equal to aMin, i.e. cell almost full
         {

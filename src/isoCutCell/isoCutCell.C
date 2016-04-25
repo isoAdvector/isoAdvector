@@ -194,32 +194,12 @@ void Foam::isoCutCell::calcIsoFaceCentreAndArea()
         isoFaceArea_ = 0.5*sumN;
     }
 
-/*    
-    //Check isoFaceArea_ direction
-    const labelList& cellPts = mesh_.cellPoints()[cellI_];
-    bool goToNextPoint = true;
-    label np = -1;
-    while(goToNextPoint)
-    {
-        np++;
-        if (f_[cellPts[np]] > isoValue_ + 1e-8)
-            
-    }
-    if (mag(isoFaceArea_) < 1e-10)
-    {
-        Info << "Warning: mag(isoFaceAre_) = " << mag(isoFaceArea_) << " for cell " 
-            << cellI_ << endl;
-    }
-*/
-    //Here test that isoFaceArea_ has magnitude larger than precision.
-    //If this is not the case store isoFaceCentre_ and recalculate isoFaceArea_
-    //with an isoValue slightly more into the cell so that the normal is well-
-    //defined.
-
-    //Here make sure that isoFaceArea points in the right direction, which is by
-    //convention from large values towards smalle values. i.e. opposite of the
-    //gradient.
     
+    //Check isoFaceArea_ direction and change if not pointing out of subcell
+    if ( (isoFaceArea_ & (isoFaceCentre_ - subCellCentre())) < 0 )
+    {
+        isoFaceArea_ *= (-1);
+    }
 }
 
 
@@ -357,7 +337,7 @@ Foam::point Foam::isoCutCell::isoFaceCentre()
 }
 
 Foam::vector Foam::isoCutCell::isoFaceArea()
-{    
+{   
     return isoFaceArea_;
 }
         
