@@ -137,7 +137,7 @@ Foam::label Foam::isoCutFace::calcSubFace
     
     if (f1 == isoValue)
     {
-        f1 += SMALL;
+        f1 += 10*SMALL;
     }
 
     forAll(pLabels, pi)
@@ -153,13 +153,11 @@ Foam::label Foam::isoCutFace::calcSubFace
         {
             nFullySubmergedPoints_ += 1;
             
-//            if (f2 <= isoValue_)
             if (f2 < isoValue_)
             {
                 lastEdgeCut_ = (isoValue_ - f1)/(f2 - f1);
             }
         }
-//        else if (f1 <= isoValue_ && f2 > isoValue_)
         else if (f1 < isoValue_ && f2 > isoValue_)
         {
             if (firstFullySubmergedPoint_ == -1)
