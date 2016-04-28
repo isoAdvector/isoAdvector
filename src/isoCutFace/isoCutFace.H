@@ -104,55 +104,19 @@ class isoCutFace
         //  - +1: face is fully above the isosurface 
         label faceStatus_;
         
+        //- Boolean telling if subface centre and area have been calculated
+        bool subFaceCentreAndAreaIsCalculated_;
+        
     // Private Member Functions
     
-public:
-
-    // Constructors
-
-        //- Construct from fvMesh and a scalarField
-        //  Length of scalarField should equal number of mesh points
-        isoCutFace
-        (
-            const fvMesh&,
-            scalarField&
-        );
-
-
-        //Member functions
-
         void calcSubFaceCentreAndArea();
-
-        //- Calculate cut points along edges of faceI
-        label calcSubFace
-        (
-            const label faceI,
-            const scalar isoValue
-        );
-
-        //- Calculate cut points along edges of face with values f
-        label calcSubFace
-        (
-            const scalarField& f,
-            const scalar isoValue
-        );
 
         //- Calculate cut points along edges of face with values f[pLabels]
         void calcSubFace
         (
+            const pointField& points,
             const scalarField& f,
             const labelList& pLabels
-        );
-
-        point subFaceCentre();
-
-        vector subFaceArea();
-
-        DynamicList<point> subFacePoints();
-
-        DynamicList<point> subFacePoints
-        (
-            const pointField& points
         );
 
         void subFacePoints
@@ -161,18 +125,50 @@ public:
             const labelList& pLabels
         );
 
-        DynamicList<point> surfacePoints();
-
-        DynamicList<point> surfacePoints
-        (
-            const pointField& points
-        );
-
         void surfacePoints
         (
             const pointField& points,
             const labelList& pLabels
         );
+
+public:
+
+    // Constructors
+
+        //- Construct from fvMesh and a scalarField
+        //  Length of scalarField should equal number of mesh points
+        isoCutFace
+        (
+            const fvMesh& mesh,
+            scalarField& f
+        );
+
+
+        //Member functions
+
+        //- Calculate cut points along edges of faceI
+        label calcSubFace
+        (
+            const label faceI,
+            const scalar isoValue
+        );
+
+        //- Calculate cut points along edges of face with values f.
+        //  Does not use the fvMesh or scalarField provided in the constructor.
+        label calcSubFace
+        (
+            const pointField& points,
+            const scalarField& f,
+            const scalar isoValue
+        );
+
+        point subFaceCentre();
+
+        vector subFaceArea();
+
+        DynamicList<point> subFacePoints();
+
+        DynamicList<point> surfacePoints();
 
         void clearStorage();
 

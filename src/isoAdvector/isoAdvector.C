@@ -442,9 +442,9 @@ Foam::scalar Foam::isoAdvector::timeIntegratedArea
     }
     else //times[uOrder[0]] < 0 so face is cut initially
     {
-        isoCutFace_.calcSubFace(-times,scalar(0));
-        initialArea = mag(isoCutFace_.subFaceArea(fPts));
-        cutPoints1 = isoCutFace_.cutPoints(fPts, -times, scalar(0.0));
+        isoCutFace_.calcSubFace(fPts,-times,scalar(0));
+        initialArea = mag(isoCutFace_.subFaceArea());
+        cutPoints1 = isoCutFace_.surfacePoints();
         //Find first time > 0
         nextTime++;
         while (times[uOrder[nextTime]] <= 0)

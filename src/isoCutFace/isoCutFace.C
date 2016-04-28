@@ -52,18 +52,16 @@ Foam::isoCutFace::isoCutFace
     subFaceArea_(vector::zero),
     subFacePoints_(10),
     surfacePoints_(4),
-    faceStatus_(-1)
+    faceStatus_(-1),
+    subFaceCentreAndAreaIsCalculated_(false)
 {}
 
 
-// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 
 
 void Foam::isoCutFace::calcSubFaceCentreAndArea()
 {
-    
-    subFacePoints();
-
     const label nPoints = subFacePoints_.size();
     // If the face is a triangle, do a direct calculation for efficiency
     // and to avoid round-off error-related problems
@@ -115,40 +113,14 @@ void Foam::isoCutFace::calcSubFaceCentreAndArea()
             subFaceArea_ = 0.5*sumN;
         }
     }
-}
-
-
-Foam::label Foam::isoCutFace::calcSubFace
-(
-    const label faceI,
-    const scalar isoValue
-)
-{        
-    clearStorage();
-    faceI_ = faceI;
-    isoValue_ = isoValue;
-    const labelList& pLabels = mesh_.faces()[faceI_];   
-    calcSubFace(f_, pLabels);
-    return faceStatus_;
-}
-
-
-Foam::label Foam::isoCutFace::calcSubFace
-(
-    const scalarField& f,
-    const scalar isoValue
-)
-{    
-    clearStorage();
-    isoValue_ = isoValue;
-    const labelList pLabels = identity(f.size());    
-    calcSubFace(f, pLabels);
-    return faceStatus_;
+    
+    subFaceCentreAndAreaIsCalculated_ = true;
 }
 
 
 void Foam::isoCutFace::calcSubFace
 (   
+    const pointField& points,
     const scalarField& f, 
     const labelList& pLabels
 )
@@ -157,18 +129,23 @@ void Foam::isoCutFace::calcSubFace
     label pl1 = pLabels[0];
     scalar f1 = f[pl1];
     
-    if (f1 == isoValue_)
+    //If vertex values are very close to isoValue lift them slightly to avoid 
+    //dealing with the many special cases of a face being touched either at a 
+    //single point, along an edge, or the entire face being on the surface.
+    if (mag(f1 - isoValue_) < 10*SMALL)
     {
-        f1 += 10*SMALL;
+        f1 += sign(f1 - isoValue_)*10*SMALL;
     }
 
+    //Finding cut edges, the point along them where they are cut, and all fully 
+    //submerged face points.
     forAll(pLabels, pi)
     {
         label pl2 = pLabels[(pi + 1) % nPoints];
         scalar f2 = f[pl2];
-        if (f2 == isoValue_)
+        if (mag(f2 - isoValue_) < 10*SMALL)
         {
-            f2 += 10*SMALL;
+            f2 += sign(f2 - isoValue_)*10*SMALL;
         }
 
         if (f1 > isoValue_)
@@ -204,6 +181,7 @@ void Foam::isoCutFace::calcSubFace
     if (firstFullySubmergedPoint_ != -1)
     {
         faceStatus_ = 0;
+        subFacePoints(points, pLabels);
         Info << "f = [";
         forAll(pLabels, pi)
         {
@@ -217,43 +195,9 @@ void Foam::isoCutFace::calcSubFace
     else if (f1 < isoValue_ ) //firstFullySubmergedPoint_ mans no cuttings
     {
         faceStatus_ = 1; //face entirely above isosurface
-    } 
+    }
     //else if (f1 > isoValue_) {face below isosurface, faceStatus_ = -1
     //which is its default value, so no action required here
-}
-
-
-Foam::point Foam::isoCutFace::subFaceCentre()
-{
-    calcSubFaceCentreAndArea();
-    return subFaceCentre_;
-}
-
-
-Foam::vector Foam::isoCutFace::subFaceArea()
-{
-    calcSubFaceCentreAndArea();
-    return subFaceArea_;
-}
-
-
-Foam::DynamicList<Foam::point> Foam::isoCutFace::subFacePoints()
-{
-    const labelList& pLabels = mesh_.faces()[faceI_];
-    const pointField& points = mesh_.points();    
-    subFacePoints(points, pLabels);
-    return subFacePoints_;
-}
-
-
-Foam::DynamicList<Foam::point> Foam::isoCutFace::subFacePoints
-(
-    const pointField& points
-)
-{        
-    const labelList pLabels = identity(points.size());
-    subFacePoints(points, pLabels);
-    return subFacePoints_;
 }
 
 
@@ -279,26 +223,6 @@ void Foam::isoCutFace::subFacePoints
             points[pLabels[(firstFullySubmergedPoint_ + pi) % nPoints]]
         );
     }
-}
-
-
-Foam::DynamicList<Foam::point> Foam::isoCutFace::surfacePoints()
-{        
-    const labelList& pLabels = mesh_.faces()[faceI_];
-    const pointField& points = mesh_.points();  
-    surfacePoints(points, pLabels);
-    return surfacePoints_;
-}
-
-
-Foam::DynamicList<Foam::point> Foam::isoCutFace::surfacePoints
-(
-    const pointField& points
-)
-{        
-    const labelList pLabels = identity(points.size());
-    surfacePoints(points, pLabels);
-    return surfacePoints_;
 }
 
 
@@ -330,6 +254,72 @@ void Foam::isoCutFace::surfacePoints
 }
 
 
+// * * * * * * * * * * * Public Member Functions  * * * * * * * * * * * * * //
+
+
+Foam::label Foam::isoCutFace::calcSubFace
+(
+    const label faceI,
+    const scalar isoValue
+)
+{        
+    clearStorage();
+    faceI_ = faceI;
+    isoValue_ = isoValue;
+    const labelList& pLabels = mesh_.faces()[faceI_];   
+    const pointField& points = mesh_.points();
+    calcSubFace(points, f_, pLabels);
+    return faceStatus_;
+}
+
+
+Foam::label Foam::isoCutFace::calcSubFace
+(
+    const pointField& points,
+    const scalarField& f,
+    const scalar isoValue
+)
+{    
+    clearStorage();
+    isoValue_ = isoValue;
+    const labelList pLabels = identity(f.size());    
+    calcSubFace(points, f, pLabels);
+    return faceStatus_;
+}
+
+
+Foam::point Foam::isoCutFace::subFaceCentre()
+{
+    if (!subFaceCentreAndAreaIsCalculated_)
+    {
+        calcSubFaceCentreAndArea();        
+    }
+    return subFaceCentre_;
+}
+
+
+Foam::vector Foam::isoCutFace::subFaceArea()
+{
+    if (!subFaceCentreAndAreaIsCalculated_)
+    {
+        calcSubFaceCentreAndArea();
+    }
+    return subFaceArea_;
+}
+
+
+Foam::DynamicList<Foam::point> Foam::isoCutFace::subFacePoints()
+{
+    return subFacePoints_;
+}
+
+
+Foam::DynamicList<Foam::point> Foam::isoCutFace::surfacePoints()
+{        
+    return surfacePoints_;
+}
+
+
 void Foam::isoCutFace::clearStorage()
 {
     firstEdgeCut_ = -1;
@@ -342,6 +332,7 @@ void Foam::isoCutFace::clearStorage()
     surfacePoints_.clear();
     subFaceCentre_ = vector::zero;
     subFaceArea_ = vector::zero;
+    subFaceCentreAndAreaIsCalculated_ = false;
 }
 
 

@@ -57,7 +57,9 @@ Foam::isoCutCell::isoCutCell
     subCellVolume_(-10),
     VOF_(-10),
     fullySubFaces_(10),
-    cellStatus_(-1)
+    cellStatus_(-1),
+    subCellCentreAndVolumeCalculated_(false),
+    isoFaceCentreAndAreaCalculated_(false)
 {}
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
@@ -140,6 +142,8 @@ void Foam::isoCutCell::calcSubCellCentreAndVolume()
     subCellCentre_ /= subCellVolume_;
     subCellVolume_ *= (1.0/3.0);
     VOF_ = subCellVolume_/mesh_.V()[cellI_];
+    
+    subCellCentreAndVolumeCalculated_ = true;
 }
 
 
@@ -200,11 +204,16 @@ void Foam::isoCutCell::calcIsoFaceCentreAndArea()
     {
         isoFaceArea_ *= (-1);
     }
+    
+    isoFaceCentreAndAreaCalculated_ = true;
 }
 
 
 void Foam::isoCutCell::calcIsoFacePointsFromEdges()
 {
+    Info << "Enter calcIsoFacePointsFromEdges() with usiFaceArea_ = " 
+        << isoFaceArea_ << " and isoFaceCentre_ = " << isoFaceCentre_ 
+        << " and isoFaceEdges_ = " << isoFaceEdges_ << endl;
     //Defining local coordinates with zhat along isoface normal and xhat from 
     //isoface centre to first point in isoFaceEdges_
     const vector zhat = isoFaceArea_/mag(isoFaceArea_);
@@ -214,6 +223,8 @@ void Foam::isoCutCell::calcIsoFacePointsFromEdges()
     vector yhat = zhat^xhat;
     yhat /= mag(yhat);
 
+    Info << "Calculated local coordinates" << endl;
+    
     //Calculating isoface point angles in local coordinates
     DynamicList<point> unsortedIsoFacePoints(3*isoFaceEdges_.size());
     DynamicList<scalar> unsortedIsoFacePointAngles(3*isoFaceEdges_.size());
@@ -235,6 +246,8 @@ void Foam::isoCutCell::calcIsoFacePointsFromEdges()
         }
     }
     
+    Info << "Calculated isoFace point angles" << endl;
+
     //Sorting isoface points by angle and inserting into isoFacePoints_
     labelList order(unsortedIsoFacePointAngles.size());
     Foam::sortedOrder(unsortedIsoFacePointAngles, order);
@@ -250,6 +263,8 @@ void Foam::isoCutCell::calcIsoFacePointsFromEdges()
             isoFacePoints_.append(unsortedIsoFacePoints[order[pi]]);
         }
     }
+    Info << "Sorted isoface points by angle" << endl;
+
 }
 
 
@@ -301,7 +316,7 @@ Foam::label Foam::isoCutCell::calcSubCell
 
 Foam::point Foam::isoCutCell::subCellCentre()
 {
-    if ( VOF_ < -9 )
+    if ( !subCellCentreAndVolumeCalculated_ )
     {
         calcSubCellCentreAndVolume();
     }
@@ -312,7 +327,7 @@ Foam::point Foam::isoCutCell::subCellCentre()
 
 Foam::scalar Foam::isoCutCell::subCellVolume()
 {
-    if ( VOF_ < -9 )
+    if ( !subCellCentreAndVolumeCalculated_ )
     {
         calcSubCellCentreAndVolume();
     }
@@ -333,18 +348,26 @@ Foam::DynamicList<Foam::point> Foam::isoCutCell::isoFacePoints()
 
 Foam::point Foam::isoCutCell::isoFaceCentre()
 {
+    if (!isoFaceCentreAndAreaCalculated_)
+    {
+        calcIsoFaceCentreAndArea();
+    }
     return isoFaceCentre_;
 }
 
 Foam::vector Foam::isoCutCell::isoFaceArea()
 {   
+    if (!isoFaceCentreAndAreaCalculated_)
+    {
+        calcIsoFaceCentreAndArea();
+    }
     return isoFaceArea_;
 }
         
 
 Foam::scalar Foam::isoCutCell::VolumeOfFluid()
 {
-    if ( VOF_ < -9 )
+    if ( !subCellCentreAndVolumeCalculated_ )
     {
         calcSubCellCentreAndVolume();
     }
@@ -365,6 +388,8 @@ void Foam::isoCutCell::clearStorage()
     VOF_ = -10;
     cellStatus_ = -1;
     isoCutFace_.clearStorage();
+    subCellCentreAndVolumeCalculated_ = false;
+    isoFaceCentreAndAreaCalculated_ = false;
 }
 
 

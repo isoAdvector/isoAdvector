@@ -121,6 +121,12 @@ class isoCutCell
         //  -  0: cell is cut
         //  - +1: cell is fully above the isosurface 
         label cellStatus_;
+        
+        //- Boolean telling if subcell centre and volume have been calculated
+        bool subCellCentreAndVolumeCalculated_;
+        
+        //- Boolean telling if isoface centre and area have been calculated
+        bool isoFaceCentreAndAreaCalculated_;
 
         // Private Member Functions
 
