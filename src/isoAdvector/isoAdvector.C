@@ -58,6 +58,7 @@ Foam::isoAdvector::isoAdvector
     surfCellTol_(dict.lookupOrDefault<scalar>("surfCellTol", 1e-8)),
     cutter_(mesh_,ap_),
     isoCutCell_(mesh_,ap_),
+    isoCutFace_(mesh_,ap_),
     procPatchLabels_(0),
     surfaceCellFacesOnProcPatches_(0)
 {
@@ -435,14 +436,15 @@ Foam::scalar Foam::isoAdvector::timeIntegratedArea
     DynamicList<point> cutPoints1(2);
     if (times[uOrder[0]] >= 0) //face still not reached until times[uOrder[0]] > 0
     {
-        cutPoints1 = isoCutFace_.otherCutPoint(fPts, times, uOrder[0]);
+        isoCutFace_.calcSubFace(fPts, times, times[uOrder[0]] + 10*SMALL);
+        cutPoints1 = isoCutFace_.surfacePoints();
         //Note: In 3D first face-plane encounter will be at a single point but 
         //in 2D it will be along an edge
         nextTime++;
     }
     else //times[uOrder[0]] < 0 so face is cut initially
     {
-        isoCutFace_.calcSubFace(fPts,-times,scalar(0));
+        isoCutFace_.calcSubFace(fPts, -times, 0);
         initialArea = mag(isoCutFace_.subFaceArea());
         cutPoints1 = isoCutFace_.surfacePoints();
         //Find first time > 0
@@ -458,7 +460,8 @@ Foam::scalar Foam::isoAdvector::timeIntegratedArea
     scalar A, B;
     while (nextTime < nTimes && times[uOrder[nextTime]] <= dt)
     {
-        cutPoints2 = isoCutFace_.otherCutPoint(fPts, times, uOrder[nextTime]);
+        isoCutFace_.calcSubFace(fPts, times, times[uOrder[nextTime]]);
+        cutPoints2 = isoCutFace_.surfacePoints();
         quadAreaCoeffs(cutPoints1, cutPoints2, A, B);
         scalar subDt = times[uOrder[nextTime]] - times[uOrder[nextTime - 1]];
         tIntArea += subDt*(initialArea + (1/3)*A + 0.5*B);
@@ -470,7 +473,8 @@ Foam::scalar Foam::isoAdvector::timeIntegratedArea
     //Treating case where surface ends between two vertices at time dt
     if (nextTime < nTimes && times[uOrder[nextTime]] > dt)
     {
-        cutPoints2 = isoCutFace_.cutPoints(fPts, times, scalar(dt));
+        isoCutFace_.calcSubFace(fPts, times, dt);
+        cutPoints2 = isoCutFace_.surfacePoints();
         quadAreaCoeffs(cutPoints1, cutPoints2, A, B);
         scalar subDt = dt - times[uOrder[nextTime - 1]];
         tIntArea += subDt*(initialArea + (1/3)*A + 0.5*B);
@@ -685,9 +689,95 @@ void Foam::isoAdvector::getQuadArea
     }
     else
     {
+        Info << "Vertex face was cut at " << pf0 << " by f0 = " << f0 
+            << " and at " << pf1 << " by " << " f1 = " << f1 << endl;
+    }
+}
+
+
+void Foam::isoAdvector::quadAreaCoeffs
+(
+    const DynamicList<point>& pf0,
+    const DynamicList<point>& pf1,
+    scalar& alpha,
+    scalar& beta
+)
+{
+    isoDebug(Info << "Enter quadAreaCoeffs" << endl;)
+    label np0(pf0.size()), np1(pf1.size());
+
+    if ( np0 > 0 && np1 > 0)
+    {
+        //Defining quadrilateral vertices
+        vector A(pf0[0]), C(pf1[0]), B(vector::zero), D(vector::zero);
+
+        //Triangle cases
+        if (np0 == 2 && mag(pf0[0]-pf0[1]) > 10*SMALL)
+        {
+            B = pf0[1];
+        }
+        else if ( np0 == 1 && np1 > 1 )
+        {
+            B = A + 1e-4*(pf1[1]-pf1[0]);
+        }
+        else
+        {
+            Info << "Warning: Vertex face was cut at pf0 = " << pf0 << endl;
+        }
+
+        if (np1 == 2 && mag(pf1[0]-pf1[1]) > 10*SMALL)
+        {
+            D = pf1[1];
+        }
+        else if ( np1 == 1 )
+        {
+            D = C + 1e-4*(A-B);
+        }
+        else
+        {
+            Info << "Warning: Vertex face was cut at pf1 = " << pf1 << endl;
+        }
+
+        //Swapping pf1 points if pf0 and pf1 point in same general direction 
+        //(because we want a quadrilateral ABCD where pf0 = AB and pf1 = CD)
+        if ( ((B-A) & (D-C)) > 0 )
+        {
+            vector tmp = D;
+            D = C;
+            C = tmp;
+        }
+
+        //Defining local coordinates for area integral calculation
+        vector xhat = B-A;
+        xhat /= mag(xhat);
+        vector yhat = (D-A);
+        yhat -= ((yhat & xhat)*xhat);
+        yhat /= mag(yhat);
+
+//        isoDebug(Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = " << (yhat & zhat) << endl;)
+
+////        Info << "A = " << A << ", B = " << B << ", C = " << C << ", D = " << D << endl;
+        scalar Bx = mag(B-A);
+        scalar Cx = (C-A) & xhat;
+        scalar Cy = mag((C-A) & yhat);
+        scalar Dx = (D-A) & xhat;
+        scalar Dy = mag((D-A) & yhat);
+
+
+//      area = ((Cx-Bx)*Dy-Dx*Cy)/6.0 + 0.25*Bx*(Dy+Cy);
+        alpha = 0.5*((Cx-Bx)*Dy-Dx*Cy);
+        beta = 0.5*Bx*(Dy+Cy);
+
+////        Info << "Bx = " << Bx << ", Cx = " << Cx << ", Cy = " << Cy << ", Dx = " << Dx << ", Dy = " << Dy << ", alpha = " << alpha << ", beta = " << beta << endl;
+        //area(t) = A*t^2+B*t
+        //integratedArea = A/3+B/2
+    }
+    else
+    {
         Info << "Vertex face was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;
     }
 }
+
 
 
 void Foam::isoAdvector::subSetExtrema

@@ -95,6 +95,8 @@ class isoAdvector
 
     isoCutCell isoCutCell_;
     
+    isoCutFace isoCutFace_;
+
     //- List of processor patch labels
     labelList procPatchLabels_;
 
@@ -168,6 +170,17 @@ class isoAdvector
         scalar& quadArea,
         scalar& intQuadArea
     );
+
+
+    //- For face with vertices p calculate its area and integrated area between isocutting lines with isovalues f0 and f1 given vertex values f
+    void quadAreaCoeffs
+    (
+        const DynamicList<point>& cutPoints1,
+        const DynamicList<point>& cutPoints2,
+        scalar& quadArea,
+        scalar& intQuadArea
+    );
+
 
     //- Find min and max of subset of scalarField f defined by labelList label
     void subSetExtrema
