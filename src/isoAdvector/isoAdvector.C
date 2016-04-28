@@ -257,7 +257,7 @@ Foam::scalar Foam::isoAdvector::timeIntegratedFlux
 {
     isoDebug(Info << "Enter timeIntegratedFlux for face " << fLabel << endl;)
 
-    scalar dVf(0.0); //Volume flowing through face in time interval [0,dt] to be calculated below
+    scalar dVf = 0; //Volume flowing through face in time interval [0,dt] to be calculated below
     const scalar phi = faceValue(phi_,fLabel);
 
     //Treating rare cases where isoface normal is not calculated properly
@@ -400,21 +400,16 @@ Foam::scalar Foam::isoAdvector::timeIntegratedArea
 //To replace above function when fully implemented and tested
 Foam::scalar Foam::isoAdvector::timeIntegratedArea
 (
-    const label fLabel,
+    const pointField& fPts,
     const scalarField& times,
-    const scalar dt
+    const scalar dt,
+    const scalar magSf
 )
 {
-    scalar tIntArea = 0.0;
-
-    const pointField& points = mesh_.points();
-
+    scalar tIntArea = 0;
     labelList uOrder;
     Foam::uniqueOrder(times,uOrder);
     const label nTimes = uOrder.size();
-
-    //Face area
-    const scalar magSf = faceValue(mesh_.magSf(),fLabel);
 
     //Treating case where face is not cut by surface during time interval [0,dt] 
     //because dt is too small for surface to reach closest face point
@@ -440,15 +435,16 @@ Foam::scalar Foam::isoAdvector::timeIntegratedArea
     DynamicList<point> cutPoints1(2);
     if (times[uOrder[0]] >= 0) //face still not reached until times[uOrder[0]] > 0
     {
-        cutPoints1 = isoCutFace_.otherCutPoint(fLabel, times, uOrder[0]);
+        cutPoints1 = isoCutFace_.otherCutPoint(fPts, times, uOrder[0]);
         //Note: In 3D first face-plane encounter will be at a single point but 
         //in 2D it will be along an edge
         nextTime++;
     }
     else //times[uOrder[0]] < 0 so face is cut initially
     {
-        initialArea = isoCutFace_.subFaceArea(fLabel, -times, scalar(0.0));
-        cutPoints1 = isoCutFace_.cutPoints(fLabel, -times, scalar(0.0));
+        isoCutFace_.calcSubFace(-times,scalar(0));
+        initialArea = mag(isoCutFace_.subFaceArea(fPts));
+        cutPoints1 = isoCutFace_.cutPoints(fPts, -times, scalar(0.0));
         //Find first time > 0
         nextTime++;
         while (times[uOrder[nextTime]] <= 0)
@@ -462,7 +458,7 @@ Foam::scalar Foam::isoAdvector::timeIntegratedArea
     scalar A, B;
     while (nextTime < nTimes && times[uOrder[nextTime]] <= dt)
     {
-        cutPoints2 = isoCutFace_.otherCutPoint(fLabel, times, uOrder[nextTime]);
+        cutPoints2 = isoCutFace_.otherCutPoint(fPts, times, uOrder[nextTime]);
         quadAreaCoeffs(cutPoints1, cutPoints2, A, B);
         scalar subDt = times[uOrder[nextTime]] - times[uOrder[nextTime - 1]];
         tIntArea += subDt*(initialArea + (1/3)*A + 0.5*B);
@@ -474,7 +470,7 @@ Foam::scalar Foam::isoAdvector::timeIntegratedArea
     //Treating case where surface ends between two vertices at time dt
     if (nextTime < nTimes && times[uOrder[nextTime]] > dt)
     {
-        cutPoints2 = isoCutFace_.cutPoints(fLabel, times, scalar(dt));
+        cutPoints2 = isoCutFace_.cutPoints(fPts, times, scalar(dt));
         quadAreaCoeffs(cutPoints1, cutPoints2, A, B);
         scalar subDt = dt - times[uOrder[nextTime - 1]];
         tIntArea += subDt*(initialArea + (1/3)*A + 0.5*B);

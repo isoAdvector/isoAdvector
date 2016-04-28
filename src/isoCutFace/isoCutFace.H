@@ -67,6 +67,7 @@ class isoCutFace
         label faceI_;
 
         //- Isofunction values at mesh points. f_size() = mesh_.nPoints().
+//        scalarField& f_;
         scalarField& f_;
 
         //- Isovalue used to cut face or cell
@@ -90,9 +91,6 @@ class isoCutFace
         //- Storage for area vector of subface
         vector subFaceArea_;
 
-        //- Storage for "area of fluid" for subface
-        scalar AreaOfFluid_;
-
         //- Storage for subFacePoints
         DynamicList<point> subFacePoints_;
 
@@ -105,11 +103,9 @@ class isoCutFace
         //  -  0: face is cut, i.e. has values larger and smaller than isoValue_
         //  - +1: face is fully above the isosurface 
         label faceStatus_;
-
+        
     // Private Member Functions
-
-    void calcSubFaceCentreAndArea();
-
+    
 public:
 
     // Constructors
@@ -125,10 +121,27 @@ public:
 
         //Member functions
 
+        void calcSubFaceCentreAndArea();
+
+        //- Calculate cut points along edges of faceI
         label calcSubFace
         (
             const label faceI,
             const scalar isoValue
+        );
+
+        //- Calculate cut points along edges of face with values f
+        label calcSubFace
+        (
+            const scalarField& f,
+            const scalar isoValue
+        );
+
+        //- Calculate cut points along edges of face with values f[pLabels]
+        void calcSubFace
+        (
+            const scalarField& f,
+            const labelList& pLabels
         );
 
         point subFaceCentre();
@@ -137,9 +150,29 @@ public:
 
         DynamicList<point> subFacePoints();
 
+        DynamicList<point> subFacePoints
+        (
+            const pointField& points
+        );
+
+        void subFacePoints
+        (
+            const pointField& points,
+            const labelList& pLabels
+        );
+
         DynamicList<point> surfacePoints();
 
-        scalar areaOfFluid();
+        DynamicList<point> surfacePoints
+        (
+            const pointField& points
+        );
+
+        void surfacePoints
+        (
+            const pointField& points,
+            const labelList& pLabels
+        );
 
         void clearStorage();
 

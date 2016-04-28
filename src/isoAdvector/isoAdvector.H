@@ -136,10 +136,11 @@ class isoAdvector
     //To replace above function....
     scalar timeIntegratedArea
     (
-        const label fLabel,
+        const pointField& fPts,
         const scalarField& times,
-        const scalar dt
-    )
+        const scalar dt,
+        const scalar magSf
+    );
 
     //- For cell ci return labels of faces fluxing out of this cell (based on sign of phi)
     void getDownwindFaces
