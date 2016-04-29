@@ -135,6 +135,8 @@ void Foam::isoCutFace::calcSubFace
     if (mag(f1 - isoValue_) < 10*SMALL)
     {
         f1 += sign(f1 - isoValue_)*10*SMALL;
+//        Info << "Warning: adding small number to vertex value of face " 
+//            << faceI_ << " with owner cell " << mesh_.owner()[faceI_] << endl;
     }
 
     //Finding cut edges, the point along them where they are cut, and all fully 
@@ -146,6 +148,8 @@ void Foam::isoCutFace::calcSubFace
         if (mag(f2 - isoValue_) < 10*SMALL)
         {
             f2 += sign(f2 - isoValue_)*10*SMALL;
+//            Info << "Warning: adding small number to vertex value of face " 
+//                << faceI_ << " with owner cell " << mesh_.owner()[faceI_] << endl;
         }
 
         if (f1 > isoValue_)
@@ -182,6 +186,7 @@ void Foam::isoCutFace::calcSubFace
     {
         faceStatus_ = 0;
         subFacePoints(points, pLabels);
+/*
         Info << "f = [";
         forAll(pLabels, pi)
         {
@@ -191,6 +196,7 @@ void Foam::isoCutFace::calcSubFace
         Info << "], " << "firstFulSubPt_: " << firstFullySubmergedPoint_ 
             << ", nFullySubmergedPoints_: " << nFullySubmergedPoints_ 
             << " with isoValue_: " << isoValue_ << endl;
+*/
     }
     else if (f1 < isoValue_ ) //firstFullySubmergedPoint_ mans no cuttings
     {

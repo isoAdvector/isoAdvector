@@ -188,60 +188,58 @@ void Foam::isoAdvector::calcIsoFace
     isoDebug(Info << "Enter calcIsoFace" << endl;)
     //Construction of isosurface calculator to get access to its functionality
     label maxIter(100);
-    vector subCellCtr;
-    cutter_.vofCutCell(ci, alpha1_.internalField()[ci], vof2IsoTol_, maxIter, f0, subCellCtr);
-    cutter_.isoFaceCentreAndArea(ci,f0,x0,n0); //Stupid to recalculate this here - should be provided by vofCutCell above
-    isoDebug(Info << "f0 = " << f0 << ", x0 = " << x0 << ", n0 = " << n0 << endl;)
+//    vector subCellCtr;
+//    cutter_.vofCutCell(ci, alpha1_.internalField()[ci], vof2IsoTol_, maxIter, f0, subCellCtr);
+//    cutter_.isoFaceCentreAndArea(ci,f0,x0,n0); //Stupid to recalculate this here - should be provided by vofCutCell above
+//    isoDebug(Info << "f0 = " << f0 << ", x0 = " << x0 << ", n0 = " << n0 << endl;)
 
-    isoCutCell_.vofCutCell(ci, alpha1_.internalField()[ci], vof2IsoTol_, maxIter);
-
-    if ( mag(n0) < 1e-10 ) //Cell almost full or empty so isoFace is undefined. Calculating normal by going a little into the cell
+    f0 = isoCutCell_.vofCutCell(ci, alpha1_.internalField()[ci], vof2IsoTol_, maxIter);
+    x0 = isoCutCell_.isoFaceCentre();
+    n0 = isoCutCell_.isoFaceArea();
+//    point subCellCtr = isoCutCell_.subCellCentre();
+/*    
+    f0 = f1;
+    x0 = x0b;
+    n0 = n0b;
+    subCellCtr = subCellCtr2;
+    
+    if (mag(x0b-x0) > 1e-10)
     {
-        scalar aMin(GREAT), aMax(-GREAT);
-        const labelList& cellPts = mesh_.cellPoints()[ci];
-        subSetExtrema(ap_,cellPts,aMin,aMax);
-        if (mag(f0-aMin) < mag(f0-aMax)) //f0 almost equal to aMin, i.e. cell almost full
-        {
-            isoDebug(Info << "Cell is almost full with aMin = " << aMin << " and aMax = " << aMax << endl;)
-            scalar f0Inside =  aMin + 1e-3*(aMax-aMin);
-            vector xdum;
-            cutter_.isoFaceCentreAndArea(ci,f0Inside,xdum,n0);
-            vector cellCentre = mesh_.C().internalField()[ci];
-            if (((x0 - cellCentre) & n0) < 0.0) //n0 should point from cell centre towards isoFace centre for an almost full cell
-            {
-                n0 *= (-1.0);
-                isoDebug(Info << "Changing direction of n0 " << n0 << endl;)
-            }
-        }
-        else if (mag(f0-aMin) > mag(f0-aMax))//f0 almost equal to aMax, i.e. cell almost empty
-        {
-            isoDebug(Info << "Cell is almost empty with aMin = " << aMin << " and aMax = " << aMax << endl;)
-            scalar f0Inside =  aMax + 1e-3*(aMin-aMax);
-            vector xdum;
-            cutter_.isoFaceCentreAndArea(ci,f0Inside,xdum,n0);
-            const vector cellCentre = mesh_.C().internalField()[ci];
-            if (((cellCentre - x0) & n0) < 0.0) //n0 should point from isoFace centre towards cell centre for an almost empty cell
-            {
-                n0 *= (-1.0);
-                isoDebug(Info << "Changing direction of n0 " << n0 << endl;)
-            }
-        }
-        else
-        {
-            Info << "Warning: aMax = aMin = " << aMax << " for cell " << ci << endl;
-        }
-
-    } //Make sure n0 points out of subCell
-    else if (((x0 - subCellCtr) & n0) < 0.0) //n0 should point out of water surface, i.e. in the direction from subCell centre to isoFace centre
+        Info << "Warning: mag(x0b-x0) = " << mag(x0b-x0) << " for cell " << ci << endl;
+    }
+    
+    if (mag(n0^n0b) > 1e-10)
     {
-        n0 *= (-1.0);
-        isoDebug(Info << "Changing direction of n0 " << n0 << endl;)
+        Info << "Warning: mag(n0^n0b) = " << mag(n0^n0b) << " for cell " << ci << endl;
     }
 
-    if ( mag(n0) > 1.0e-8 )
+    if (mag(f0-f1) > 1e-10)
+    {
+        Info << "Warning: mag(f0-f1) = " << mag(f0-f1) << " for cell " << ci << endl;
+    }
+
+    if (mag(subCellCtr-subCellCtr2) > 1e-10)
+    {
+        Info << "Warning: mag(subCellCtr-subCellCtr2) = " << mag(subCellCtr-subCellCtr2) << " for cell " << ci << endl;
+    }
+*/
+    //If cell almost full or empty isoFace may be undefined. 
+    //Calculating normal by going a little into the cell.
+    if ( mag(n0) < 1e-10 ) 
+    {
+        scalar fInside = f0 + sign(alpha1_[ci]-0.5)*1e-6;
+        isoCutCell_.calcSubCell(ci,fInside);
+        n0 = isoCutCell_.isoFaceArea();
+    }    
+    
+    if ( mag(n0) > 1e-10 )
     {
         isoDebug(Info << "Normalising n0: " << n0 << endl;)
         n0 /= mag(n0);
+    }
+    else
+    {
+        Info << "Warning: mag(n0) = " << mag(n0) << " < 1e-10." << endl;
     }
 }
 
@@ -754,9 +752,14 @@ void Foam::isoAdvector::quadAreaCoeffs
         yhat -= ((yhat & xhat)*xhat);
         yhat /= mag(yhat);
 
-//        isoDebug(Info << "xhat = " << xhat << ", yhat = " << yhat << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = " << (yhat & zhat) << endl;)
+//        isoDebug(Info << "xhat = " << xhat << ", yhat = " << yhat 
+//            << ", zhat = " << zhat << ". x.x = " << (xhat & xhat) 
+//            << ", y.y = " << (yhat & yhat) <<", z.z = " << (zhat & zhat) 
+//            << ", x.y = " << (xhat & yhat) << ", x.z = " << (xhat & zhat) 
+//            << ", y.z = " << (yhat & zhat) << endl;)
 
-////        Info << "A = " << A << ", B = " << B << ", C = " << C << ", D = " << D << endl;
+//        Info << "A = " << A << ", B = " << B << ", C = " << C << ", D = " 
+//            << D << endl;
         scalar Bx = mag(B-A);
         scalar Cx = (C-A) & xhat;
         scalar Cy = mag((C-A) & yhat);
@@ -768,13 +771,16 @@ void Foam::isoAdvector::quadAreaCoeffs
         alpha = 0.5*((Cx-Bx)*Dy-Dx*Cy);
         beta = 0.5*Bx*(Dy+Cy);
 
-////        Info << "Bx = " << Bx << ", Cx = " << Cx << ", Cy = " << Cy << ", Dx = " << Dx << ", Dy = " << Dy << ", alpha = " << alpha << ", beta = " << beta << endl;
+//        Info << "Bx = " << Bx << ", Cx = " << Cx << ", Cy = " << Cy 
+//          << ", Dx = " << Dx << ", Dy = " << Dy << ", alpha = " << alpha 
+//          << ", beta = " << beta << endl;
         //area(t) = A*t^2+B*t
         //integratedArea = A/3+B/2
     }
     else
     {
-        Info << "Vertex face was cut at " << pf0 << " by f0 = " << f0 << " and at " << pf1 << " by " << " f1 = " << f1 << endl;
+        Info << "Vertex face was cut at pf0 = " << pf0 << " and at pf1 = " 
+            << pf1 <<  endl;
     }
 }
 
