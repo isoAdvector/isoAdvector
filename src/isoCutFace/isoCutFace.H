@@ -171,6 +171,15 @@ public:
         DynamicList<point> surfacePoints();
 
         void clearStorage();
+        
+        void cutPoints
+        (
+            const pointField& pts,
+            const scalarField& f,
+            const scalar f0,
+            DynamicList<point>& cutPoints
+        );
+
 
 };
 

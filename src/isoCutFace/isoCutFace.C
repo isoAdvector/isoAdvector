@@ -342,4 +342,34 @@ void Foam::isoCutFace::clearStorage()
 }
 
 
+void Foam::isoCutFace::cutPoints
+(
+    const pointField& pts,
+    const scalarField& f,
+    const scalar f0,
+    DynamicList<point>& cutPoints
+)
+{
+    isoDebug(Info << "Enter getFaceCutPoints" << endl;)
+
+    const label nPoints = pts.size();
+    scalar f1(f[0]);
+    forAll(pts,pi)
+    {
+        label pi2 = (pi+1)%nPoints;
+        scalar f2 = f[pi2];
+        if ( (f1 < f0 && f2 > f0 ) || (f1 > f0 && f2 < f0) )
+        {
+            scalar s = (f0-f1)/(f2-f1);
+            point pCut = pts[pi] + s*(pts[pi2]-pts[pi]);
+            cutPoints.append(pCut);
+        }
+        else if ( f1 == f0 )
+        {
+            cutPoints.append(pts[pi]);
+        }
+        f1 = f2;
+    }
+}
+
 // ************************************************************************* //

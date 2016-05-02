@@ -44,7 +44,6 @@ SourceFiles
 #ifndef isoAdvector_H
 #define isoAdvector_H
 
-#include "isoCutter.H"
 #include "isoCutCell.H"
 #include "isoCutFace.H"
 #include "fvMesh.H"
@@ -69,6 +68,9 @@ class isoAdvector
     //- VOF field
     volScalarField& alpha1_;
 
+    //- VOF field
+    scalarField& alpha1In_;
+
     //- volPointInterpolation from cell centres to points
     volPointInterpolation vpi_;
 
@@ -89,9 +91,6 @@ class isoAdvector
 
     //- Cells with surfCellTol_ < alpha1 < surfCellTol_ are treated as surface cells
     const scalar surfCellTol_;
-
-    //- The isoCutter doing the geometric cutting of face edges and cell edges
-    isoCutter cutter_;
 
     isoCutCell isoCutCell_;
     
@@ -127,22 +126,13 @@ class isoAdvector
 
     scalar timeIntegratedArea
     (
-        const label fLabel,
         const pointField& fPts,
         const scalarField& pTimes,
         const scalar dt,
+        const scalar magSf,
         const scalar Un0
     );
 
-
-    //To replace above function....
-    scalar timeIntegratedArea
-    (
-        const pointField& fPts,
-        const scalarField& times,
-        const scalar dt,
-        const scalar magSf
-    );
 
     //- For cell ci return labels of faces fluxing out of this cell (based on sign of phi)
     void getDownwindFaces
@@ -159,28 +149,15 @@ class isoAdvector
         const label cellI
     );
 
-    //- For face with vertices p calculate its area and integrated area between isocutting lines with isovalues f0 and f1 given vertex values f
-    void getQuadArea
-    (
-        const label fLabel,
-        const pointField& p,
-        const scalarField& f,
-        const scalar f0,
-        const scalar f1,
-        scalar& quadArea,
-        scalar& intQuadArea
-    );
-
 
     //- For face with vertices p calculate its area and integrated area between isocutting lines with isovalues f0 and f1 given vertex values f
     void quadAreaCoeffs
     (
-        const DynamicList<point>& cutPoints1,
-        const DynamicList<point>& cutPoints2,
+        const DynamicList<point>& pf0,
+        const DynamicList<point>& pf1,
         scalar& quadArea,
         scalar& intQuadArea
     );
-
 
     //- Find min and max of subset of scalarField f defined by labelList label
     void subSetExtrema
@@ -201,7 +178,7 @@ class isoAdvector
 
     void boundFromAbove
     (
-        const volScalarField& alpha1,
+        const scalarField& alpha1,
         const scalar dt,
         surfaceScalarField& dVfcorrected,
         DynamicList<label>& correctedFaces
@@ -220,16 +197,6 @@ class isoAdvector
     bool isASurfaceCell
     (
         const label cellI
-    );
-
-
-    //- For cell ci calculate the isoFace centre x0, normal n0, and isovalue f0, of the isosurface cutting it at to the right volume fractions.
-    void calcIsoFace
-    (
-        const label ci,
-        vector& x0,
-        vector& n0,
-        scalar& f0
     );
 
 
