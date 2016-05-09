@@ -171,11 +171,15 @@ void Foam::isoCutFace::calcSubFace
             }
             else
             {
+/*
                 FatalErrorIn
                 (
                     "void Foam::isoCutFace::calcSubFace(...)"
                 )   << "More than two face cuts for face " << faceI_
                     << abort(FatalError);
+
+                Info << "More than two face cuts for face " << faceI_ << endl;
+*/
             }
         }
         pl1 = pl2;
