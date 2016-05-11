@@ -148,9 +148,7 @@
 		mesh,
 		dimensionedScalar("vol", dimVol, 0)
     );	
-
+    
 	const dictionary& isoAdvectorDict = mesh.solutionDict().subDict("isoAdvector");
     const scalar clipAlphaTol = isoAdvectorDict.lookupOrDefault<scalar>("clipAlphaTol", 1e-12);
     const bool snapAlpha = isoAdvectorDict.lookupOrDefault<bool>("snapAlpha", true);
-	const scalar period = isoAdvectorDict.lookupOrDefault<scalar>("period", 0.0);
-	scalar reverseTime = isoAdvectorDict.lookupOrDefault<scalar>("reverseTime", 0.0);

@@ -150,7 +150,42 @@
     );	
 
 	const dictionary& isoAdvectorDict = mesh.solutionDict().subDict("isoAdvector");
-    const scalar clipAlphaTol = isoAdvectorDict.lookupOrDefault<scalar>("clipAlphaTol", 1e-12);
+    const scalar clipAlphaTol = isoAdvectorDict.lookupOrDefault<scalar>("clipAlphaTol", 0);
     const bool snapAlpha = isoAdvectorDict.lookupOrDefault<bool>("snapAlpha", true);
-	const scalar period = isoAdvectorDict.lookupOrDefault<scalar>("period", 0.0);
-	scalar reverseTime = isoAdvectorDict.lookupOrDefault<scalar>("reverseTime", 0.0);
+    
+    cellSet surfCells
+    (
+        IOobject
+        (
+            "surfCells", 
+            runTime.timeName(),
+            runTime,  
+            IOobject::NO_READ, 
+            IOobject::AUTO_WRITE
+        )
+    );
+    
+    cellSet boundCells
+    (
+        IOobject
+        (
+            "boundCells", 
+            runTime.timeName(),
+            runTime,  
+            IOobject::NO_READ, 
+            IOobject::AUTO_WRITE
+        )
+    );
+    
+    volScalarField contErr
+    (
+        IOobject
+        (
+            "contErr",
+            runTime.timeName(),
+            mesh,
+            IOobject::NO_READ,
+            IOobject::AUTO_WRITE
+        ),
+        alpha1
+    );

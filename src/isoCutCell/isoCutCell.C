@@ -417,6 +417,16 @@ Foam::scalar Foam::isoCutCell::vofCutCell
         }
     }
 
+    //Handling special case where method is handed an almost full or empty cell
+    if ( alpha1 < tol )
+    {
+        return fMax;
+    }
+    else if (1-alpha1 < tol)
+    {
+        return fMin;
+    }
+
     //Initial guess of isovalue
     scalar aMin(0), aMax(1);
     scalar f0 = (alpha1 - aMin)/(aMax-aMin)*(fMin-fMax) + fMax;
@@ -443,11 +453,13 @@ Foam::scalar Foam::isoCutCell::vofCutCell
         f0 = 0.5*(fMin + fMax);
         calcSubCell(cellI,f0);
         alpha0 = VolumeOfFluid();
-//      Info << nIter << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
+//      Info << "Cell " << cellI << ", iter " << nIter << ": f0 = " << f0 << " (" << 1-f0 << ") gives alpha = " << alpha0 << endl;
         nIter++;
     }
 //  Info << nIter-1 << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
     return f0;
 }
+
+
 
 // ************************************************************************* //

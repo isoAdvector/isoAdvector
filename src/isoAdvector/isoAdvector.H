@@ -51,6 +51,7 @@ SourceFiles
 #include "surfaceFields.H"
 #include "OFstream.H"
 #include "interpolationCellPoint.H"
+#include "cellSet.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -89,7 +90,8 @@ class isoAdvector
     //- Tolerance for search of isoFace giving specified VOF value
     const scalar vof2IsoTol_;
 
-    //- Cells with surfCellTol_ < alpha1 < surfCellTol_ are treated as surface cells
+    //- Cells with surfCellTol_ < alpha1 < 1 - surfCellTol_ are treated as 
+    //  surface cells
     const scalar surfCellTol_;
 
     isoCutCell isoCutCell_;
@@ -103,7 +105,15 @@ class isoAdvector
     //  on this patch that are downwind to a surface cell.
     //  For non-processor patches the list will be empty.
     List< DynamicList<label> > surfaceCellFacesOnProcPatches_;
+    
+    DynamicList<label> surfCells_;
 
+    //- Boolean saying if a cell has been touched by the bounding step  
+    boolList cellIsBounded_;
+
+    //- True for all surface cells and their neighbours
+    boolList checkBounding_;
+    
     // Private Member Functions
 
     //- For each face calculate volumetric face transport during dt
@@ -199,7 +209,7 @@ class isoAdvector
         const label cellI
     );
 
-
+    
     //- Return face value of a surfaceScalarField
     scalar faceValue
     (
@@ -265,6 +275,16 @@ class isoAdvector
     (
         const scalar dt,
         surfaceScalarField& dVf
+    );
+    
+    void getSurfaceCells
+    (
+        cellSet& surfCells
+    );
+
+    void getBoundedCells
+    (
+        cellSet& boundCells
     );
 
 };

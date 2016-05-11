@@ -60,7 +60,10 @@ Foam::isoAdvector::isoAdvector
     isoCutCell_(mesh_,ap_),
     isoCutFace_(mesh_,ap_),
     procPatchLabels_(0),
-    surfaceCellFacesOnProcPatches_(0)
+    surfaceCellFacesOnProcPatches_(0),
+    surfCells_(max(10, ceil(0.2*mesh_.nCells()))),
+    cellIsBounded_(mesh_.nCells(),false),
+    checkBounding_(mesh_.nCells(),false)
 {
 
     //Prepare lists used in parallel runs
@@ -101,16 +104,22 @@ void Foam::isoAdvector::timeIntegratedFlux
 
     //Calculating weights for interpolation of U to the isoface face centre
     interpolationCellPoint<vector> UInterp(U_);
-
+    
     isoDebug(Info << "Running through all surface cells" << endl;)
 
     //For each downwind face of each surface cell we "isoadvect" to find dVf
     label nSurfaceCells = 0;
+    surfCells_.clear();
+    checkBounding_ = false;
+    
     forAll (alpha1In_, cellI)
     {
         if ( isASurfaceCell(cellI) )
         {
             nSurfaceCells++;
+            surfCells_.append(cellI);
+            checkBounding_[cellI] = true;
+            
             isoDebug
             (
                 Info << "\n------------ Cell " << cellI << " with alpha1 = " 
@@ -122,6 +131,7 @@ void Foam::isoAdvector::timeIntegratedFlux
             //Calculate isoFace centre x0, normal n0 at time t
             label maxIter(100);
             scalar f0 = isoCutCell_.vofCutCell(cellI, alpha1In_[cellI], vof2IsoTol_, maxIter);
+//            Info << "1 - f0 = " << 1 - f0 << " for cell " << cellI << endl;
             point x0 = isoCutCell_.isoFaceCentre();
             vector n0 = isoCutCell_.isoFaceArea();
                         
@@ -129,6 +139,7 @@ void Foam::isoAdvector::timeIntegratedFlux
             //Calculating normal by going a little into the cell.
             if ( mag(n0) < 1e-10 ) 
             {
+                Info << "Warning: mag(n0) = " << mag(n0) << " < 1e-10 for cell " << cellI << endl;
                 scalar fInside = f0 + sign(alpha1In_[cellI]-0.5)*1e-6;
                 isoCutCell_.calcSubCell(cellI,fInside);
                 n0 = isoCutCell_.isoFaceArea();
@@ -174,6 +185,18 @@ void Foam::isoAdvector::timeIntegratedFlux
                     const scalar tif = timeIntegratedFlux(faceI,x0,n0,Un0,f0,dt);
                     faceValue(dVf,faceI,tif);
                     checkIfOnProcPatch(faceI);
+                    
+                    if (mesh_.isInternalFace(faceI))
+                    {
+                        if (mesh_.owner()[faceI] == cellI)
+                        {
+                            checkBounding_[mesh_.neighbour()[faceI]] = true;
+                        }
+                        else
+                        {
+                            checkBounding_[mesh_.owner()[faceI]] = true;                            
+                        }
+                    }
                 }
             }
         }
@@ -189,13 +212,13 @@ bool Foam::isoAdvector::isASurfaceCell
 )
 {
     return 
-    ( 
+    (
         surfCellTol_ < alpha1In_[cellI] 
      && alpha1In_[cellI] < 1 - surfCellTol_ 
     );
 }
 
-
+    
 Foam::scalar Foam::isoAdvector::timeIntegratedFlux
 (
     const label fLabel,
@@ -553,7 +576,8 @@ void Foam::isoAdvector::limitFluxes
     scalar minAlpha = -1;//min(alphaNew);
     label nUndershoots = 20;//sum(neg(alphaNew+aTol));
     label nOvershoots = 20;//sum(pos(alphaNew-1-aTol));
-
+    cellIsBounded_ = false;
+    
     for ( label n = 0; n < nAlphaBounds_; n++ )
     {
         Info << "Running bounding number " << n+1 << " of time " << mesh_.time().value() << endl;
@@ -621,64 +645,69 @@ void Foam::isoAdvector::boundFromAbove
 
     forAll(alpha1,ci)
     {
-        scalar Vi = mesh_.V()[ci];
-        scalar alpha1New = alpha1[ci] - netFlux(dVf,ci)/Vi;
-        scalar alphaOvershoot = alpha1New - 1.0;
-        scalar fluidToPassOn = alphaOvershoot*Vi;
-        label nFacesToPassFluidThrough = 1;
-
-        //First try to pass surplus fluid on to neighbour cells that are not filled and to which dVf < phi*dt
-        while ( alphaOvershoot > aTol && nFacesToPassFluidThrough > 0 )
+        if (checkBounding_[ci])
         {
-            isoDebug(Info << "\n\nBounding cell " << ci << " with alpha overshooting " << alphaOvershoot << endl;)
-            //First find potential neighbour cells to pass surplus water to
-            DynamicList<label> downwindFaces(mesh_.cells()[ci].size());
-            getDownwindFaces(ci,downwindFaces);
-            DynamicList<label> facesToPassFluidThrough(downwindFaces.size());
-            DynamicList<scalar> dVfmax(downwindFaces.size());
-            DynamicList<scalar> phi(downwindFaces.size());
-            scalar dVftot = 0.0;
-            nFacesToPassFluidThrough = 0;
 
-            isoDebug(Info << "downwindFaces: " << downwindFaces << endl;)
-            forAll(downwindFaces,fi)
+            scalar Vi = mesh_.V()[ci];
+            scalar alpha1New = alpha1[ci] - netFlux(dVf,ci)/Vi;
+            scalar alphaOvershoot = alpha1New - 1.0;
+            scalar fluidToPassOn = alphaOvershoot*Vi;
+            label nFacesToPassFluidThrough = 1;
+
+            //First try to pass surplus fluid on to neighbour cells that are not filled and to which dVf < phi*dt
+            while ( alphaOvershoot > aTol && nFacesToPassFluidThrough > 0 )
             {
-                label fLabel = downwindFaces[fi];
-                scalar maxExtraFaceFluidTrans = 0.0;
-                scalar phif = faceValue(phi_,fLabel);
-                scalar dVff = faceValue(dVf,fLabel);
-                maxExtraFaceFluidTrans = mag(phif*dt - dVff);
+                cellIsBounded_[ci] = true;
+                isoDebug(Info << "\n\nBounding cell " << ci << " with alpha overshooting " << alphaOvershoot << endl;)
+                //First find potential neighbour cells to pass surplus water to
+                DynamicList<label> downwindFaces(mesh_.cells()[ci].size());
+                getDownwindFaces(ci,downwindFaces);
+                DynamicList<label> facesToPassFluidThrough(downwindFaces.size());
+                DynamicList<scalar> dVfmax(downwindFaces.size());
+                DynamicList<scalar> phi(downwindFaces.size());
+                scalar dVftot = 0.0;
+                nFacesToPassFluidThrough = 0;
 
-                //dVf has same sign as phi and so if phi>0 we have mag(phi_[fLabel]*dt) - mag(dVf[fLabel]) = phi_[fLabel]*dt - dVf[fLabel]
-                //If phi<0 we have mag(phi_[fLabel]*dt) - mag(dVf[fLabel]) = -phi_[fLabel]*dt - (-dVf[fLabel]) > 0 since mag(dVf) < phi*dt
-                isoDebug(Info << "downwindFace " << fLabel << " has maxExtraFaceFluidTrans = " << maxExtraFaceFluidTrans << endl;)
-                if ( maxExtraFaceFluidTrans/Vi > aTol )
-//              if ( maxExtraFaceFluidTrans/Vi > aTol && mag(dVfIn[fLabel])/Vi > aTol ) //Last condition may be important because without this we will flux through uncut downwind faces
+                isoDebug(Info << "downwindFaces: " << downwindFaces << endl;)
+                forAll(downwindFaces,fi)
                 {
-                    facesToPassFluidThrough.append(fLabel);
-                    phi.append(phif);
-                    dVfmax.append(maxExtraFaceFluidTrans);
-                    dVftot += mag(phif*dt);
-                }
-            }
+                    label fLabel = downwindFaces[fi];
+                    scalar maxExtraFaceFluidTrans = 0.0;
+                    scalar phif = faceValue(phi_,fLabel);
+                    scalar dVff = faceValue(dVf,fLabel);
+                    maxExtraFaceFluidTrans = mag(phif*dt - dVff);
 
-            isoDebug(Info << "\nfacesToPassFluidThrough: " << facesToPassFluidThrough << ", dVftot = " << dVftot << " m3 corresponding to dalpha = " << dVftot/Vi << endl;)
-            forAll(facesToPassFluidThrough,fi)
-            {
-                const label fLabel = facesToPassFluidThrough[fi];
-                scalar fluidToPassThroughFace = fluidToPassOn*mag(phi[fi]*dt)/dVftot;
-                nFacesToPassFluidThrough += pos(dVfmax[fi] - fluidToPassThroughFace);
-                fluidToPassThroughFace = min(fluidToPassThroughFace,dVfmax[fi]);
-                scalar dVff = faceValue(dVf,fLabel);
-                dVff += sign(phi[fi])*fluidToPassThroughFace;
-                faceValue(dVf,fLabel,dVff);
-                checkIfOnProcPatch(fLabel);
-                correctedFaces.append(fLabel);
+                    //dVf has same sign as phi and so if phi>0 we have mag(phi_[fLabel]*dt) - mag(dVf[fLabel]) = phi_[fLabel]*dt - dVf[fLabel]
+                    //If phi<0 we have mag(phi_[fLabel]*dt) - mag(dVf[fLabel]) = -phi_[fLabel]*dt - (-dVf[fLabel]) > 0 since mag(dVf) < phi*dt
+                    isoDebug(Info << "downwindFace " << fLabel << " has maxExtraFaceFluidTrans = " << maxExtraFaceFluidTrans << endl;)
+                    if ( maxExtraFaceFluidTrans/Vi > aTol )
+    //              if ( maxExtraFaceFluidTrans/Vi > aTol && mag(dVfIn[fLabel])/Vi > aTol ) //Last condition may be important because without this we will flux through uncut downwind faces
+                    {
+                        facesToPassFluidThrough.append(fLabel);
+                        phi.append(phif);
+                        dVfmax.append(maxExtraFaceFluidTrans);
+                        dVftot += mag(phif*dt);
+                    }
+                }
+
+                isoDebug(Info << "\nfacesToPassFluidThrough: " << facesToPassFluidThrough << ", dVftot = " << dVftot << " m3 corresponding to dalpha = " << dVftot/Vi << endl;)
+                forAll(facesToPassFluidThrough,fi)
+                {
+                    const label fLabel = facesToPassFluidThrough[fi];
+                    scalar fluidToPassThroughFace = fluidToPassOn*mag(phi[fi]*dt)/dVftot;
+                    nFacesToPassFluidThrough += pos(dVfmax[fi] - fluidToPassThroughFace);
+                    fluidToPassThroughFace = min(fluidToPassThroughFace,dVfmax[fi]);
+                    scalar dVff = faceValue(dVf,fLabel);
+                    dVff += sign(phi[fi])*fluidToPassThroughFace;
+                    faceValue(dVf,fLabel,dVff);
+                    checkIfOnProcPatch(fLabel);
+                    correctedFaces.append(fLabel);
+                }
+                alpha1New = alpha1[ci] - netFlux(dVf,ci)/Vi;
+                alphaOvershoot = alpha1New - 1.0;
+                fluidToPassOn = alphaOvershoot*Vi;
+                isoDebug(Info << "\nNew alpha for cell " << ci << ": " << alpha1New << endl;)
             }
-            alpha1New = alpha1[ci] - netFlux(dVf,ci)/Vi;
-            alphaOvershoot = alpha1New - 1.0;
-            fluidToPassOn = alphaOvershoot*Vi;
-            isoDebug(Info << "\nNew alpha for cell " << ci << ": " << alpha1New << endl;)
         }
     }
     isoDebug(Info << "correctedFaces = " << correctedFaces << endl;)
@@ -1049,6 +1078,35 @@ void Foam::isoAdvector::getTransportedVolume
 
     //Adjust dVf for unbounded cells
     limitFluxes(dVf,dt);
+}
+
+
+void Foam::isoAdvector::getSurfaceCells
+(
+    cellSet& surfCells
+)
+{
+    surfCells.clear();
+    forAll(surfCells_,i)
+    {
+        surfCells.insert(surfCells_[i]);
+    }
+}
+
+
+void Foam::isoAdvector::getBoundedCells
+(
+    cellSet& boundCells
+)
+{
+    boundCells.clear();
+    forAll(cellIsBounded_,i)
+    {
+        if (cellIsBounded_[i])
+        {
+            boundCells.insert(i);
+        }
+    }
 }
 
 // ************************************************************************* //

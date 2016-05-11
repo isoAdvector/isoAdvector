@@ -99,7 +99,10 @@ int main(int argc, char *argv[])
         advector.getTransportedVolume(dt,dVf);
         alpha1 -= fvc::surfaceIntegrate(dVf);
         alpha1.correctBoundaryConditions();
-
+        
+        advector.getSurfaceCells(surfCells);
+        advector.getBoundedCells(boundCells);
+        
         Info << "1-max(alpha1) = " << 1-max(alpha1).value() << " and min(alpha1) = " << min(alpha1).value() << endl;
 
         //Clip and snap alpha1 to ensure strict boundedness to machine precision
@@ -134,6 +137,8 @@ int main(int argc, char *argv[])
                 turbulence->correct();
             }
         }
+
+        contErr = fvc::surfaceIntegrate(phi)*dimensionedScalar("dt", dimTime, dt);
 
         runTime.write();
 //        phi.write();

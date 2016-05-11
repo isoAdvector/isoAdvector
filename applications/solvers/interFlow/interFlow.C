@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
         advector.getTransportedVolume(dt,dVf);
         alpha1 -= fvc::surfaceIntegrate(dVf);
         alpha1.correctBoundaryConditions();
-
+        
         Info << "1-max(alpha1) = " << 1-max(alpha1).value() << " and min(alpha1) = " << min(alpha1).value() << endl;
 
         //Clip and snap alpha1 to ensure strict boundedness to machine precision
