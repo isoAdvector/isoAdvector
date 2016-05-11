@@ -161,7 +161,14 @@ void Foam::isoCutCell::calcIsoFaceCentreAndArea()
             nEdgePoints++;
         }        
     }
-    fCentre /= nEdgePoints;
+    if (nEdgePoints > 0)
+    {
+        fCentre /= nEdgePoints;
+    }
+    else
+    {
+        Info << "Warning: nEdgePoints = 0 for cell " << cellI_ << endl;
+    }
     
     vector sumN = vector::zero;
     scalar sumA = 0.0;
@@ -460,6 +467,72 @@ Foam::scalar Foam::isoCutCell::vofCutCell
     return f0;
 }
 
+Foam::scalar Foam::isoCutCell::vofCutCell2
+(
+    const label cellI,
+    const scalar alpha1,
+    const scalar tol,
+    const label maxIter
+)
+{
+    //Finding cell vertex extremum values
+    scalar fMin(GREAT), fMax(-GREAT);
+    const labelList& pLabels = mesh_.cellPoints(cellI);
+    forAll(pLabels,pi)
+    {
+        scalar fp = f_[pLabels[pi]];
+        if (fp > fMax)
+        {
+            fMax = fp;
+        }
+        if (fp < fMin)
+        {
+            fMin = fp;
+        }
+    }
+
+    //Handling special case where method is handed an almost full or empty cell
+    if ( alpha1 < tol )
+    {
+        return fMax;
+    }
+    else if (1-alpha1 < tol)
+    {
+        return fMin;
+    }
+    
+    //Initial guess of isovalue
+    scalar aMin(0), aMax(1);
+    scalar f0 = (alpha1 - aMin)/(aMax-aMin)*(fMin-fMax) + fMax;
+
+    calcSubCell(cellI,f0);
+    scalar alpha0 = VolumeOfFluid();
+
+    //Bisection method to find root.
+    //Since function is monotonically increasing and only piecewise smooth 
+    //derivative based root finding algorithms should not be used here.
+    label nIter = 0;
+    while ( mag(alpha1-alpha0) > tol && nIter < maxIter )
+    {
+        if ( alpha0 > alpha1 )
+        {
+            aMax = alpha0;
+            fMin = f0;
+        }
+        else
+        {
+            aMin = alpha0;
+            fMax = f0;
+        }
+        f0 = 0.5*(fMin + fMax);
+        calcSubCell(cellI,f0);
+        alpha0 = VolumeOfFluid();
+//      Info << "Cell " << cellI << ", iter " << nIter << ": f0 = " << f0 << " (" << 1-f0 << ") gives alpha = " << alpha0 << endl;
+        nIter++;
+    }
+//  Info << nIter-1 << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
+    return f0;
+}
 
 
 // ************************************************************************* //

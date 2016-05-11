@@ -179,6 +179,13 @@ public:
             const label maxIter
         );
 
+        scalar vofCutCell2
+        (
+            const label cellI,
+            const scalar alpha1,
+            const scalar tol,
+            const label maxIter
+        );
 };
 
 
