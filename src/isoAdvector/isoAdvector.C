@@ -130,7 +130,8 @@ void Foam::isoAdvector::timeIntegratedFlux
 
             //Calculate isoFace centre x0, normal n0 at time t
             label maxIter(100);
-            scalar f0 = isoCutCell_.vofCutCell(cellI, alpha1In_[cellI], vof2IsoTol_, maxIter);
+//            scalar f0 = isoCutCell_.vofCutCell(cellI, alpha1In_[cellI], vof2IsoTol_, maxIter);
+            scalar f0 = isoCutCell_.vofCutCell2(cellI, alpha1In_[cellI], vof2IsoTol_, maxIter);
 //            Info << "1 - f0 = " << 1 - f0 << " for cell " << cellI << endl;
             point x0 = isoCutCell_.isoFaceCentre();
             vector n0 = isoCutCell_.isoFaceArea();
@@ -186,6 +187,8 @@ void Foam::isoAdvector::timeIntegratedFlux
                     faceValue(dVf,faceI,tif);
                     checkIfOnProcPatch(faceI);
                     
+                    //We want to check boundedness of both surface cells and of 
+                    //their neighbours
                     if (mesh_.isInternalFace(faceI))
                     {
                         if (mesh_.owner()[faceI] == cellI)

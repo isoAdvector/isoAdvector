@@ -437,6 +437,7 @@ Foam::scalar Foam::isoCutCell::vofCutCell
     //Initial guess of isovalue
     scalar aMin(0), aMax(1);
     scalar f0 = (alpha1 - aMin)/(aMax-aMin)*(fMin-fMax) + fMax;
+//    scalar f0 = 0.5*(fMin + fMax);
 
     calcSubCell(cellI,f0);
     scalar alpha0 = VolumeOfFluid();
@@ -445,6 +446,8 @@ Foam::scalar Foam::isoCutCell::vofCutCell
     //Since function is monotonically increasing and only piecewise smooth 
     //derivative based root finding algorithms should not be used here.
     label nIter = 0;
+//    Info << "Cell " << cellI << ", target: alpha1 =  " << alpha1 << ":" << endl;
+//    Info << "(f0 alpha) = " << f0 << " " << alpha0 << endl;
     while ( mag(alpha1-alpha0) > tol && nIter < maxIter )
     {
         if ( alpha0 > alpha1 )
@@ -458,14 +461,18 @@ Foam::scalar Foam::isoCutCell::vofCutCell
             fMax = f0;
         }
         f0 = 0.5*(fMin + fMax);
+//        f0 = (alpha1 - aMin)/(aMax-aMin)*(fMin-fMax) + fMax;
         calcSubCell(cellI,f0);
         alpha0 = VolumeOfFluid();
 //      Info << "Cell " << cellI << ", iter " << nIter << ": f0 = " << f0 << " (" << 1-f0 << ") gives alpha = " << alpha0 << endl;
+//        Info << f0 << " " << alpha0 << endl;
         nIter++;
     }
-//  Info << nIter-1 << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
+//    Info << nIter-1 << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
+        
     return f0;
 }
+
 
 Foam::scalar Foam::isoCutCell::vofCutCell2
 (
@@ -476,62 +483,153 @@ Foam::scalar Foam::isoCutCell::vofCutCell2
 )
 {
     //Finding cell vertex extremum values
-    scalar fMin(GREAT), fMax(-GREAT);
     const labelList& pLabels = mesh_.cellPoints(cellI);
+    scalarField fvert(pLabels.size());
     forAll(pLabels,pi)
     {
-        scalar fp = f_[pLabels[pi]];
-        if (fp > fMax)
-        {
-            fMax = fp;
-        }
-        if (fp < fMin)
-        {
-            fMin = fp;
-        }
+        fvert[pi] = f_[pLabels[pi]];
     }
-
+    labelList order(fvert.size());
+    sortedOrder(fvert,order);
+    scalar f1 = fvert[order.first()];
+    scalar f2 = fvert[order.last()];
+    
     //Handling special case where method is handed an almost full or empty cell
-    if ( alpha1 < tol )
+    if (alpha1 < tol)
     {
-        return fMax;
+        return f2;
     }
     else if (1-alpha1 < tol)
     {
-        return fMin;
+        return f1;
     }
     
-    //Initial guess of isovalue
-    scalar aMin(0), aMax(1);
-    scalar f0 = (alpha1 - aMin)/(aMax-aMin)*(fMin-fMax) + fMax;
-
-    calcSubCell(cellI,f0);
-    scalar alpha0 = VolumeOfFluid();
-
-    //Bisection method to find root.
-    //Since function is monotonically increasing and only piecewise smooth 
-    //derivative based root finding algorithms should not be used here.
-    label nIter = 0;
-    while ( mag(alpha1-alpha0) > tol && nIter < maxIter )
+    //Finding the two vertices inbetween which the isovalue giving alpha1 lies
+    label L1 = 0;
+    label L2 = fvert.size()-1;
+    scalar a1 = 1;
+    scalar a2 = 0;
+    scalar L3, f3, a3;
+    
+    while (L2 - L1 > 1)
     {
-        if ( alpha0 > alpha1 )
+        L3 = round(0.5*(L1 + L2));
+        f3 = fvert[order[L3]];
+        calcSubCell(cellI,f3);
+        a3 = VolumeOfFluid();
+        if (a3 > alpha1)
         {
-            aMax = alpha0;
-            fMin = f0;
+            L1 = L3; f1 = f3; a1 = a3; 
+        }
+        else if (a3 < alpha1)
+        {
+            L2 = L3; f2 = f3; a2 = a3;
+        }        
+    }
+    //Now we know that a(f) = alpha1 is to be found on the f interval
+    //[f1, f2], i.e. alpha1 will be in the interval [a2,a1]
+    
+//    Info << "Cell " << cellI << " with alpha1 = " << alpha1 << ": (f1,f2) = (" 
+//        << f1 << "," << f2 << "), (a2,a1) = (" << a2 << "," << a1 << ")" << endl;
+    
+    //Finding coefficients in 3 deg polynomial alpha(f) from 4 solutions
+    
+    //Finding 2 additional points on 3 deg polynomial
+    f3 = f1 + 0.3333333333333*(f2-f1); 
+    calcSubCell(cellI,f3);
+    a3 = VolumeOfFluid();
+
+    scalar f4 = f1 + 0.666666666667*(f2-f1); 
+    calcSubCell(cellI,f4);
+    scalar a4 = VolumeOfFluid();
+
+    //Building and solving Vandermonde matrix equation
+    scalarField a(4), f(4), C(4);
+    {
+        f[0] = f1, f[1] = f3, f[2] = f4, f[3] = f2;
+        a[0] = a1, a[1] = a3, a[2] = a4, a[3] = a2;
+        scalarSquareMatrix M(4);
+        forAll(f, i)
+        {
+            forAll(f, j)
+            {
+                M[i][j] = pow(f[i], 3-j);
+            }
+        }
+        //C holds the 4 polynomial coefficients 
+        C = a;
+        LUsolve(M, C);
+//        Info << "a = " << a << endl;
+//        Info << "f = " << f << endl;
+//        Info << "C = " << C << endl;
+//        Info << "M = " << M << endl;
+    }
+    
+    //Finding root with Newton method
+    
+    //Initial guess
+    {
+//        scalarField da = mag(a-alpha1);
+//        L3 = findMin(da);
+//        f3 = f[L3]; a3 = a[L3];
+        f3 = f[1]; a3 = a[1];
+//        Info << "Initial guess for Newton root finding: (f3,a3) = (" << f3 
+//        << "," << a3 << ")" << endl;
+    }
+    
+    //Newton method
+    label nIter = 0;
+    scalar res = mag(a3 - alpha1);
+    while (res > tol && nIter < maxIter)
+    {
+        f3 -= (C[0]*pow3(f3) + C[1]*sqr(f3) + C[2]*f3 + C[3] - alpha1)
+            /(3*C[0]*sqr(f3) + 2*C[1]*f3 + C[2]);
+        a3 = C[0]*pow3(f3) + C[1]*sqr(f3) + C[2]*f3 + C[3];
+        res = mag(a3 - alpha1);
+        nIter++;
+    }
+    if (nIter == maxIter)
+    {
+        Info << "Warning: nIter = maxIter for cell " << cellI << endl;
+    }
+    
+    //Check result
+    f4 = f3;
+    calcSubCell(cellI,f4);
+    a4 = VolumeOfFluid();
+    
+//    Info << "Polynomial approx after " << nIter << " iterations: (f,a) = (" 
+//        << f3 << "," << a3 << ")" << " so a3 - alpha1 = " << a3 - alpha1 << endl;
+
+    //If tolerance not met use bisection with a4 as a hopefully very good 
+    //initial guess to crank res the last piece down below tol
+    res = mag(a4 - alpha1);
+    a3 = a4; f3 = f4;
+    nIter = 0;
+    while ( res > tol && nIter < maxIter )
+    {
+        if ( a3 > alpha1 )
+        {
+            a1 = a3;
+            f1 = f3;
         }
         else
         {
-            aMin = alpha0;
-            fMax = f0;
+            a2 = a3;
+            f2 = f3;
         }
-        f0 = 0.5*(fMin + fMax);
-        calcSubCell(cellI,f0);
-        alpha0 = VolumeOfFluid();
-//      Info << "Cell " << cellI << ", iter " << nIter << ": f0 = " << f0 << " (" << 1-f0 << ") gives alpha = " << alpha0 << endl;
+
+        f3 = 0.5*(f1 + f2);
+        calcSubCell(cellI,f3);
+        a3 = VolumeOfFluid();
+        res = mag(a3 - alpha1);
         nIter++;
     }
-//  Info << nIter-1 << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
-    return f0;
+    
+//    Info << "Bisection correction after " << nIter << " iterations: (f,a) = (" 
+//        << f3 << "," << a3 << ")" << endl;
+        
+    return f3;
 }
 
 

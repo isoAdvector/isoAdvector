@@ -46,6 +46,7 @@ SourceFiles
 #include "surfaceFields.H"
 #include "OFstream.H"
 #include "isoCutFace.H"
+#include "scalarMatrices.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
