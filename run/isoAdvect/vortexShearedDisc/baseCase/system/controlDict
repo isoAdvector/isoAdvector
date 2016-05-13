@@ -17,7 +17,7 @@ FoamFile
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     isoAdvect;
+application     isoAdvector;
 
 startFrom       latestTime;
 
@@ -27,34 +27,35 @@ stopAt          endTime;
 
 endTime         8;
 
-writeControl    timeStep;
+writeControl    adjustableRunTime;
 
-writeInterval   10;
+writeInterval   .1;
 
-deltaT          0.005;
+deltaT          1e-3;
 
 purgeWrite      0;
 
 writeFormat     ascii;
 
-writePrecision  12;
+writePrecision  14;
 
 writeCompression uncompressed;
 
 timeFormat      general;
 
-timePrecision   6;
+timePrecision   14;
 
 graphFormat     raw;
 
 runTimeModifiable no;
 
-adjustTimeStep  no;
+adjustTimeStep  yes;
 
-maxCo           0.2;
-maxAlphaCo      0.2;
+maxCo           1e6;
+maxAlphaCo      0.5;
 
-maxDeltaT       0.2;
+maxDeltaT       .05;
 
+libs ( "libVOFInterpolationSchemes.so" );
 
 // ************************************************************************* //
