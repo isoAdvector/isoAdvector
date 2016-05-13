@@ -482,6 +482,8 @@ Foam::scalar Foam::isoCutCell::vofCutCell2
     const label maxIter
 )
 {
+////    Info << "\n------ vofCutCell2 for cell " << cellI << " with alpha1 = " 
+////        << alpha1 << " ------" << endl;
     //Finding cell vertex extremum values
     const labelList& pLabels = mesh_.cellPoints(cellI);
     scalarField fvert(pLabels.size());
@@ -493,6 +495,8 @@ Foam::scalar Foam::isoCutCell::vofCutCell2
     sortedOrder(fvert,order);
     scalar f1 = fvert[order.first()];
     scalar f2 = fvert[order.last()];
+
+////    Info << "fvert = " << fvert << ", and order = " << order << endl;
     
     //Handling special case where method is handed an almost full or empty cell
     if (alpha1 < tol)
@@ -526,28 +530,41 @@ Foam::scalar Foam::isoCutCell::vofCutCell2
             L2 = L3; f2 = f3; a2 = a3;
         }        
     }
+    
+    if (f1 == f2)
+    {
+        Info << "Warning: f1 = f2." << endl;
+        return f1;
+    }
+    
+    if (mag(a1-a2) < tol)
+    {
+        return 0.5*(f1+f2);
+    }
     //Now we know that a(f) = alpha1 is to be found on the f interval
     //[f1, f2], i.e. alpha1 will be in the interval [a2,a1]
+////    Info << "L1 = " << L1 << ", f1 = " << f1 << ", a1 = " << a1 << endl;
+////    Info << "L2 = " << L2 << ", f2 = " << f2  << ", a2 = " << a2 << endl;
     
-//    Info << "Cell " << cellI << " with alpha1 = " << alpha1 << ": (f1,f2) = (" 
-//        << f1 << "," << f2 << "), (a2,a1) = (" << a2 << "," << a1 << ")" << endl;
     
     //Finding coefficients in 3 deg polynomial alpha(f) from 4 solutions
     
     //Finding 2 additional points on 3 deg polynomial
-    f3 = f1 + 0.3333333333333*(f2-f1); 
+    f3 = f1 + 0.33333333333333333333333*(f2-f1); 
     calcSubCell(cellI,f3);
     a3 = VolumeOfFluid();
 
-    scalar f4 = f1 + 0.666666666667*(f2-f1); 
+    scalar f4 = f1 + 0.66666666666666666666667*(f2-f1); 
     calcSubCell(cellI,f4);
     scalar a4 = VolumeOfFluid();
-
+    
     //Building and solving Vandermonde matrix equation
     scalarField a(4), f(4), C(4);
     {
-        f[0] = f1, f[1] = f3, f[2] = f4, f[3] = f2;
+//        f[0] = f1, f[1] = f3, f[2] = f4, f[3] = f2;
         a[0] = a1, a[1] = a3, a[2] = a4, a[3] = a2;
+        f[0] = 0, f[1] = (f3-f1)/(f2-f1), f[2] = (f4-f1)/(f2-f1), f[3] = 1;
+//        a[0] = 1, a[1] = (a3-a1)/(a1-a2), a[2] = (a4-a1)/(a1-a2), a[3] =1;
         scalarSquareMatrix M(4);
         forAll(f, i)
         {
@@ -563,24 +580,18 @@ Foam::scalar Foam::isoCutCell::vofCutCell2
 //        Info << "f = " << f << endl;
 //        Info << "C = " << C << endl;
 //        Info << "M = " << M << endl;
+        if (a[0] < a[1] || a[1] < a[2] || a[2] < a[3])
+        {
+            Info << "Warninig: a is not monotonic" << endl;
+        }
     }
     
     //Finding root with Newton method
-    
-    //Initial guess
-    {
-//        scalarField da = mag(a-alpha1);
-//        L3 = findMin(da);
-//        f3 = f[L3]; a3 = a[L3];
-        f3 = f[1]; a3 = a[1];
-//        Info << "Initial guess for Newton root finding: (f3,a3) = (" << f3 
-//        << "," << a3 << ")" << endl;
-    }
-    
-    //Newton method
+        
+    f3 = f[1]; a3 = a[1];
     label nIter = 0;
     scalar res = mag(a3 - alpha1);
-    while (res > tol && nIter < maxIter)
+    while (res > tol && nIter < 10*maxIter)
     {
         f3 -= (C[0]*pow3(f3) + C[1]*sqr(f3) + C[2]*f3 + C[3] - alpha1)
             /(3*C[0]*sqr(f3) + 2*C[1]*f3 + C[2]);
@@ -588,47 +599,87 @@ Foam::scalar Foam::isoCutCell::vofCutCell2
         res = mag(a3 - alpha1);
         nIter++;
     }
-    if (nIter == maxIter)
+    //Scaling back to original range
+    f3 = f3*(f2 - f1) + f1;
+
+/*    
+    if (res > tol)
     {
-        Info << "Warning: nIter = maxIter for cell " << cellI << endl;
+        Info << "Warning: Leaving Newton method in iter " << nIter 
+            << " with f3 = " << f3 << " and a3 = " << a3 << endl;
     }
-    
+*/
     //Check result
-    f4 = f3;
-    calcSubCell(cellI,f4);
-    a4 = VolumeOfFluid();
+    calcSubCell(cellI,f3);
+    scalar VOF = VolumeOfFluid();
+    res = mag(VOF - alpha1);
     
-//    Info << "Polynomial approx after " << nIter << " iterations: (f,a) = (" 
-//        << f3 << "," << a3 << ")" << " so a3 - alpha1 = " << a3 - alpha1 << endl;
-
-    //If tolerance not met use bisection with a4 as a hopefully very good 
-    //initial guess to crank res the last piece down below tol
-    res = mag(a4 - alpha1);
-    a3 = a4; f3 = f4;
-    nIter = 0;
-    while ( res > tol && nIter < maxIter )
+    if (res > tol)
     {
-        if ( a3 > alpha1 )
-        {
-            a1 = a3;
-            f1 = f3;
-        }
-        else
-        {
-            a2 = a3;
-            f2 = f3;
-        }
+/*
+        Info << "Newton obtained f3 = " << f3 << " and a3 = " << a3 
+           << " with mag(a3-alpha1) = " << mag(a3-alpha1) 
+           << " but calcSubCell(cellI,f3) gives VOF  = " << VOF << endl;
+        Info << "M(f)*C = a with " << endl;
+        Info << "f_scaled = " << f << endl;
+        Info << "f = " << f*(f2 - f1) + f1 << endl;
+        Info << "a = " << a << endl;
+        Info << "C = " << C << endl;
+*/
+    }
+    else
+    {
+//        Info << "Newton did the job" << endl;
+        return f3;
+    }
 
-        f3 = 0.5*(f1 + f2);
-        calcSubCell(cellI,f3);
-        a3 = VolumeOfFluid();
-        res = mag(a3 - alpha1);
+    //If tolerance not met use the secant method  with f3 as a hopefully very 
+    //good initial guess to crank res the last piece down below tol
+
+    scalar x2 = f3;
+    scalar g2 = VOF - alpha1;    
+    scalar x1 = max(1e-3*(f2-f1),100*SMALL);
+    x1 = max(x1,f1);
+    x1 = min(x1,f2);
+    calcSubCell(cellI,x1);
+    scalar g1 = VolumeOfFluid() - alpha1;
+
+/*
+    scalar x1 = f1;
+    scalar g1 = a1 - alpha1;    
+    scalar x2 = f2;
+    scalar g2 = a2 - alpha1;
+*/
+    nIter = 0;
+    scalar g0(0), x0(0);
+    while ( res > tol && nIter < maxIter && g1 != g2 )
+    {
+        x0 = (x2*g1 - x1*g2)/(g1 - g2);
+        calcSubCell(cellI,x0);
+        g0 = VolumeOfFluid() - alpha1;
+        res = mag(g0);
+        x2 = x1; g2 = g1;
+        x1 = x0; g1 = g0;
         nIter++;
     }
-    
-//    Info << "Bisection correction after " << nIter << " iterations: (f,a) = (" 
-//        << f3 << "," << a3 << ")" << endl;
-        
+    if (nIter > 0)
+    {
+        f3 = x0;
+        a3 = g0 + alpha1;
+
+    }    
+/*    
+    if (res < tol)
+    {
+        Info << "Bisection finished the job in " << nIter << " iterations." << endl;
+    }
+    else
+    {
+        Info << "Warning: Bisection not converged " << endl;
+        Info << "Leaving vofCutCell with f3 = " << f3 << " giving a3 = " 
+            << a3 << " so alpha1 - a3 = " << alpha1 - a3 << endl;
+    }    
+*/        
     return f3;
 }
 

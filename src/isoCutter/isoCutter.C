@@ -107,6 +107,15 @@ void Foam::isoCutter::vofCutCell
 //        Info << nIter << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
         nIter++;
     }
+    
+    if (nIter == maxIter)
+    {
+        Info << "Warning: Bisection method reached nIter = maxIter for cell " 
+            << ci << endl;
+        Info << "Leaving vofCutCell with f0 = " << f0 << " giving alpha0 = " 
+            << alpha0 << " so alpha1 - alpha0 = " << alpha1 - alpha0 << endl;
+    }    
+
 //    Info << nIter-1 << ": f0 = " << f0 << " gives alpha = " << alpha0 << endl;
 }
 

@@ -117,11 +117,11 @@ void Foam::isoAdvection::timeIntegratedFlux
             vector x0(vector::zero), n0(vector::zero);
             calcIsoFace(cellI,x0,n0,f0); //This one really also should give us a0 on all faces since it is calculated anyway. Do this with a cutCell structure
 
-            Info << "Cell " << cellI << " with alpha1 = " 
-                << alpha1_.internalField()[cellI] << " and 1-alpha1 = " 
-                << 1.0-alpha1_.internalField()[cellI] << " " << endl;
+//            Info << "Cell " << cellI << " with alpha1 = " 
+//                << alpha1_.internalField()[cellI] << " and 1-alpha1 = " 
+//                << 1.0-alpha1_.internalField()[cellI] << " " << endl;
 
-            Info << "1 - f0 = " << 1 - f0 << " for cell " << cellI << endl;
+//            Info << "1 - f0 = " << 1 - f0 << " for cell " << cellI << endl;
 
             //Interpolate velocity to isoFace centre
             vector U0 = UInterp.interpolate(x0,cellI);
