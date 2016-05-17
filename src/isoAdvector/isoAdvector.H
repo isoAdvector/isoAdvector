@@ -114,6 +114,21 @@ class isoAdvector
     //- True for all surface cells and their neighbours
     boolList checkBounding_;
     
+    //- Storage for boundary faces downwind to a surface cell
+    DynamicList<label> bsFaces_;
+    
+    //- Storage for 
+    DynamicList<vector> bsx0_;
+    
+    //- Storage for 
+    DynamicList<vector> bsn0_;
+    
+    //- Storage for 
+    DynamicList<scalar> bsUn0_;
+
+    //- Storage for 
+    DynamicList<scalar> bsf0_;
+
     // Private Member Functions
 
     //- For each face calculate volumetric face transport during dt

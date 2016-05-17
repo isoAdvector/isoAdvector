@@ -63,7 +63,12 @@ Foam::isoAdvector::isoAdvector
     surfaceCellFacesOnProcPatches_(0),
     surfCells_(max(10, ceil(0.2*mesh_.nCells()))),
     cellIsBounded_(mesh_.nCells(),false),
-    checkBounding_(mesh_.nCells(),false)
+    checkBounding_(mesh_.nCells(),false),
+    bsFaces_(max(10, ceil(0.2*(mesh_.nFaces()-mesh_.nInternalFaces())))),
+    bsx0_(bsFaces_.size()),
+    bsn0_(bsFaces_.size()),
+    bsUn0_(bsFaces_.size()),
+    bsf0_(bsFaces_.size())
 {
 
     //Prepare lists used in parallel runs
@@ -111,6 +116,13 @@ void Foam::isoAdvector::timeIntegratedFlux
     label nSurfaceCells = 0;
     surfCells_.clear();
     checkBounding_ = false;
+    bsFaces_.clear();
+    bsx0_.clear();
+    bsn0_.clear();
+    bsUn0_.clear();
+    bsf0_.clear();
+    const scalarField& phiIn = phi_.internalField();
+    scalarField& dVfIn = dVf.internalField();
     
     forAll (alpha1In_, cellI)
     {
@@ -140,7 +152,8 @@ void Foam::isoAdvector::timeIntegratedFlux
             //Calculating normal by going a little into the cell.
             if ( mag(n0) < 1e-10 ) 
             {
-                Info << "Warning: mag(n0) = " << mag(n0) << " < 1e-10 for cell " << cellI << endl;
+                Info << "Warning: mag(n0) = " << mag(n0) << " < 1e-10 for cell " 
+                    << cellI << endl;
                 scalar fInside = f0 + sign(alpha1In_[cellI]-0.5)*1e-6;
                 isoCutCell_.calcSubCell(cellI,fInside);
                 n0 = isoCutCell_.isoFaceArea();
@@ -172,34 +185,76 @@ void Foam::isoAdvector::timeIntegratedFlux
             forAll (cellFaces, fi)
             {
                 const label faceI = cellFaces[fi];
-                if ( isADownwindFace(faceI, cellI) )
+                if (mesh_.isInternalFace(faceI))
                 {
-                    isoDebug
-                    (
-                        Info << "\nFace " << faceI 
-                            << " with outward normal nf = " 
-                            << sign( (mesh_.Cf()[faceI]
-                               -mesh_.C().internalField()[cellI]) 
-                               & mesh_.Sf()[faceI] )
-                               *mesh_.Sf()[faceI]/mag(mesh_.Sf()[faceI]) << endl;
-                    )
-                    const scalar tif = timeIntegratedFlux(faceI,x0,n0,Un0,f0,dt);
-                    faceValue(dVf,faceI,tif);
-                    checkIfOnProcPatch(faceI);
-                    
-                    //We want to check boundedness of both surface cells and of 
-                    //their neighbours
-                    if (mesh_.isInternalFace(faceI))
+                    bool isDownwindFace = false;
+                    label otherCell = -1;
+                    if (cellI == mesh_.owner()[faceI])
                     {
-                        if (mesh_.owner()[faceI] == cellI)
+                        if (phiIn[faceI] > 1e-12)
                         {
-                            checkBounding_[mesh_.neighbour()[faceI]] = true;
+                            isDownwindFace = true;
                         }
-                        else
-                        {
-                            checkBounding_[mesh_.owner()[faceI]] = true;                            
-                        }
+                        otherCell = mesh_.neighbour()[faceI];
                     }
+                    else //cellI must be neighbour
+                    {
+                        if (phiIn[faceI] < -1e-12)
+                        {
+                            isDownwindFace = true;
+                        }
+                        otherCell = mesh_.owner()[faceI];                            
+                    }
+
+                    if (isDownwindFace)
+                    {
+//                        Info << "Setting value for internal face " << faceI << endl;
+                        dVfIn[faceI] = timeIntegratedFlux(faceI,x0,n0,Un0,f0,dt);                        
+                    }
+                    //We want to check bounding of neighbour cells to surface 
+                    //cells as well:
+                    checkBounding_[otherCell] = true;
+                }
+                else
+                {
+                    bsFaces_.append(faceI);
+                    bsx0_.append(x0);
+                    bsn0_.append(n0);
+                    bsUn0_.append(Un0);
+                    bsf0_.append(f0);
+                    checkIfOnProcPatch(faceI);
+                }
+            }
+        }
+    }
+    
+    //Setting dVf for boundary faces of surface cells
+    if(bsFaces_.size() > 0)
+    {
+        label patchI = -1;
+        label start = -1;
+        label size = -1;
+
+        forAll(bsFaces_, fi)
+        {
+            const label fLabel = bsFaces_[fi];
+//            Info << "Boundary face: " << fLabel << endl;
+            if (fLabel >= start + size)
+            {
+                patchI = mesh_.boundaryMesh().whichPatch(fLabel);
+                start = mesh_.boundary()[patchI].start();
+                size = mesh_.boundary()[patchI].size();
+//                Info << "Changing to patch " << patchI << " with start = " 
+//                    << start << " and size = " << size << endl;
+            }
+            if (size > 0)
+            {
+                const scalarField& phiP = phi_.boundaryField()[patchI];
+                scalarField& dVfP = dVf.boundaryField()[patchI];
+                if (phiP[fLabel - start] > 1e-12)
+                {
+                    dVfP[fLabel - start] = timeIntegratedFlux(fLabel, bsx0_[fi],
+                        bsn0_[fi], bsUn0_[fi], bsf0_[fi], dt);            
                 }
             }
         }
