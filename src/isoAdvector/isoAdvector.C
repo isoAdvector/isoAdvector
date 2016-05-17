@@ -122,6 +122,7 @@ void Foam::isoAdvector::timeIntegratedFlux
     bsUn0_.clear();
     bsf0_.clear();
     const scalarField& phiIn = phi_.internalField();
+    const scalarField& magSfIn = mesh_.magSf().internalField();
     scalarField& dVfIn = dVf.internalField();
     
     forAll (alpha1In_, cellI)
@@ -209,7 +210,8 @@ void Foam::isoAdvector::timeIntegratedFlux
                     if (isDownwindFace)
                     {
 //                        Info << "Setting value for internal face " << faceI << endl;
-                        dVfIn[faceI] = timeIntegratedFlux(faceI,x0,n0,Un0,f0,dt);                        
+                        dVfIn[faceI] = timeIntegratedFlux(faceI, x0, n0, Un0,
+                            f0, dt, phiIn[faceI], magSfIn[faceI]);
                     }
                     //We want to check bounding of neighbour cells to surface 
                     //cells as well:
@@ -249,12 +251,14 @@ void Foam::isoAdvector::timeIntegratedFlux
             }
             if (size > 0)
             {
-                const scalarField& phiP = phi_.boundaryField()[patchI];
-                scalarField& dVfP = dVf.boundaryField()[patchI];
-                if (phiP[fLabel - start] > 1e-12)
+                const scalar phiP = phi_.boundaryField()[patchI][fLabel - start];
+                if (phiP > 1e-12)
                 {
-                    dVfP[fLabel - start] = timeIntegratedFlux(fLabel, bsx0_[fi],
-                        bsn0_[fi], bsUn0_[fi], bsf0_[fi], dt);            
+                    const scalar magSf = mesh_.magSf().boundaryField()[patchI][fLabel - start];
+                    scalar& dVfP = dVf.boundaryField()[patchI][fLabel - start];
+                    dVfP = timeIntegratedFlux(fLabel, bsx0_[fi],
+                        bsn0_[fi], bsUn0_[fi], bsf0_[fi], dt,
+                        phiP, magSf);
                 }
             }
         }
@@ -284,13 +288,14 @@ Foam::scalar Foam::isoAdvector::timeIntegratedFlux
     const vector& n0,
     const scalar Un0,
     const scalar f0,
-    const scalar dt
+    const scalar dt,
+    const scalar phi,
+    const scalar magSf
 )
 {
     isoDebug(Info << "Enter timeIntegratedFlux for face " << fLabel << endl;)
 
     scalar dVf = 0; //Volume flowing through face in time interval [0,dt] to be calculated below
-    const scalar phi = faceValue(phi_,fLabel);
 
     //Treating rare cases where isoface normal is not calculated properly
     if (mag(n0) < .5)
@@ -323,7 +328,6 @@ Foam::scalar Foam::isoAdvector::timeIntegratedFlux
         fPts[pi] = mesh_.points()[pLabels[pi]];
     }
     scalarField pTimes(fPts.size());
-    scalar magSf = faceValue(mesh_.magSf(),fLabel);
     if ( mag(Un0) > 1e-12 )
     {
         pTimes = ((fPts - x0) & n0)/Un0; //Here we estimate time of arrival to the face points from their normal distance to the initial surface and the surface normal velocity
@@ -353,19 +357,13 @@ Foam::scalar Foam::isoAdvector::timeIntegratedArea
 {
     isoDebug(Info << "Enter timeIntegratedArea for face " << fLabel << endl;)
     scalar tIntArea = 0.0;
-//    const label nPoints = fPts.size();
-
-    //Face area
-//    scalar magSf = faceValue(mesh_.magSf(),fLabel);
 
     //Sorting face vertex encounter time list
-//    scalarField sortedTimes(pTimes);
     List<scalar> sortedTimes(pTimes);
     sort(sortedTimes);
     isoDebug(Info << "sortedTimes = " << sortedTimes << endl;)
 
     //Dealing with case where face is not cut by surface during time interval [0,dt] because face was already passed by surface
-//    if ( sortedTimes[nPoints-1] <= 0.0 ) //All cuttings in the past
     if ( sortedTimes.last() <= 0.0 ) //All cuttings in the past
     {
         isoDebug(Info << "All cuttings in the past" << endl;)
@@ -374,7 +372,6 @@ Foam::scalar Foam::isoAdvector::timeIntegratedArea
     }
 
     //Dealing with case where face is not cut by surface during time interval [0,dt] because dt is too small for surface to reach closest face point
-//    if ( sortedTimes[0] >= dt ) //All cuttings in the future
     if ( sortedTimes.first() >= dt ) //All cuttings in the future
     {
         isoDebug(Info << "All cuttings in the future" << endl;)

@@ -146,7 +146,9 @@ class isoAdvector
         const vector& n0,
         const scalar Un0,
         const scalar f0,
-        const scalar dt
+        const scalar dt,
+        const scalar phi,
+        const scalar magSf
     );
 
     scalar timeIntegratedArea
