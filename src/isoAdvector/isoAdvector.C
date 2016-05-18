@@ -633,9 +633,10 @@ void Foam::isoAdvector::limitFluxes
     label nOvershoots = 20;//sum(pos(alphaNew-1-aTol));
     cellIsBounded_ = false;
     
-    for ( label n = 0; n < nAlphaBounds_; n++ )
+    for (label n = 0; n < nAlphaBounds_; n++)
     {
-        Info << "Running bounding number " << n+1 << " of time " << mesh_.time().value() << endl;
+        Info << "Running bounding number " << n + 1 << " of time " 
+            << mesh_.time().value() << endl;
 
         if ( maxAlphaMinus1 > aTol )
         {

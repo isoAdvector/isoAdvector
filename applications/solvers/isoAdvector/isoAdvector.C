@@ -63,9 +63,15 @@ int main(int argc, char *argv[])
 
     while (runTime.run())
     {
+        #include "readTimeControls.H"
+        #include "CourantNo.H"
+        #include "alphaCourantNo.H"
+        #include "setDeltaT.H"
+        
         //Setting velocity field and face fluxes for next time step
         scalar t = runTime.time().value();
-        if ( reverseTime > 0.0 && t > reverseTime )
+        scalar dt = runTime.deltaT().value();
+        if ( reverseTime > 0.0 && t >= reverseTime )
         {
             Info<< "Reversing flow" << endl;
             phi = -phi;
@@ -76,20 +82,16 @@ int main(int argc, char *argv[])
         }
         if ( period > 0.0 )
         {
-            phi = phi0*Foam::cos(2.0*PI*t/period);
-            U = U0*Foam::cos(2.0*PI*t/period);
+            phi = phi0*Foam::cos(2.0*PI*(t + 0.5*dt)/period);
+            U = U0*Foam::cos(2.0*PI*(t + 0.5*dt)/period);
         }
 
-        #include "readTimeControls.H"
-        #include "CourantNo.H"
-        #include "alphaCourantNo.H"
-        #include "setDeltaT.H"
         runTime++;
         Info<< "Time = " << runTime.timeName() << nl << endl;
         t = runTime.time().value();
+        dt = runTime.deltaT().value();
 
         //Advance alpha1 from time t to t+dt
-        const scalar dt = runTime.deltaT().value();
         advector.getTransportedVolume(dt,dVf);
         alpha1 -= fvc::surfaceIntegrate(dVf);
         alpha1.correctBoundaryConditions();
