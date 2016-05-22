@@ -1,0 +1,25 @@
+#!/bin/bash
+
+meshes=(hex tri poly)
+resolutions=(100 200 400)
+times=(4 8)
+
+solver=isoAdvector
+
+for nm in ${!meshes[*]}
+do
+    mesh=${meshes[$nm]}
+
+    for nr in ${!resolutions[*]}
+    do
+        res=${resolutions[$nr]}
+
+        for nt in ${!times[*]}
+        do
+	    time=${times[$nt]}
+            echo $solver/$mesh/N${res}Co0.5/0/alpha$time
+	    cp $solver/$mesh/N${res}Co0.5/$time/alpha1 $solver/$mesh/N${res}Co0.5/0/alpha$time
+	    sed -i "s/alpha1/alpha${time}/" $solver/$mesh/N${res}Co0.5/0/alpha$time
+        done
+    done
+done

@@ -1,14 +1,15 @@
 #!/bin/bash
 
-appList=(isoAdvect interFoam passiveAdvectionFoam passiveAdvectionFoam)
-#appList=(isoAdvect)
+appList=(isoAdvector interFoam passiveAdvectionFoam passiveAdvectionFoam)
+#appList=(isoAdvector)
 schemeList=(isoAdvector MULES HRIC CICSAM)
 #schemeList=(isoAdvector)
 meshList=(hex tri poly)
+#meshList=(hex)
 CoList=(0.1 0.2 0.5)
 
 #Location of tri meshes
-triMeshDir=triMeshes
+triMeshDir=../triMeshes
 
 for nn in ${!meshList[*]}
 do

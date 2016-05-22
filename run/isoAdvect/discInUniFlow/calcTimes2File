@@ -1,0 +1,46 @@
+#!/bin/bash
+
+applicationList=(isoAdvector interFoam passiveAdvectionFoam passiveAdvectionFoam)
+#applicationList=(isoAdvect)
+schemeList=(isoAdvector MULES HRIC CICSAM)
+#schemeList=(isoAdvector)
+meshList=(hex tri poly)
+#meshList=(hex)
+CoList=(0.1 0.2 0.5)
+
+#Location of tri meshes
+triMeshDir=triMeshes
+
+calcTimeFile=calcTimes.log
+rm $calcTimeFile
+
+for nn in ${!meshList[*]}
+do
+	meshType=${meshList[$nn]}
+	
+	for mm in ${!schemeList[*]}
+	do
+		scheme=${schemeList[$mm]}
+		application=${applicationList[$mm]}
+		echo $meshType >> $calcTimeFile
+		echo $scheme >> $calcTimeFile
+		
+		#Case location
+		series=$PWD/$scheme/$meshType
+
+		printHeader=yes
+		for n in $(ls "$series");
+		do
+			caseDir=$series/$n
+			echo $caseDir
+			echo $n >> $calcTimeFile
+			tail -8 $caseDir/logs/${application}.log > tmpfile
+			grep "ExecutionTime = " tmpfile >> $calcTimeFile
+		done
+		
+#		cat $errorFile | cut -d' ' -f2  >> $scheme_$meshType_E1
+#		cat $errorFile | cut -d' ' -f3  >> $scheme_$meshType_dV
+#		cat $errorFile | cut -d' ' -f3  >> $scheme_$meshType_dV
+	done
+done
+rm tmpfile

@@ -4,12 +4,13 @@
 appList=(isoAdvector)
 #schemeList=(isoAdvector MULES HRIC CICSAM)
 schemeList=(isoAdvector)
-#meshList=(hex tri poly)
-meshList=(hex)
-CoList=(0.1 0.2 0.5)
+meshList=(hex tri poly)
+#meshList=(hex)
+CoList=(0.5)
+#CoList=(0.1 0.2 0.5)
 
 #Location of tri meshes
-triMeshDir=triMeshes
+triMeshDir=../triMeshes
 
 for nn in ${!meshList[*]}
 do
@@ -22,18 +23,15 @@ do
 		#Case location
 		series=$PWD/$scheme/$meshType
 
+        	NzList=(100 200 400)
+		#Vertical velocity component
+		Uz=0
 		if [ "$meshType" = "hex" ];
 		then
 			#Domain  dimensions
 			L=1
 			H=1
-			#Vertical velocity component
-			Uz=0
-			NzList=(100 200 400)
 			NxList=(100 200 400)
-		else
-			NzList=(20 40 80)
-			Uz=0.0
 		fi
 
 		mkdir --parents $series

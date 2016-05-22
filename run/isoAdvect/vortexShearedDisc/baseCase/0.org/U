@@ -17,9 +17,9 @@ FoamFile
 
 dimensions      [0 1 -1 0 0 0 0];
 
-Ux	1;
+Ux	0;
 Uy	0;
-Uz	0.5;
+Uz	0;
 
 internalField   uniform ($Ux $Uy $Uz);
 

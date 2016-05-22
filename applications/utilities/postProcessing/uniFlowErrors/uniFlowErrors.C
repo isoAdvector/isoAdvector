@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     );
 
 	const vector U0 = U[0];
-//	Info << "Velocity U0 = " << U0 << endl;
+	Info << "Velocity U0 = " << U0 << endl;
 
     volScalarField alpha1Exact = alpha1; //Values are overwritten
 	
@@ -249,9 +249,9 @@ int main(int argc, char *argv[])
 			 << "dVrel " 
 			 << "aMin " 
 			 << "1-aMax " 
-			 << "dWrel " 
 			 << "dW " 
 			 << "dWEx "
+			 << "dWrel " 
 			 << "dCM" << endl;
 
 		cout << setprecision(2) << E1 << " "
@@ -259,9 +259,9 @@ int main(int argc, char *argv[])
 		     << setprecision(2) << (sum(mesh.V()*alpha1).value()-V0)/V0 << " "
 		     << setprecision(2) << min(alpha1).value() << " "
 			 << setprecision(2) << 1-max(alpha1).value() << " "
-			 << setprecision(2) << (dV-dVExact)/dVExact << " "
 			 << setprecision(2) << dV << " "
 			 << setprecision(2) << dVExact << " "
+			 << setprecision(2) << (dV-dVExact)/(dVExact+SMALL) << " "
 		     << setprecision(2) << mag(cm-cmExact) << endl;
 			 
 //			<< ",\td_Ex/d0 = " << deltaExact/delta0 << endl;
