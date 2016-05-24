@@ -79,7 +79,9 @@ int main(int argc, char *argv[])
 
     Info<< "\nStarting time loop\n" << endl;
     isoAdvector advector(alpha1,phi,U,isoAdvectorDict);
-
+    scalar executionTime = runTime.elapsedCpuTime();
+    scalar advectionTime = 0;
+    
     while (runTime.run())
     {
         #include "readTimeControls.H"
@@ -91,8 +93,9 @@ int main(int argc, char *argv[])
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
-        twoPhaseProperties.correct();
+        scalar advectionStartTime = runTime.elapsedCpuTime();
 
+        twoPhaseProperties.correct();
 
         //Advance alpha1 from time t to t+dt
         const scalar dt = runTime.deltaT().value();
@@ -100,8 +103,14 @@ int main(int argc, char *argv[])
         alpha1 -= fvc::surfaceIntegrate(dVf);
         alpha1.correctBoundaryConditions();
         
-        advector.getSurfaceCells(surfCells);
-        advector.getBoundedCells(boundCells);
+        if (printSurfCells)
+        {
+            advector.getSurfaceCells(surfCells);
+        }
+        if (printBoundCells)
+        {
+            advector.getBoundedCells(boundCells);
+        }
         
         Info << "1-max(alpha1) = " << 1-max(alpha1).value() << " and min(alpha1) = " << min(alpha1).value() << endl;
 
@@ -121,6 +130,8 @@ int main(int argc, char *argv[])
 //        #include "alphaEqnSubCycle.H"
         interface.correct();
 
+        advectionTime += (advectionStartTime - runTime.elapsedCpuTime());
+        
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
         {
@@ -141,12 +152,14 @@ int main(int argc, char *argv[])
         contErr = fvc::surfaceIntegrate(phi)*dimensionedScalar("dt", dimTime, dt);
 
         runTime.write();
-//        phi.write();
-//        rhoPhi.write();
 
+        scalar newExecutionTime = runTime.elapsedCpuTime();
         Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
-            << nl << endl;
+            << "  timeStepTime = " << newExecutionTime - executionTime << " s"
+            << "  advection fraction: " << 100*advectionTime/newExecutionTime
+            << "%" << nl << endl;
+        executionTime = runTime.elapsedCpuTime();
     }
 
     Info<< "End\n" << endl;

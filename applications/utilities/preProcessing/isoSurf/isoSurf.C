@@ -36,6 +36,8 @@ Author
 
 #include "fvCFD.H"
 #include "isoCutter.H"
+#include "isoCutFace.H"
+#include "isoCutCell.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -108,17 +110,47 @@ int main(int argc, char *argv[])
     //Define function on mesh points and isovalue
 	
 	//Calculating alpha1 volScalarField from f = f0 isosurface
-    Foam::isoCutter cutter(mesh,f);
-    cutter.subCellFractions(f0,alpha1);
-	alpha1.correctBoundaryConditions();
+
+    //Setting internal alpha1 values
+    isoCutCell icc(mesh,f);
+    scalarField& alphaIn = alpha1.internalField();
+        
+    forAll(mesh.cells(),ci)
+    {
+        const label cellStatus = icc.calcSubCell(ci,f0);
+        if (cellStatus != 1) //I.e. if cell not entirely above isosurface
+        {
+            alphaIn[ci] = icc.VolumeOfFluid();
+        }
+    }
+    
+    //Setting boundary alpha1 values
+    isoCutFace icf(mesh, f);
+    forAll(mesh.boundary(), patchI)
+    {
+        if (mesh.boundary()[patchI].size() > 0)
+        {
+            fvPatchScalarField& alphaBP = alpha1.boundaryField()[patchI];
+
+            forAll(alphaBP, faceI)
+            {
+                const label fLabel = faceI + mesh.boundary()[patchI].start();
+                const label faceStatus = icf.calcSubFace(fLabel, f0);
+                if (faceStatus != 1) //I.e. if face not entirely above isosurface
+                {
+                    alphaBP[faceI] = mag(icf.subFaceArea());
+                }
+            }
+        }
+    }
 	
 	ISstream::defaultPrecision(18);
 	
     alpha1.write(); //Writing volScalarField alpha1
 
-	Info << "sum(alpha*V) = " << sum(mesh.V()*alpha1).value() 
-	 << ", max(alpha1)-1 = " << max(alpha1).value()-1.0
-	 << "\t min(alpha1) = " << min(alpha1).value() << endl;
+	Info << "sum(alpha*V) = " << gSum(mesh.V()*alphaIn)
+	 << ", 1-max(alpha1) = " << 1 - gMax(alphaIn)
+	 << "\t min(alpha1) = " << gMin(alphaIn) << endl;
 	
     Info<< "End\n" << endl;
 

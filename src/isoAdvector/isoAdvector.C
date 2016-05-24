@@ -68,7 +68,8 @@ Foam::isoAdvector::isoAdvector
     bsx0_(bsFaces_.size()),
     bsn0_(bsFaces_.size()),
     bsUn0_(bsFaces_.size()),
-    bsf0_(bsFaces_.size())
+    bsf0_(bsFaces_.size()),
+    minMagSf_(gMin(mesh_.magSf()))
 {
 
     //Prepare lists used in parallel runs
@@ -144,87 +145,104 @@ void Foam::isoAdvector::timeIntegratedFlux
             //Calculate isoFace centre x0, normal n0 at time t
             label maxIter(100);
 //            scalar f0 = isoCutCell_.vofCutCell(cellI, alpha1In_[cellI], vof2IsoTol_, maxIter);
-            scalar f0 = isoCutCell_.vofCutCell2(cellI, alpha1In_[cellI], vof2IsoTol_, maxIter);
+            label cellStatus = isoCutCell_.vofCutCell2(cellI, alpha1In_[cellI], vof2IsoTol_, maxIter);
 //            Info << "1 - f0 = " << 1 - f0 << " for cell " << cellI << endl;
-            point x0 = isoCutCell_.isoFaceCentre();
-            vector n0 = isoCutCell_.isoFaceArea();
-                        
-            //If cell almost full or empty isoFace may be undefined. 
-            //Calculating normal by going a little into the cell.
-            if ( mag(n0) < 1e-10 ) 
+            if (cellStatus == 0)
             {
-                Info << "Warning: mag(n0) = " << mag(n0) << " < 1e-10 for cell " 
-                    << cellI << endl;
-                scalar fInside = f0 + sign(alpha1In_[cellI]-0.5)*1e-6;
-                isoCutCell_.calcSubCell(cellI,fInside);
-                n0 = isoCutCell_.isoFaceArea();
-            }    
-            
-            if ( mag(n0) > 1e-10 )
-            {
-                isoDebug(Info << "Normalising n0: " << n0 << endl;)
-                n0 /= mag(n0);
-            }
-            else
-            {
-                Info << "Warning: mag(n0) = " << mag(n0) << " < 1e-10." << endl;
-            }
-
-            //Interpolate velocity to isoFace centre
-            vector U0 = UInterp.interpolate(x0,cellI);
-            scalar Un0 = (U0 & n0);
-
-            isoDebug
-            (
-                Info << "calcIsoFace gives initial surface: \nx0 = " << x0 
-                    << ", \nn0 = " << n0 << ", \nf0 = " << f0 << ", \nUn0 = " 
-                    << Un0 << endl;
-            )
-
-            //Estimating time integrated water flux through each downwind face
-            const labelList& cellFaces = mesh_.cells()[cellI];
-            forAll (cellFaces, fi)
-            {
-                const label faceI = cellFaces[fi];
-                if (mesh_.isInternalFace(faceI))
+                scalar f0 = isoCutCell_.isoValue();
+                point x0 = isoCutCell_.isoFaceCentre();
+                vector n0 = isoCutCell_.isoFaceArea();
+                            
+                //If cell almost full or empty isoFace may be undefined. 
+                //Calculating normal by going a little into the cell.
+                if ( mag(n0) < 1e-6*minMagSf_ ) 
                 {
-                    bool isDownwindFace = false;
-                    label otherCell = -1;
-                    if (cellI == mesh_.owner()[faceI])
-                    {
-                        if (phiIn[faceI] > 1e-12)
-                        {
-                            isDownwindFace = true;
-                        }
-                        otherCell = mesh_.neighbour()[faceI];
-                    }
-                    else //cellI must be neighbour
-                    {
-                        if (phiIn[faceI] < -1e-12)
-                        {
-                            isDownwindFace = true;
-                        }
-                        otherCell = mesh_.owner()[faceI];                            
-                    }
-
-                    if (isDownwindFace)
-                    {
-//                        Info << "Setting value for internal face " << faceI << endl;
-                        dVfIn[faceI] = timeIntegratedFlux(faceI, x0, n0, Un0,
-                            f0, dt, phiIn[faceI], magSfIn[faceI]);
-                    }
-                    //We want to check bounding of neighbour cells to surface 
-                    //cells as well:
-                    checkBounding_[otherCell] = true;
+                    Info << "Warning: mag(n0) = " << mag(n0) 
+                        << " < 1e-6*minMagSf_ for cell " << cellI << endl;
+                    scalar fInside = f0 + sign(alpha1In_[cellI]-0.5)*1e-6;
+                    isoCutCell_.calcSubCell(cellI,fInside);
+                    n0 = isoCutCell_.isoFaceArea();
+                }    
+                
+                if ( mag(n0) > 1e-6*minMagSf_ )
+                {
+                    isoDebug(Info << "Normalising n0: " << n0 << endl;)
+                    n0 /= mag(n0);
                 }
                 else
                 {
-                    bsFaces_.append(faceI);
-                    bsx0_.append(x0);
-                    bsn0_.append(n0);
-                    bsUn0_.append(Un0);
-                    bsf0_.append(f0);
-                    checkIfOnProcPatch(faceI);
+                    Info << "Warning: mag(n0) = " << mag(n0)
+                    << " < 1e-6*minMagSf_ for cell " << cellI << " with alpha1 = " 
+                        << alpha1In_[cellI] << ", 1-alpha1 = " 
+                        << 1.0-alpha1In_[cellI] << " and f0 = " << f0 << endl;
+                    n0 /= (mag(n0) + SMALL);
+                    Info << "After normalisation: mag(n0) = " << mag(n0) << endl;
+                }
+
+                //Interpolate velocity to isoFace centre
+                vector U0 = UInterp.interpolate(x0,cellI);
+                scalar Un0 = (U0 & n0);
+
+                isoDebug
+                (
+                    Info << "calcIsoFace gives initial surface: \nx0 = " << x0 
+                        << ", \nn0 = " << n0 << ", \nf0 = " << f0 << ", \nUn0 = " 
+                        << Un0 << endl;
+                )
+
+                //Estimating time integrated water flux through each downwind face
+                const labelList& cellFaces = mesh_.cells()[cellI];
+                forAll (cellFaces, fi)
+                {
+                    const label faceI = cellFaces[fi];
+                    if (mesh_.isInternalFace(faceI))
+                    {
+                        bool isDownwindFace = false;
+                        label otherCell = -1;
+                        if (cellI == mesh_.owner()[faceI])
+                        {
+    //                        if (phiIn[faceI] > 1e-12)
+                            if (phiIn[faceI] > 10*SMALL)
+                            {
+                                isDownwindFace = true;
+                            }
+                            otherCell = mesh_.neighbour()[faceI];
+                        }
+                        else //cellI must be neighbour
+                        {
+    //                        if (phiIn[faceI] < -1e-12)
+                            if (phiIn[faceI] < -10*SMALL)
+                            {
+                                isDownwindFace = true;
+                            }
+                            otherCell = mesh_.owner()[faceI];                            
+                        }
+
+                        if (isDownwindFace)
+                        {
+    //                        Info << "Setting value for internal face " << faceI << endl;
+                            dVfIn[faceI] = timeIntegratedFlux(faceI, x0, n0, Un0,
+                                f0, dt, phiIn[faceI], magSfIn[faceI]);
+                        }
+                        //We want to check bounding of neighbour cells to surface 
+                        //cells as well:
+                        checkBounding_[otherCell] = true;
+                        //Also check neighbour neighbours
+                        const labelList& nNeighbourCells = mesh_.cellCells()[otherCell];
+                        forAll(nNeighbourCells, ni)
+                        {
+                            checkBounding_[nNeighbourCells[ni]] = true;                        
+                        }
+                    }
+                    else
+                    {
+                        bsFaces_.append(faceI);
+                        bsx0_.append(x0);
+                        bsn0_.append(n0);
+                        bsUn0_.append(Un0);
+                        bsf0_.append(f0);
+                        checkIfOnProcPatch(faceI);
+                    }
                 }
             }
         }
@@ -252,7 +270,8 @@ void Foam::isoAdvector::timeIntegratedFlux
             if (size > 0)
             {
                 const scalar phiP = phi_.boundaryField()[patchI][fLabel - start];
-                if (phiP > 1e-12)
+//                if (phiP > 1e-12)
+                if (phiP > 10*SMALL)
                 {
                     const scalar magSf = mesh_.magSf().boundaryField()[patchI][fLabel - start];
                     scalar& dVfP = dVf.boundaryField()[patchI][fLabel - start];
@@ -459,12 +478,14 @@ void Foam::isoAdvector::getDownwindFaces
 
         if (mesh_.owner()[fLabel] == ci)
         {
-            if (phi > 1e-12)
+//            if (phi > 1e-12)
+            if (phi > 10*SMALL)
             {
                 downwindFaces.append(fLabel);
             }
         }
-        else if ( phi < -1e-12 ) //ci must be neighbour of fLabel
+//        else if ( phi < -1e-12 ) //ci must be neighbour of fLabel
+        else if ( phi < -10*SMALL ) //ci must be neighbour of fLabel
         {
             downwindFaces.append(fLabel);
         }
@@ -484,12 +505,14 @@ bool Foam::isoAdvector::isADownwindFace
     bool isDownwindFace = false;
     if (mesh_.owner()[faceI] == cellI)
     {
-        if ( phi > 1e-12 )
+//        if ( phi > 1e-12 )
+        if ( phi > 10*SMALL )
         {
             isDownwindFace = true;
         }
     }
-    else if ( phi < -1e-12 ) //cellI assumed to be neighbour of faceI
+//    else if ( phi < -1e-12 ) //cellI assumed to be neighbour of faceI
+    else if ( phi < -10*SMALL ) //cellI assumed to be neighbour of faceI
     {
         isDownwindFace = true;
     }
@@ -697,7 +720,8 @@ void Foam::isoAdvector::boundFromAbove
 )
 {
     correctedFaces.clear();
-    scalar aTol = 1e-12;
+//    scalar aTol = 1e-12;
+    scalar aTol = 10*SMALL;
 
     forAll(alpha1,ci)
     {
@@ -1123,7 +1147,7 @@ void Foam::isoAdvector::getTransportedVolume
     //Interpolating alpha1 cell centre values to mesh points (vertices)
     ap_ = vpi_.interpolate(alpha1_);
 
-    //Initialising dVf with upwind values, i.e. phi[fLabel]*alpha1[upwindCell]*dt
+    //Initialising dVf with upwind values, i.e. phi[fLabel]*alpha1[upwindCell]*dt    
     dVf = upwind<scalar>(mesh_, phi_).flux(alpha1_)*dimensionedScalar("dt", dimTime, dt);
 
     //Do the isoAdvector on surface cells

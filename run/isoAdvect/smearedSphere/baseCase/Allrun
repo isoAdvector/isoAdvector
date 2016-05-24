@@ -3,7 +3,7 @@
 #./Allclean
 
 #nProc=$(sed -ne "s/^numberOfSubdomains *\(.*\);/\1/p" system/decomposeParDict)
-application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
+application=$(sed -ne "s/^application\s*\(.*\);/\1/p" system/controlDict)
 jobStart=$(date +"%Y%m%d%H%M")
 
 cd generateU
@@ -13,7 +13,9 @@ cd ..
 if [ ! -d "logs" ]; then
     mkdir logs
     cp -r 0.org 0
-    blockMesh > logs/blockMesh.log 2>&1
+    if [ ! -f "constant/polyMesh/points" ]; then
+        blockMesh > logs/blockMesh.log 2>&1
+    fi
     generateU/generateU > logs/generateU.log 2>&1
     isoSurf > logs/isoSurf.log 2>&1
 else

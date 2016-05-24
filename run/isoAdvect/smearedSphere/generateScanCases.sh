@@ -1,13 +1,9 @@
 #!/bin/bash
 
-#appList=(isoAdvect mulesFoam passiveAdvectionFoam passiveAdvectionFoam)
 appList=(isoAdvector)
-#schemeList=(isoAdvector MULES HRIC CICSAM)
 schemeList=(isoAdvector)
-meshList=(hex tri poly)
-#meshList=(hex)
+meshList=(hex)
 CoList=(0.5)
-#CoList=(0.1 0.2 0.5)
 
 #Location of tri meshes
 triMeshDir=../triMeshes
@@ -23,15 +19,20 @@ do
 		#Case location
 		series=$PWD/$scheme/$meshType
 
-        	NzList=(100 200 400)
-		#Vertical velocity component
-		Uz=0
 		if [ "$meshType" = "hex" ];
 		then
 			#Domain  dimensions
 			L=1
+                        D=1
 			H=1
-			NxList=(100 200 400)
+			#Vertical velocity component
+			Uz=0
+			NxList=(64 128 256)
+			NyList=(64 128 256)
+			NzList=(64 128 256)
+		else
+			NzList=(20 40 80)
+			Uz=0.0
 		fi
 
 		mkdir --parents $series
@@ -60,27 +61,29 @@ do
 				fi
 
 				#Generating mesh
-				mkdir $caseDir/logs
 				cp -r $caseDir/0.org $caseDir/0
 				touch $caseDir/case.foam
 				if [ "$meshType" = "hex" ];
 				then
 					nx=${NxList[$n]}
+					ny=${NyList[$n]}
 					nz=${NzList[$n]}
 					./ofset L "$L" $caseDir/constant/polyMesh/blockMeshDict
+					./ofset D "$D" $caseDir/constant/polyMesh/blockMeshDict
 					./ofset H "$H" $caseDir/constant/polyMesh/blockMeshDict
 					./ofset nx "$nx" $caseDir/constant/polyMesh/blockMeshDict
+					./ofset ny "$ny" $caseDir/constant/polyMesh/blockMeshDict
 					./ofset nz "$nz" $caseDir/constant/polyMesh/blockMeshDict
-					blockMesh -case $caseDir > $caseDir/logs/blockMesh.log 2>&1
+#					blockMesh -case $caseDir 
 				else
 					cp $triMeshDir/N${NzList[$n]}/* $caseDir/constant/polyMesh/
 					if [ "$meshType" = "poly" ];
 					then
 						#Convert from tet to poly mesh
-						polyDualMesh -case $caseDir -overwrite 160 > $caseDir/logs/polyDualMesh.log 2>&1
+						polyDualMesh -case $caseDir -overwrite 160 
 						#Remove backmost  part of cells
-						topoSet -case $caseDir > $caseDir/logs/topoSet.log 2>&1
-						subsetMesh -case $caseDir -overwrite c0 -patch front > $caseDir/logs/subsetMesh.log 2>&1
+						topoSet -case $caseDir 
+						subsetMesh -case $caseDir -overwrite c0 -patch front
 						rm -rf *.obj			
 					fi
 				fi

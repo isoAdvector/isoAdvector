@@ -129,6 +129,9 @@ class isoAdvector
     //- Storage for 
     DynamicList<scalar> bsf0_;
 
+    //- Smallest face area
+    scalar minMagSf_;
+    
     // Private Member Functions
 
     //- For each face calculate volumetric face transport during dt

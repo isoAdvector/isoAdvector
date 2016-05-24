@@ -170,6 +170,8 @@ public:
 
         scalar VolumeOfFluid();
 
+        scalar isoValue();
+
         void clearStorage();
         
         scalar vofCutCell
@@ -180,7 +182,7 @@ public:
             const label maxIter
         );
 
-        scalar vofCutCell2
+        label vofCutCell2
         (
             const label cellI,
             const scalar alpha1,

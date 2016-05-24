@@ -54,7 +54,9 @@ Foam::isoCutFace::isoCutFace
     surfacePoints_(4),
     faceStatus_(-1),
     subFaceCentreAndAreaIsCalculated_(false)
-{}
+{
+    clearStorage();
+}
 
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
@@ -179,7 +181,13 @@ void Foam::isoCutFace::calcSubFace
                     << abort(FatalError);
 
                 Info << "More than two face cuts for face " << faceI_ << endl;
-*/
+                const labelList& fl = mesh_.faces()[faceI_];
+                Info << "Face values: f-isoValue = " << endl;
+                forAll(fl, fi)
+                {
+                    Info << f_[fl[fi]]-isoValue_ << endl;
+                }
+*/                
             }
         }
         pl1 = pl2;
@@ -332,16 +340,17 @@ Foam::DynamicList<Foam::point> Foam::isoCutFace::surfacePoints()
 
 void Foam::isoCutFace::clearStorage()
 {
+    faceI_ = -1;
+    isoValue_ = 0;
     firstEdgeCut_ = -1;
     lastEdgeCut_ = -1;
     firstFullySubmergedPoint_ = -1;
     nFullySubmergedPoints_ = 0;
-    faceStatus_ = -1;
-    
-    subFacePoints_.clear();
-    surfacePoints_.clear();
     subFaceCentre_ = vector::zero;
     subFaceArea_ = vector::zero;
+    subFacePoints_.clear();
+    surfacePoints_.clear();
+    faceStatus_ = -1;    
     subFaceCentreAndAreaIsCalculated_ = false;
 }
 

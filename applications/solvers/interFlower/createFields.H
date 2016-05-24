@@ -153,6 +153,15 @@
     const scalar clipAlphaTol = isoAdvectorDict.lookupOrDefault<scalar>("clipAlphaTol", 0);
     const bool snapAlpha = isoAdvectorDict.lookupOrDefault<bool>("snapAlpha", true);
     
+    //Optional writing out of surface cell set and bounded cell sets
+    IOobject::writeOption writeOpt = IOobject::NO_WRITE;
+    const bool printSurfCells 
+        = isoAdvectorDict.lookupOrDefault<bool>("printSurfCells", false);
+    if (printSurfCells)
+    {
+        writeOpt = IOobject::AUTO_WRITE;
+    }
+    
     cellSet surfCells
     (
         IOobject
@@ -161,10 +170,17 @@
             runTime.timeName(),
             runTime,  
             IOobject::NO_READ, 
-            IOobject::AUTO_WRITE
+            writeOpt
         )
     );
-    
+
+    writeOpt = IOobject::NO_WRITE;
+    const bool printBoundCells 
+        = isoAdvectorDict.lookupOrDefault<bool>("printBoundCells", false);    
+    if (printBoundCells)
+    {
+        writeOpt = IOobject::AUTO_WRITE;
+    }
     cellSet boundCells
     (
         IOobject
@@ -173,7 +189,7 @@
             runTime.timeName(),
             runTime,  
             IOobject::NO_READ, 
-            IOobject::AUTO_WRITE
+            writeOpt
         )
     );
     

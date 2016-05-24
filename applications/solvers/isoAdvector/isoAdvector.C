@@ -96,10 +96,19 @@ int main(int argc, char *argv[])
         alpha1 -= fvc::surfaceIntegrate(dVf);
         alpha1.correctBoundaryConditions();
 
+        if (printSurfCells)
+        { 
+            advector.getSurfaceCells(surfCells);
+        }
+        if (printBoundCells)
+        {
+            advector.getBoundedCells(boundCells);
+        }
+
         //Write total VOF and discrepancy from original VOF to log
         label lMin = -1, lMax = -1;
         scalar aMax = -GREAT, aMin = GREAT;
-        forAll(alpha1,ci)
+        forAll(alpha1.internalField(),ci)
         {
             if ( alpha1[ci] > aMax)
             {
@@ -113,7 +122,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        const scalar V = sum(mesh.V()*alpha1).value();
+        const scalar V = gSum(mesh.V()*alpha1.internalField());
         Info << "t = " << t << ",\t sum(alpha*V) = " << V
              << ",\t dev = " << 100*(1.0-V/V0) << "%"
              << ",\t 1-max(alpha1) = " << 1-aMax << " at cell " << lMax
@@ -134,8 +143,8 @@ int main(int argc, char *argv[])
         scalar newExecutionTime = runTime.elapsedCpuTime();
         Info<< "ExecutionTime = " << newExecutionTime << " s"
             << "  ClockTime = " << runTime.elapsedClockTime() << " s"
+            << "  timeStepTime = " << newExecutionTime - executionTime << " s"
             << nl << endl;
-        Info<< "dT_exec = " << newExecutionTime - executionTime << " s" << endl;
         executionTime = runTime.elapsedCpuTime();
     }
 

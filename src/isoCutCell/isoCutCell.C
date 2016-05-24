@@ -60,90 +60,127 @@ Foam::isoCutCell::isoCutCell
     cellStatus_(-1),
     subCellCentreAndVolumeCalculated_(false),
     isoFaceCentreAndAreaCalculated_(false)
-{}
+{
+    clearStorage();
+}
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 
 void Foam::isoCutCell::calcSubCellCentreAndVolume()
 {
-    // Clear the fields for accumulation
-    subCellCentre_ = vector::zero;
-    subCellVolume_ = 0.0;
-
-    // first estimate the approximate cell centre as the average of
-    // face centres
-
-    vector cEst = isoFaceCentre_;
-
-    forAll(isoCutFaceCentres_, facei)
+    if (cellStatus_ == 0)
     {
-        cEst += isoCutFaceCentres_[facei];
-    }
+        // Clear the fields for accumulation
+        subCellCentre_ = vector::zero;
+        subCellVolume_ = 0.0;
 
-    forAll(fullySubFaces_, facei)
-    {
-        cEst += mesh_.Cf()[fullySubFaces_[facei]];
-    }
+        // first estimate the approximate cell centre as the average of
+        // face centres
 
-    label nCellFaces(1 + isoCutFaceCentres_.size() + fullySubFaces_.size());
-    cEst /= nCellFaces;
+        vector cEst = isoFaceCentre_;
 
-    //Contribution to subcell centre and volume from isoface
-    scalar pyr3Vol =
-        max(mag(isoFaceArea_ & (isoFaceCentre_ - cEst)), VSMALL);
+        forAll(isoCutFaceCentres_, facei)
+        {
+            cEst += isoCutFaceCentres_[facei];
+        }
 
-    // Calculate face-pyramid centre
-    vector pc = (3.0/4.0)*isoFaceCentre_ + (1.0/4.0)*cEst;
+        forAll(fullySubFaces_, facei)
+        {
+            cEst += mesh_.Cf()[fullySubFaces_[facei]];
+        }
 
-    // Accumulate volume-weighted face-pyramid centre
-    subCellCentre_ += pyr3Vol*pc;
+        label nCellFaces(1 + isoCutFaceCentres_.size() + fullySubFaces_.size());
+        cEst /= nCellFaces;
 
-    // Accumulate face-pyramid volume
-    subCellVolume_ += pyr3Vol;
-    
-    //Contribution to subcell centre and volume from cut faces
-    forAll(isoCutFaceCentres_, facei)
-    {
-        // Calculate 3*face-pyramid volume
+        //Contribution to subcell centre and volume from isoface
         scalar pyr3Vol =
-            max(mag(isoCutFaceAreas_[facei] & (isoCutFaceCentres_[facei] - cEst)), VSMALL);
+            max(mag(isoFaceArea_ & (isoFaceCentre_ - cEst)), VSMALL);
 
         // Calculate face-pyramid centre
-        vector pc = (3.0/4.0)*isoCutFaceCentres_[facei] + (1.0/4.0)*cEst;
+        vector pc = (3.0/4.0)*isoFaceCentre_ + (1.0/4.0)*cEst;
 
         // Accumulate volume-weighted face-pyramid centre
         subCellCentre_ += pyr3Vol*pc;
 
         // Accumulate face-pyramid volume
         subCellVolume_ += pyr3Vol;
-    }
+        
+        //Contribution to subcell centre and volume from cut faces
+        forAll(isoCutFaceCentres_, facei)
+        {
+            // Calculate 3*face-pyramid volume
+            scalar pyr3Vol =
+                max(mag(isoCutFaceAreas_[facei] & (isoCutFaceCentres_[facei] - cEst)), VSMALL);
 
-    //Contribution to subcell centre and volume from fully submerged faces
-    forAll(fullySubFaces_, facei)
+            // Calculate face-pyramid centre
+            vector pc = (3.0/4.0)*isoCutFaceCentres_[facei] + (1.0/4.0)*cEst;
+
+            // Accumulate volume-weighted face-pyramid centre
+            subCellCentre_ += pyr3Vol*pc;
+
+            // Accumulate face-pyramid volume
+            subCellVolume_ += pyr3Vol;
+        }
+
+        //Contribution to subcell centre and volume from fully submerged faces
+        forAll(fullySubFaces_, facei)
+        {
+            const point& fCentre = mesh_.Cf()[fullySubFaces_[facei]]; 
+            const vector& fArea = mesh_.Sf()[fullySubFaces_[facei]]; 
+
+            // Calculate 3*face-pyramid volume
+            scalar pyr3Vol =
+                max(mag(fArea & (fCentre - cEst)), VSMALL);
+
+            // Calculate face-pyramid centre
+            vector pc = (3.0/4.0)*fCentre + (1.0/4.0)*cEst;
+
+            // Accumulate volume-weighted face-pyramid centre
+            subCellCentre_ += pyr3Vol*pc;
+
+            // Accumulate face-pyramid volume
+            subCellVolume_ += pyr3Vol;
+        }
+
+        subCellCentre_ /= subCellVolume_;
+        subCellVolume_ *= (1.0/3.0);
+        VOF_ = subCellVolume_/mesh_.V()[cellI_];
+        
+        subCellCentreAndVolumeCalculated_ = true;
+/*        
+        //Testing
+        vector sumSf = isoFaceArea_;
+        scalar sumMagSf = mag(isoFaceArea_);
+        forAll(isoCutFaceCentres_, facei)
+        {
+            sumSf += isoCutFaceAreas_[facei];
+            sumMagSf += mag(isoCutFaceAreas_[facei]);
+        }
+        forAll(fullySubFaces_, facei)
+        {
+            sumSf += mesh_.Sf()[fullySubFaces_[facei]]; 
+            sumMagSf += mag(isoCutFaceAreas_[facei]);
+        }
+        if (mag(sumSf) > 1e-10)
+        {
+            Info << "Warninig: mag(sumSf)/magSumSf = " << mag(sumSf)/sumMagSf << " for surface cell" 
+                << cellI_ << endl;
+        }
+*/
+    }
+    else if (cellStatus_ == 1) //cell fully above isosurface
     {
-        const point& fCentre = mesh_.Cf()[fullySubFaces_[facei]]; 
-        const vector& fArea = mesh_.Sf()[fullySubFaces_[facei]]; 
-
-        // Calculate 3*face-pyramid volume
-        scalar pyr3Vol =
-            max(mag(fArea & (fCentre - cEst)), VSMALL);
-
-        // Calculate face-pyramid centre
-        vector pc = (3.0/4.0)*fCentre + (1.0/4.0)*cEst;
-
-        // Accumulate volume-weighted face-pyramid centre
-        subCellCentre_ += pyr3Vol*pc;
-
-        // Accumulate face-pyramid volume
-        subCellVolume_ += pyr3Vol;
+        subCellCentre_ = vector::zero;
+        subCellVolume_ = 0;
+        VOF_ = 0;       
     }
-
-    subCellCentre_ /= subCellVolume_;
-    subCellVolume_ *= (1.0/3.0);
-    VOF_ = subCellVolume_/mesh_.V()[cellI_];
-    
-    subCellCentreAndVolumeCalculated_ = true;
+    else if (cellStatus_ == -1) //cell fully below isosurface
+    {
+        subCellCentre_ = mesh_.C()[cellI_];
+        subCellVolume_ = mesh_.V()[cellI_];
+        VOF_ = 1;         
+    }
 }
 
 
@@ -218,9 +255,9 @@ void Foam::isoCutCell::calcIsoFaceCentreAndArea()
 
 void Foam::isoCutCell::calcIsoFacePointsFromEdges()
 {
-    Info << "Enter calcIsoFacePointsFromEdges() with usiFaceArea_ = " 
-        << isoFaceArea_ << " and isoFaceCentre_ = " << isoFaceCentre_ 
-        << " and isoFaceEdges_ = " << isoFaceEdges_ << endl;
+//    Info << "Enter calcIsoFacePointsFromEdges() with isoFaceArea_ = " 
+//        << isoFaceArea_ << " and isoFaceCentre_ = " << isoFaceCentre_ 
+//        << " and isoFaceEdges_ = " << isoFaceEdges_ << endl;
     //Defining local coordinates with zhat along isoface normal and xhat from 
     //isoface centre to first point in isoFaceEdges_
     const vector zhat = isoFaceArea_/mag(isoFaceArea_);
@@ -230,7 +267,7 @@ void Foam::isoCutCell::calcIsoFacePointsFromEdges()
     vector yhat = zhat^xhat;
     yhat /= mag(yhat);
 
-    Info << "Calculated local coordinates" << endl;
+//    Info << "Calculated local coordinates" << endl;
     
     //Calculating isoface point angles in local coordinates
     DynamicList<point> unsortedIsoFacePoints(3*isoFaceEdges_.size());
@@ -253,7 +290,7 @@ void Foam::isoCutCell::calcIsoFacePointsFromEdges()
         }
     }
     
-    Info << "Calculated isoFace point angles" << endl;
+//    Info << "Calculated isoFace point angles" << endl;
 
     //Sorting isoface points by angle and inserting into isoFacePoints_
     labelList order(unsortedIsoFacePointAngles.size());
@@ -270,7 +307,7 @@ void Foam::isoCutCell::calcIsoFacePointsFromEdges()
             isoFacePoints_.append(unsortedIsoFacePoints[order[pi]]);
         }
     }
-    Info << "Sorted isoface points by angle" << endl;
+//    Info << "Sorted isoface points by angle" << endl;
 
 }
 
@@ -301,7 +338,7 @@ Foam::label Foam::isoCutCell::calcSubCell
         }
         else if (faceStatus == -1) //face fully below
         {
-        fullySubFaces_.append(faces[fi]);
+            fullySubFaces_.append(faces[fi]);
         }            
     }
     
@@ -313,6 +350,10 @@ Foam::label Foam::isoCutCell::calcSubCell
     else if (fullySubFaces_.size() == 0) //cell fully above isosurface
     {
         cellStatus_ = 1;
+    }
+    else //cell fully below isosurface
+    {
+        cellStatus_ = -1;
     }
     //else all faces are below isosurface and cellStatus_ = -1,
     //which is its default value, so no action required here
@@ -382,19 +423,30 @@ Foam::scalar Foam::isoCutCell::VolumeOfFluid()
     return VOF_;
 }
 
+Foam::scalar Foam::isoCutCell::isoValue()
+{    
+    return isoValue_;
+}
+
 
 void Foam::isoCutCell::clearStorage()
 {
+    cellI_ = -1;
+    isoValue_ = 0;
+    isoCutFace_.clearStorage();
     isoCutFaces_.clear();
     isoCutFacePoints_.clear();
     isoCutFaceCentres_.clear();
     isoCutFaceAreas_.clear();
-    isoFacePoints_.clear();
     isoFaceEdges_.clear();
-    fullySubFaces_.clear();
+    isoFacePoints_.clear();
+    isoFaceCentre_ = vector::zero;
+    isoFaceArea_ = vector::zero;
+    subCellCentre_ = vector::zero;
+    subCellVolume_ = -10;
     VOF_ = -10;
+    fullySubFaces_.clear();
     cellStatus_ = -1;
-    isoCutFace_.clearStorage();
     subCellCentreAndVolumeCalculated_ = false;
     isoFaceCentreAndAreaCalculated_ = false;
 }
@@ -474,7 +526,7 @@ Foam::scalar Foam::isoCutCell::vofCutCell
 }
 
 
-Foam::scalar Foam::isoCutCell::vofCutCell2
+Foam::label Foam::isoCutCell::vofCutCell2
 (
     const label cellI,
     const scalar alpha1,
@@ -501,11 +553,11 @@ Foam::scalar Foam::isoCutCell::vofCutCell2
     //Handling special case where method is handed an almost full or empty cell
     if (alpha1 < tol)
     {
-        return f2;
+        return calcSubCell(cellI,f2);
     }
     else if (1-alpha1 < tol)
     {
-        return f1;
+        return calcSubCell(cellI,f1);
     }
     
     //Finding the two vertices inbetween which the isovalue giving alpha1 lies
@@ -534,12 +586,13 @@ Foam::scalar Foam::isoCutCell::vofCutCell2
     if (f1 == f2)
     {
         Info << "Warning: f1 = f2." << endl;
-        return f1;
+        return calcSubCell(cellI,f1);
     }
     
     if (mag(a1-a2) < tol)
     {
-        return 0.5*(f1+f2);
+        Info << "Warning: mag(a1-a2) < tol for cell " << cellI << endl;
+        return calcSubCell(cellI,0.5*(f1 + f2));
     }
     //Now we know that a(f) = alpha1 is to be found on the f interval
     //[f1, f2], i.e. alpha1 will be in the interval [a2,a1]
@@ -550,19 +603,20 @@ Foam::scalar Foam::isoCutCell::vofCutCell2
     //Finding coefficients in 3 deg polynomial alpha(f) from 4 solutions
     
     //Finding 2 additional points on 3 deg polynomial
-    f3 = f1 + 0.33333333333333333333333*(f2-f1); 
+    f3 = f1 + 0.333333333333333333333333333*(f2-f1); 
     calcSubCell(cellI,f3);
     a3 = VolumeOfFluid();
 
-    scalar f4 = f1 + 0.66666666666666666666667*(f2-f1); 
+    scalar f4 = f1 + 0.666666666666666666666666667*(f2-f1); 
     calcSubCell(cellI,f4);
     scalar a4 = VolumeOfFluid();
     
     //Building and solving Vandermonde matrix equation
-    scalarField a(4), f(4), C(4);
+    scalarField a(4), f(4), C(4), fOld(4);
     {
 //        f[0] = f1, f[1] = f3, f[2] = f4, f[3] = f2;
         a[0] = a1, a[1] = a3, a[2] = a4, a[3] = a2;
+        fOld[0] = f1, fOld[1] = f3, fOld[2] = f4, fOld[3] = f2;
         f[0] = 0, f[1] = (f3-f1)/(f2-f1), f[2] = (f4-f1)/(f2-f1), f[3] = 1;
 //        a[0] = 1, a[1] = (a3-a1)/(a1-a2), a[2] = (a4-a1)/(a1-a2), a[3] =1;
         scalarSquareMatrix M(4);
@@ -582,7 +636,75 @@ Foam::scalar Foam::isoCutCell::vofCutCell2
 //        Info << "M = " << M << endl;
         if (a[0] < a[1] || a[1] < a[2] || a[2] < a[3])
         {
-            Info << "Warninig: a is not monotonic" << endl;
+//            Info << "---------------Cell " << cellI << " with alpha1 = " << alpha1 << endl;
+            Info << "Warninig: a is not monotonic: a = " << a << ", f = " << fOld << endl;
+/*            
+            calcSubCell(cellI,f1);
+            a1 = VolumeOfFluid();
+            Info << "isoFacePoints for f1 = " << f1 << " and a1 = " << a1 << ": " << endl;
+            DynamicList<point> pf = isoFacePoints();
+            Info << "p = [" << endl;
+            forAll(pf, pi)
+            {
+                Info << "[" << pf[pi][0] << " " << pf[pi][1] << " " << pf[pi][2] << "];" << endl;
+            }
+            Info << "];" << endl;
+            Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
+
+            calcSubCell(cellI,f3);
+            a3 = VolumeOfFluid();
+            Info << "isoFacePoints for f3 = " << f3 << " and a3 = " << a3 << ": " << endl;
+            pf = isoFacePoints();
+            Info << "p = [" << endl;
+            forAll(pf, pi)
+            {
+                Info << "[" << pf[pi][0] << " " << pf[pi][1] << " " << pf[pi][2] << "];" << endl;
+            }
+            Info << "];" << endl;
+            Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
+            
+            calcSubCell(cellI,f4);
+            a4 = VolumeOfFluid();
+            Info << "isoFacePoints for f4 = " << f4 << " and a4 = " << a4 << ": " << endl;
+            pf = isoFacePoints();
+            Info << "p = [" << endl;
+            forAll(pf, pi)
+            {
+                Info << "[" << pf[pi][0] << " " << pf[pi][1] << " " << pf[pi][2] << "];" << endl;
+            }
+            Info << "];" << endl;
+            Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
+
+            calcSubCell(cellI,f2);
+            a2 = VolumeOfFluid();
+            Info << "isoFacePoints for f2 = " << f2 << " and a2 = " << a2 << ": " << endl;
+            pf = isoFacePoints();
+            Info << "p = [" << endl;
+            forAll(pf, pi)
+            {
+                Info << "[" << pf[pi][0] << " " << pf[pi][1] << " " << pf[pi][2] << "];" << endl;
+            }
+            Info << "];" << endl;
+            Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
+            
+            Info << "Cell points: " << endl;
+            const labelList& pl = mesh_.cellPoints(cellI);
+            const pointField& points = mesh_.points();
+            Info << "cp = [" << endl;
+            forAll(pl, pi)
+            {
+                Info << "[" << points[pl[pi]][0] << " " << points[pl[pi]][1] << " " << points[pl[pi]][2] << "];" << endl;
+            }
+            Info << "];" << endl;
+            Info << "f = [" << endl;
+            forAll(pl, pi)
+            {
+                Info << f_[pl[pi]] << endl;
+            }
+            Info << "];" << endl;
+
+            Info << "---------------END-------------" << endl;
+        */
         }
     }
     
@@ -630,7 +752,7 @@ Foam::scalar Foam::isoCutCell::vofCutCell2
     else
     {
 //        Info << "Newton did the job" << endl;
-        return f3;
+        return cellStatus_;
     }
 
     //If tolerance not met use the secant method  with f3 as a hopefully very 
@@ -662,13 +784,13 @@ Foam::scalar Foam::isoCutCell::vofCutCell2
         x1 = x0; g1 = g0;
         nIter++;
     }
+/*
     if (nIter > 0)
     {
         f3 = x0;
         a3 = g0 + alpha1;
-
     }    
-/*    
+    
     if (res < tol)
     {
         Info << "Bisection finished the job in " << nIter << " iterations." << endl;
@@ -680,8 +802,10 @@ Foam::scalar Foam::isoCutCell::vofCutCell2
             << a3 << " so alpha1 - a3 = " << alpha1 - a3 << endl;
     }    
 */        
-    return f3;
+    return cellStatus_;
 }
+
+
 
 
 // ************************************************************************* //

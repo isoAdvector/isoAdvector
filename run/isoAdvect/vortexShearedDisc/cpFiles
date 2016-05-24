@@ -1,10 +1,15 @@
 #!/bin/bash
 
 meshes=(hex tri poly)
-resolutions=(100 200 400)
+#resolutions=(100 200 400)
+resolutions=(200)
 times=(4 8)
 
-solver=isoAdvector
+#solver=isoAdvector
+solver=MULES
+
+#Co=0.5
+Co=0.1
 
 for nm in ${!meshes[*]}
 do
@@ -17,9 +22,9 @@ do
         for nt in ${!times[*]}
         do
 	    time=${times[$nt]}
-            echo $solver/$mesh/N${res}Co0.5/0/alpha$time
-	    cp $solver/$mesh/N${res}Co0.5/$time/alpha1 $solver/$mesh/N${res}Co0.5/0/alpha$time
-	    sed -i "s/alpha1/alpha${time}/" $solver/$mesh/N${res}Co0.5/0/alpha$time
+            echo $solver/$mesh/N${res}Co${Co}/0/alpha$time
+	    cp $solver/$mesh/N${res}Co${Co}/$time/alpha1 $solver/$mesh/N${res}Co${Co}/0/alpha$time
+	    sed -i "s/alpha1/alpha${time}/" $solver/$mesh/N${res}Co${Co}/0/alpha$time
         done
     done
 done

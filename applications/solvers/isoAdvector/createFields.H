@@ -44,11 +44,11 @@
     );	
 
 	//Initial Volume of Fluid (VOF)
-    scalar V0 = sum(mesh.V()*alpha1).value();   
+    scalar V0 = gSum(mesh.V()*alpha1.internalField());   
 
     Info << "sum(alpha*V) = " << V0
-     << ", max(alpha1)-1 = " << max(alpha1).value()-1.0
-     << "\t min(alpha1) = " << min(alpha1).value() << endl;
+     << ", 1-max(alpha1) = " << 1 - gMax(alpha1.internalField())
+     << "\t min(alpha1) = " << gMin(alpha1.internalField()) << endl;
 
     const dictionary& isoAdvectorDict = mesh.solutionDict().subDict("isoAdvector");
     const scalar clipAlphaTol = isoAdvectorDict.lookupOrDefault<scalar>("clipAlphaTol", 1e-12);
@@ -60,3 +60,43 @@
 	surfaceScalarField phi0 = phi;
 	volVectorField U0 = U;
 	scalar PI = Foam::constant::mathematical::pi;
+    
+    //Optional writing out of surface cell set and bounded cell sets
+    IOobject::writeOption writeOpt = IOobject::NO_WRITE;
+    const bool printSurfCells 
+        = isoAdvectorDict.lookupOrDefault<bool>("printSurfCells", false);
+    if (printSurfCells)
+    {
+        writeOpt = IOobject::AUTO_WRITE;
+    }
+    
+    cellSet surfCells
+    (
+        IOobject
+        (
+            "surfCells", 
+            runTime.timeName(),
+            runTime,  
+            IOobject::NO_READ, 
+            writeOpt
+        )
+    );
+
+    writeOpt = IOobject::NO_WRITE;
+    const bool printBoundCells 
+        = isoAdvectorDict.lookupOrDefault<bool>("printBoundCells", false);    
+    if (printBoundCells)
+    {
+        writeOpt = IOobject::AUTO_WRITE;
+    }
+    cellSet boundCells
+    (
+        IOobject
+        (
+            "boundCells", 
+            runTime.timeName(),
+            runTime,  
+            IOobject::NO_READ, 
+            writeOpt
+        )
+    );
