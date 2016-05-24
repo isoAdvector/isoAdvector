@@ -56,8 +56,6 @@ isoAdvector
     clipAlphaTol 1e-12;
     nAlphaBounds 3;
     snapAlpha   true;
-    writeToLog  true;
-    period 6;
 }
 
 

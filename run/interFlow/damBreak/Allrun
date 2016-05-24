@@ -6,6 +6,7 @@ cp -r 0.org 0
 
 mkdir logs
 
-isoSurf > logs/isoSurf.log 2>&1
+blockMesh > logs/blockMesh.log 2>&1
+setFields > logs/setFields.log 2>&1
 
 $application > logs/${application}.log 2>&1
