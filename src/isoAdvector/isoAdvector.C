@@ -549,26 +549,26 @@ void Foam::isoAdvector::quadAreaCoeffs
         {
             B = pf0[1];
         }
-        else if ( np0 == 1 )
-        {
-            B = A + 1e-4*(pf1[1]-pf1[0]);
-        }
         else
         {
-            Info << "Warning: Vertex face was cut at pf0 = " << pf0 << endl;
+            B = A + 1e-4*(pf1[1]-pf1[0]);
+            if ( np0  != 1 )
+            {
+                Info << "Warning: Vertex face was cut at pf0 = " << pf0 << endl;
+            }
         }
 
         if (np1 == 2 && mag(pf1[0]-pf1[1]) > SMALL)
         {
             D = pf1[1];
         }
-        else if ( np1 == 1 )
-        {
-            D = C + 1e-4*(A-B);
-        }
         else
         {
-            Info << "Warning: Vertex face was cut at pf1 = " << pf1 << endl;
+            D = C + 1e-4*(A-B);
+            if ( np1 != 1)
+            {
+                Info << "Warning: Vertex face was cut at pf1 = " << pf1 << endl;
+            }
         }
         
         //Defining local coordinates for area integral calculation

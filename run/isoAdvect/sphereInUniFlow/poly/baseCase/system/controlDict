@@ -27,9 +27,9 @@ stopAt          endTime;
 
 endTime         $T;
 
-writeControl    timeStep;
+writeControl    adjustableRunTime;
 
-writeInterval   1;
+writeInterval   .2;
 
 deltaT          $dt;
 
@@ -37,13 +37,13 @@ purgeWrite      0;
 
 writeFormat     ascii;
 
-writePrecision  6;
+writePrecision  14;
 
 writeCompression uncompressed;
 
 timeFormat      general;
 
-timePrecision   6;
+timePrecision   14;
 
 graphFormat     raw;
 
@@ -51,10 +51,10 @@ runTimeModifiable no;
 
 adjustTimeStep  no;
 
-maxCo           0.2;
-maxAlphaCo      0.2;
+maxCo           1e6;
+maxAlphaCo      0.5;
 
-maxDeltaT       0.2;
+maxDeltaT       0.5;
 
 
 // ************************************************************************* //

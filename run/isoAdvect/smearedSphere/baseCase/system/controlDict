@@ -29,7 +29,7 @@ endTime         3.0;
 
 writeControl    adjustableRunTime;
 
-writeInterval   0.2;
+writeInterval   0.1;
 
 deltaT          0.0005;
 
@@ -47,7 +47,7 @@ timePrecision   14;
 
 graphFormat     raw;
 
-runTimeModifiable no;
+runTimeModifiable yes;
 
 adjustTimeStep  yes;
 

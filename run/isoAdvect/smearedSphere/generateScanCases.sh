@@ -3,7 +3,7 @@
 appList=(isoAdvector)
 schemeList=(isoAdvector)
 meshList=(hex)
-CoList=(0.5)
+CoList=(0.2)
 
 #Location of tri meshes
 triMeshDir=../triMeshes

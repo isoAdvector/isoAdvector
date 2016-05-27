@@ -1,15 +1,15 @@
 #!/bin/bash
 
 meshType=tet
-dxList=(0025)
-dtList=(0.0025)
+dxList=(01)
+dtList=(0.01)
 CoList=(05)
 
 export T=4
 export Ux=0
 export Uy=0
 export Uz=1
-export solver=isoAdvect #Change to interFoam to run with MULES
+export solver=isoAdvector
 
 for n in ${!dxList[*]} 
 do
