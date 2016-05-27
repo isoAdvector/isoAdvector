@@ -1,4 +1,4 @@
-/*--------------------------------*- C++ -*----------------------------------*\
+	/*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
 |  \\    /   O peration     | Version:  2.0.1                                 |
@@ -29,7 +29,7 @@ endTime         1;
 
 writeControl    adjustableRunTime;
 
-writeInterval   .1;
+writeInterval   .02;
 
 deltaT          1e-3;
 
@@ -52,7 +52,7 @@ runTimeModifiable no;
 adjustTimeStep  yes;
 
 maxCo           1e6;
-maxAlphaCo      .9;
+maxAlphaCo      .75;
 
 maxDeltaT       .5;
 

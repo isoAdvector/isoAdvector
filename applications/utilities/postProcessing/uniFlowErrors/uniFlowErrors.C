@@ -182,11 +182,29 @@ int main(int argc, char *argv[])
 			Info << "Aborting..." << endl;
 		}
 
-		//Define function on mesh points and isovalue
-		
-		//Calculating alpha1 volScalarField from f = f0 isosurface
-		Foam::isoCutter cutter(mesh,f);
-		cutter.subCellFractions(f0,alpha1Exact);
+        if (mag(U0*runTime.time().value()) < 1e-10)
+        {
+            volScalarField dummy 
+            (
+                IOobject
+                (
+                    "alpha1",
+                    "0",
+                    mesh,
+                    IOobject::MUST_READ,
+                    IOobject::NO_WRITE
+                ),
+                mesh
+            );
+            alpha1Exact = dummy;            
+        }
+        else
+        {
+            //Calculating alpha1 volScalarField from f = f0 isosurface
+            Foam::isoCutter cutter(mesh,f);
+            cutter.subCellFractions(f0,alpha1Exact);
+        }
+
 		scalar E1 = sum(mag(alpha1Exact-alpha1)*mesh.V());
 		vector cmExact = (sum(alpha1Exact*mesh.V()*mesh.C())/sum(mesh.V())).value();
 		vector cm = (sum(alpha1*mesh.V()*mesh.C())/sum(mesh.V())).value();
