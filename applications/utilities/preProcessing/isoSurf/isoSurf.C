@@ -110,47 +110,17 @@ int main(int argc, char *argv[])
     //Define function on mesh points and isovalue
 	
 	//Calculating alpha1 volScalarField from f = f0 isosurface
-
-    //Setting internal alpha1 values
     isoCutCell icc(mesh,f);
-    scalarField& alphaIn = alpha1.internalField();
-        
-    forAll(mesh.cells(),ci)
-    {
-        const label cellStatus = icc.calcSubCell(ci,f0);
-        if (cellStatus != 1) //I.e. if cell not entirely above isosurface
-        {
-            alphaIn[ci] = icc.VolumeOfFluid();
-        }
-    }
-    
-    //Setting boundary alpha1 values
-    isoCutFace icf(mesh, f);
-    forAll(mesh.boundary(), patchI)
-    {
-        if (mesh.boundary()[patchI].size() > 0)
-        {
-            fvPatchScalarField& alphaBP = alpha1.boundaryField()[patchI];
-
-            forAll(alphaBP, faceI)
-            {
-                const label fLabel = faceI + mesh.boundary()[patchI].start();
-                const label faceStatus = icf.calcSubFace(fLabel, f0);
-                if (faceStatus != 1) //I.e. if face not entirely above isosurface
-                {
-                    alphaBP[faceI] = mag(icf.subFaceArea());
-                }
-            }
-        }
-    }
+    icc.VolumeOfFluid(alpha1, f0);
 	
 	ISstream::defaultPrecision(18);
 	
     alpha1.write(); //Writing volScalarField alpha1
 
-	Info << "sum(alpha*V) = " << gSum(mesh.V()*alphaIn)
-	 << ", 1-max(alpha1) = " << 1 - gMax(alphaIn)
-	 << "\t min(alpha1) = " << gMin(alphaIn) << endl;
+    const scalarField& alpha = alpha1.internalField();
+	Info << "sum(alpha*V) = " << gSum(mesh.V()*alpha)
+	 << ", 1-max(alpha1) = " << 1 - gMax(alpha)
+	 << "\t min(alpha1) = " << gMin(alpha) << endl;
 	
     Info<< "End\n" << endl;
 

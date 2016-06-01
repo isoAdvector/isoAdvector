@@ -189,6 +189,12 @@ public:
             const scalar tol,
             const label maxIter
         );
+        
+        void VolumeOfFluid
+        (
+            volScalarField& alpha1,
+            const scalar f0
+        );
 };
 
 

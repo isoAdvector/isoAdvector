@@ -64,7 +64,6 @@ isoAdvector
     clipAlphaTol 0;
     nAlphaBounds 3;
     snapAlpha	false;
-    writeToLog	true;
 }
 
 PIMPLE

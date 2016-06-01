@@ -1,7 +1,5 @@
 isoCutCell/isoCutCell.C
 isoCutFace/isoCutFace.C
-isoCutter/isoCutter.C 
-isoAdvection/isoAdvection.C
 isoAdvector/isoAdvector.C
 
 LIB = $(FOAM_USER_LIBBIN)/libisoAdvection

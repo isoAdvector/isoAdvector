@@ -1,8 +1,8 @@
 #!/bin/bash
 
 meshType=tet
-dxList=(01)
-dtList=(0.01)
+dxList=(0025)
+dtList=(0.0025)
 CoList=(05)
 
 export T=4

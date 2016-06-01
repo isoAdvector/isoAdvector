@@ -17,7 +17,7 @@ FoamFile
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     isoAdvect;
+application     isoAdvector;
 
 startFrom       latestTime;
 

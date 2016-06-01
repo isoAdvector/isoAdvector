@@ -37,6 +37,7 @@ Author
 #include "timeSelector.H"
 #include "fvCFD.H"
 #include "isoCutter.H"
+#include "isoCutCell.H"
 #include "volPointInterpolation.H"
 using namespace std;
 #include <iomanip>
@@ -127,25 +128,12 @@ int main(int argc, char *argv[])
     scalar f0 = 0.0;
 	scalarField f(x.size());
 
-	volPointInterpolation vpi(mesh);
-	volScalarField alpha101 = alpha1; //Convenience copy: values are overwritten in next line
-	volScalarField alpha199 = alpha1; //Convenience copy: values are overwritten in next line
-	volScalarField alpha1Exact01 = alpha1; //Convenience copy: values are overwritten in next line
-	volScalarField alpha1Exact99 = alpha1; //Convenience copy: values are overwritten in next line
-
 	//Time loop
     instantList timeDirs = timeSelector::select0(runTime, args);
 
     forAll(timeDirs, timeI)
     {
         runTime.setTime(timeDirs[timeI], timeI);
-//        #include "readTimeControls.H"
-	
-//		Info << "Before runTime++: runTime.timeName() = " << runTime.timeName() << endl;
-//		Info << "Before runTime++: runTime.time().value() = " << runTime.time().value() << endl;
-//        runTime++;
-//		Info << "After runTime++: runTime.timeName() = " << runTime.timeName() << endl;
-//		Info << "After runTime++: runTime.time().value() = " << runTime.time().value() << endl;
 
 		volScalarField alpha1
 		(
@@ -201,34 +189,42 @@ int main(int argc, char *argv[])
         else
         {
             //Calculating alpha1 volScalarField from f = f0 isosurface
-            Foam::isoCutter cutter(mesh,f);
-            cutter.subCellFractions(f0,alpha1Exact);
+            isoCutCell icc(mesh, f);
+            icc.VolumeOfFluid(alpha1Exact, f0);
         }
 
 		scalar E1 = sum(mag(alpha1Exact-alpha1)*mesh.V());
 		vector cmExact = (sum(alpha1Exact*mesh.V()*mesh.C())/sum(mesh.V())).value();
 		vector cm = (sum(alpha1*mesh.V()*mesh.C())/sum(mesh.V())).value();
 		
+        isoCutCell icc(mesh, f);
+        icc.VolumeOfFluid(alpha1Exact, f0);
+        
+        volPointInterpolation vpi(mesh);
 		scalarField ap = vpi.interpolate(alpha1);
-		Foam::isoCutter cutter2(mesh,ap);
+        isoCutCell icc2(mesh, ap);
 		
 		//Volume if alpha = 0.1 isosurface for calculated solution
-		cutter2.subCellFractions(.01,alpha101);	
+        volScalarField alpha101 = alpha1;
+		icc2.VolumeOfFluid(alpha101, .01);	
 		scalar V01 = sum(mesh.V()*alpha101).value();
 
 		//Volume if alpha = .99 isosurface for calculated solution		
-		cutter2.subCellFractions(.99,alpha199);	
+        volScalarField alpha199 = alpha1;
+		icc2.VolumeOfFluid(alpha199, .99);	
 		scalar V99 = sum(mesh.V()*alpha199).value();
 
 		scalarField apExact = vpi.interpolate(alpha1Exact);
-		Foam::isoCutter cutter3(mesh,apExact);
+        isoCutCell icc3(mesh, apExact);
 		
 		//Volume if alpha = 0.1 isosurface for exact solution
-		cutter3.subCellFractions(.01,alpha1Exact01);	
+        volScalarField alpha1Exact01 = alpha1;
+		icc3.VolumeOfFluid(alpha1Exact01, .01);	
 		scalar V01Exact = sum(mesh.V()*alpha1Exact01).value();
 
 		//Volume if alpha = .99 isosurface for exact solution		
-		cutter3.subCellFractions(.99,alpha1Exact99);	
+        volScalarField alpha1Exact99 = alpha1; //Convenience copy: values are overwritten in next line
+		icc3.VolumeOfFluid(alpha1Exact99, .99);	
 		scalar V99Exact = sum(mesh.V()*alpha1Exact99).value();
 		
 //		scalar PI = Foam::constant::mathematical::pi;
@@ -238,49 +234,29 @@ int main(int argc, char *argv[])
 		scalar dV = V01 - V99;
 
 		Info << "Time: " << runTime.time().value() << endl;
-		int w = 12;	
-		int w2 = 10;
-/*		
-		cout << setw(w) << "E1" 
-			 << setw(w) << "E1/V0" 
-			 << setw(w) << "dVrel" 
-			 << setw(w) << "aMin" 
-			 << setw(w) << "1-aMax" 
-			 << setw(w) << "dWrel" 
-			 << setw(w) << "dW" 
-			 << setw(w) << "dWEx"
-			 << setw(w) << "dCM" << endl;
-
-		cout << setprecision(3) << setw(w) << E1 << " "
-		     << setprecision(3) << setw(w2) << E1/V0 << " "
-		     << setprecision(3) << setw(w2) << (sum(mesh.V()*alpha1).value()-V0)/V0 << " "
-		     << setprecision(3) << setw(w2) << min(alpha1).value() << " "
-			 << setprecision(3) << setw(w2) << 1-max(alpha1).value() << " "
-			 << setprecision(3) << setw(w2) << (dV-dVExact)/dVExact << " "
-			 << setprecision(3) << setw(w2) << dV << " "
-			 << setprecision(3) << setw(w2) << dVExact << " "
-		     << setprecision(3) << setw(w2) << mag(cm-cmExact) << endl;
-*/
 		 
-		cout << "E1 "
-			 << "E1/V0 " 
-			 << "dVrel " 
-			 << "aMin " 
-			 << "1-aMax " 
-			 << "dW " 
-			 << "dWEx "
-			 << "dWrel " 
-			 << "dCM" << endl;
+        int w = 9;	
+//		cout << "E1 "
+		cout << setw(w) << "E1/V0     " 
+			 << setw(w) << "dVrel     " 
+			 << setw(w) << "aMin      " 
+			 << setw(w) << "1-aMax    " 
+			 << setw(w) << "dWrel     " 
+//			 << "dW " 
+//			 << "dWEx "
+//			 << "dCM" 
+            << endl;
 
-		cout << setprecision(2) << E1 << " "
-			 << setprecision(2) << E1/V0 << " "
-		     << setprecision(2) << (sum(mesh.V()*alpha1).value()-V0)/V0 << " "
-		     << setprecision(2) << min(alpha1).value() << " "
-			 << setprecision(2) << 1-max(alpha1).value() << " "
-			 << setprecision(2) << dV << " "
-			 << setprecision(2) << dVExact << " "
-			 << setprecision(2) << (dV-dVExact)/(dVExact+SMALL) << " "
-		     << setprecision(2) << mag(cm-cmExact) << endl;
+//		cout << setprecision(2) << E1 << " "
+		cout << setw(w) << setprecision(2) << E1/V0 << " "
+		     << setw(w) << setprecision(2) << (sum(mesh.V()*alpha1).value()-V0)/V0 << " "
+		     << setw(w) << setprecision(2) << min(alpha1).value() << " "
+			 << setw(w) << setprecision(2) << 1-max(alpha1).value() << " "
+			 << setw(w) << setprecision(2) << (dV-dVExact)/(dVExact+SMALL) << " "
+//			 << setprecision(2) << dV << " "
+//			 << setprecision(2) << dVExact << " "
+//		     << setprecision(2) << mag(cm-cmExact) 
+             << endl;
 			 
 //			<< ",\td_Ex/d0 = " << deltaExact/delta0 << endl;
 //			<< ",\t(V01-Ex)/Ex = " << (V01-V01Exact)/V01Exact

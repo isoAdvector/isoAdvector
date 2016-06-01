@@ -3,6 +3,11 @@ cd ${0%/*} || exit 1    # run from this directory
 
 set -x 
 
-wmake all solvers
+wmake solvers/interFlower
+wmake solvers/isoAdvector
+wmake solvers/mulesFoam
+wmake solvers/passiveAdvectionFoam
+
+wmake all test
 wmake all utilities/preProcessing
 wmake all utilities/postProcessing

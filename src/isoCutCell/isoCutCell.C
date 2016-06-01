@@ -805,6 +805,45 @@ Foam::label Foam::isoCutCell::vofCutCell2
     return cellStatus_;
 }
 
+void Foam::isoCutCell::VolumeOfFluid
+(
+    volScalarField& alpha1,
+    const scalar f0
+)
+{
+    alpha1 = 0;
+    
+    //Setting internal field
+    scalarField& alphaIn = alpha1.internalField();        
+    forAll(alphaIn, ci)
+    {
+        const label cellStatus = calcSubCell(ci,f0);
+        if (cellStatus != 1) //I.e. if cell not entirely above isosurface
+        {
+            alphaIn[ci] = VolumeOfFluid();
+        }
+    }
+    
+    //Setting boundary alpha1 values
+    forAll(mesh_.boundary(), patchI)
+    {
+        if (mesh_.boundary()[patchI].size() > 0)
+        {
+            fvPatchScalarField& alphaBP = alpha1.boundaryField()[patchI];
+
+            forAll(alphaBP, faceI)
+            {
+                const label fLabel = faceI + mesh_.boundary()[patchI].start();
+                const label faceStatus = isoCutFace_.calcSubFace(fLabel, f0);
+                if (faceStatus != 1) //I.e. if face not entirely above isosurface
+                {
+                    alphaBP[faceI] = mag(isoCutFace_.subFaceArea());
+                }
+            }
+        }
+    }
+
+}
 
 
 
