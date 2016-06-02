@@ -1,6 +1,7 @@
 #!/bin/bash
 
-schemeList=(isoAdvector HRIC CICSAM MULES)
+#schemeList=(isoAdvector HRIC CICSAM MULES)
+schemeList=(isoAdvector)
 meshList=(hex tri poly)
 
 for nn in ${!schemeList[*]}

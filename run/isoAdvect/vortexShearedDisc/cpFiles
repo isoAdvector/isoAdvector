@@ -1,15 +1,15 @@
 #!/bin/bash
 
 meshes=(hex tri poly)
-#resolutions=(100 200 400)
-resolutions=(200)
+resolutions=(100 200 400)
+#resolutions=(200)
 times=(4 8)
 
-#solver=isoAdvector
-solver=MULES
+solver=isoAdvector
+#solver=MULES
 
-#Co=0.5
-Co=0.1
+Co=0.5
+#Co=0.1
 
 for nm in ${!meshes[*]}
 do

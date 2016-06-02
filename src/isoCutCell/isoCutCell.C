@@ -810,9 +810,7 @@ void Foam::isoCutCell::VolumeOfFluid
     volScalarField& alpha1,
     const scalar f0
 )
-{
-    alpha1 = 0;
-    
+{    
     //Setting internal field
     scalarField& alphaIn = alpha1.internalField();        
     forAll(alphaIn, ci)
