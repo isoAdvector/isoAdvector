@@ -159,7 +159,19 @@ void Foam::isoAdvector::timeIntegratedFlux
                 {
                     Info << "Warning: mag(n0) = " << mag(n0) 
                         << " < 1e-6*minMagSf_ for cell " << cellI << endl;
-                    scalar fInside = f0 + sign(alpha1In_[cellI]-0.5)*1e-6;
+                    scalar fMin(GREAT), fMax(-GREAT);
+                    const labelList& cellPts = mesh_.cellPoints()[cellI];
+                    subSetExtrema(ap_, cellPts, fMin, fMax);
+                    scalar fInside  = 0;
+                    if (alpha1In_[cellI] >= 0.5)
+                    {
+                        fInside =  fMin + 1e-3*(fMax-fMin);
+                    }
+                    else 
+                    {
+                        fInside =  fMax - 1e-3*(fMax-fMin);                        
+                    }
+//                    scalar fInside = f0 + sign(alpha1In_[cellI]-0.5)*1e-3;
                     isoCutCell_.calcSubCell(cellI,fInside);
                     n0 = isoCutCell_.isoFaceArea();
                 }    

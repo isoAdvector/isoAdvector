@@ -49,7 +49,7 @@ graphFormat     raw;
 
 runTimeModifiable yes;
 
-adjustTimeStep  yes;
+adjustTimeStep  no;
 
 maxCo           1e6;
 maxAlphaCo      0.5;

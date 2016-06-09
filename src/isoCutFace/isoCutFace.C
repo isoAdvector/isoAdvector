@@ -180,14 +180,15 @@ void Foam::isoCutFace::calcSubFace
                 )   << "More than two face cuts for face " << faceI_
                     << abort(FatalError);
 
-                Info << "More than two face cuts for face " << faceI_ << endl;
+                Info << "Warning: More than two face cuts for face " << faceI_ << endl;
                 const labelList& fl = mesh_.faces()[faceI_];
                 Info << "Face values: f-isoValue = " << endl;
                 forAll(fl, fi)
                 {
-                    Info << f_[fl[fi]]-isoValue_ << endl;
+                    Info << f_[fl[fi]]-isoValue_ << " ";
                 }
-*/                
+                Info << " " << endl;
+*/
             }
         }
         pl1 = pl2;
@@ -210,7 +211,7 @@ void Foam::isoCutFace::calcSubFace
             << " with isoValue_: " << isoValue_ << endl;
 */
     }
-    else if (f1 < isoValue_ ) //firstFullySubmergedPoint_ mans no cuttings
+    else if (f1 < isoValue_ ) //firstFullySubmergedPoint_ = -1 means no cuttings
     {
         faceStatus_ = 1; //face entirely above isosurface
     }

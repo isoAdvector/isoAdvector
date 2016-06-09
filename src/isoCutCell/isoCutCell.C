@@ -583,9 +583,9 @@ Foam::label Foam::isoCutCell::vofCutCell2
         }        
     }
     
-    if (f1 == f2)
+    if (mag(f1 - f2) < 10*SMALL)
     {
-        Info << "Warning: f1 = f2." << endl;
+        Info << "Warning: mag(f1 - f2) < 10*SMALL." << endl;
         return calcSubCell(cellI,f1);
     }
     
@@ -636,61 +636,63 @@ Foam::label Foam::isoCutCell::vofCutCell2
 //        Info << "M = " << M << endl;
         if (a[0] < a[1] || a[1] < a[2] || a[2] < a[3])
         {
+
+/*
 //            Info << "---------------Cell " << cellI << " with alpha1 = " << alpha1 << endl;
             Info << "Warninig: a is not monotonic: a = " << a << ", f = " << fOld << endl;
-/*            
+            
             calcSubCell(cellI,f1);
             a1 = VolumeOfFluid();
-            Info << "isoFacePoints for f1 = " << f1 << " and a1 = " << a1 << ": " << endl;
+            Info << "%isoFacePoints for f1 = " << f1 << " and a1 = " << a1 << ": " << endl;
             DynamicList<point> pf = isoFacePoints();
-            Info << "p = [" << endl;
+            Info << "p{1} = [" << endl;
             forAll(pf, pi)
             {
                 Info << "[" << pf[pi][0] << " " << pf[pi][1] << " " << pf[pi][2] << "];" << endl;
             }
             Info << "];" << endl;
-            Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
+//            Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
 
             calcSubCell(cellI,f3);
             a3 = VolumeOfFluid();
-            Info << "isoFacePoints for f3 = " << f3 << " and a3 = " << a3 << ": " << endl;
+            Info << "%isoFacePoints for f3 = " << f3 << " and a3 = " << a3 << ": " << endl;
             pf = isoFacePoints();
-            Info << "p = [" << endl;
+            Info << "p{2} = [" << endl;
             forAll(pf, pi)
             {
                 Info << "[" << pf[pi][0] << " " << pf[pi][1] << " " << pf[pi][2] << "];" << endl;
             }
             Info << "];" << endl;
-            Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
+  //          Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
             
             calcSubCell(cellI,f4);
             a4 = VolumeOfFluid();
-            Info << "isoFacePoints for f4 = " << f4 << " and a4 = " << a4 << ": " << endl;
+            Info << "%isoFacePoints for f4 = " << f4 << " and a4 = " << a4 << ": " << endl;
             pf = isoFacePoints();
-            Info << "p = [" << endl;
+            Info << "p{3} = [" << endl;
             forAll(pf, pi)
             {
                 Info << "[" << pf[pi][0] << " " << pf[pi][1] << " " << pf[pi][2] << "];" << endl;
             }
             Info << "];" << endl;
-            Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
+//            Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
 
             calcSubCell(cellI,f2);
             a2 = VolumeOfFluid();
-            Info << "isoFacePoints for f2 = " << f2 << " and a2 = " << a2 << ": " << endl;
+            Info << "%isoFacePoints for f2 = " << f2 << " and a2 = " << a2 << ": " << endl;
             pf = isoFacePoints();
-            Info << "p = [" << endl;
+            Info << "p{4} = [" << endl;
             forAll(pf, pi)
             {
                 Info << "[" << pf[pi][0] << " " << pf[pi][1] << " " << pf[pi][2] << "];" << endl;
             }
             Info << "];" << endl;
-            Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
+//            Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
             
-            Info << "Cell points: " << endl;
+//            Info << "Cell points: " << endl;
             const labelList& pl = mesh_.cellPoints(cellI);
             const pointField& points = mesh_.points();
-            Info << "cp = [" << endl;
+            Info << "p{5} = [" << endl;
             forAll(pl, pi)
             {
                 Info << "[" << points[pl[pi]][0] << " " << points[pl[pi]][1] << " " << points[pl[pi]][2] << "];" << endl;
@@ -704,7 +706,7 @@ Foam::label Foam::isoCutCell::vofCutCell2
             Info << "];" << endl;
 
             Info << "---------------END-------------" << endl;
-        */
+*/        
         }
     }
     

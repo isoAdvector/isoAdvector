@@ -2,93 +2,44 @@
 
 appList=(isoAdvector)
 schemeList=(isoAdvector)
-meshList=(hex)
-CoList=(0.2)
+#NxList=(64)
+NxList=(64 128 256)
+#dtList=(0.004)
+dtList=(0.004 0.002 0.001)
+Co=0.5
 
-#Location of tri meshes
-triMeshDir=../triMeshes
-
-for nn in ${!meshList[*]}
+for mm in ${!appList[*]}
 do
-	meshType=${meshList[$nn]}
-	for mm in ${!appList[*]}
-	do
-		application=${appList[$mm]}
-		scheme=${schemeList[$mm]}
+    application=${appList[$mm]}
+    scheme=${schemeList[$mm]}
 
-		#Case location
-		series=$PWD/$scheme/$meshType
+    #Case location
+    series=$PWD/$scheme
+    mkdir --parents $series
 
-		if [ "$meshType" = "hex" ];
-		then
-			#Domain  dimensions
-			L=1
-                        D=1
-			H=1
-			#Vertical velocity component
-			Uz=0
-			NxList=(64 128 256)
-			NyList=(64 128 256)
-			NzList=(64 128 256)
-		else
-			NzList=(20 40 80)
-			Uz=0.0
-		fi
+    for n in ${!NxList[*]}
+    do
+        Nx=${NxList[$n]}
+        dt=${dtList[$n]}
+        caseName=N${Nx}Co${Co}
+        caseDir=$series/$caseName
+        echo $caseDir
+        cp -r baseCase $caseDir
 
-		mkdir --parents $series
+        ./ofset application "$application" $caseDir/system/controlDict
+        ./ofset deltaT "$dt" $caseDir/system/controlDict
 
-		for n in ${!NzList[*]} 
-		do
-			for m in ${!CoList[*]}
-			do
-				Co=${CoList[$m]}
-				caseName=N${NzList[$n]}Co${Co}
-				caseDir=$series/$caseName
-				echo $caseDir
-				cp -r baseCase $caseDir
-				
-				./ofset maxAlphaCo "$Co" $caseDir/system/controlDict
-				./ofset application "$application" $caseDir/system/controlDict
-				./ofset Uz "$Uz" $caseDir/0.org/U
-
-				if [ "$scheme" = "CICSAM" ];
-				then
-					./ofset 'div(phi,alpha1)'  "Gauss $scheme 0.5" $caseDir/system/fvSchemes
-				fi
-				if [ "$scheme" = "HRIC" ];
-				then
-					./ofset 'div(phi,alpha1)'  "Gauss $scheme" $caseDir/system/fvSchemes
-				fi
-
-				#Generating mesh
-				cp -r $caseDir/0.org $caseDir/0
-				touch $caseDir/case.foam
-				if [ "$meshType" = "hex" ];
-				then
-					nx=${NxList[$n]}
-					ny=${NyList[$n]}
-					nz=${NzList[$n]}
-					./ofset L "$L" $caseDir/constant/polyMesh/blockMeshDict
-					./ofset D "$D" $caseDir/constant/polyMesh/blockMeshDict
-					./ofset H "$H" $caseDir/constant/polyMesh/blockMeshDict
-					./ofset nx "$nx" $caseDir/constant/polyMesh/blockMeshDict
-					./ofset ny "$ny" $caseDir/constant/polyMesh/blockMeshDict
-					./ofset nz "$nz" $caseDir/constant/polyMesh/blockMeshDict
-#					blockMesh -case $caseDir 
-				else
-					cp $triMeshDir/N${NzList[$n]}/* $caseDir/constant/polyMesh/
-					if [ "$meshType" = "poly" ];
-					then
-						#Convert from tet to poly mesh
-						polyDualMesh -case $caseDir -overwrite 160 
-						#Remove backmost  part of cells
-						topoSet -case $caseDir 
-						subsetMesh -case $caseDir -overwrite c0 -patch front
-						rm -rf *.obj			
-					fi
-				fi
-				
-			done
-		done
-	done
+        if [ "$scheme" = "CICSAM" ];
+        then
+            ./ofset 'div(phi,alpha1)'  "Gauss $scheme 0.5" $caseDir/system/fvSchemes
+        fi
+        if [ "$scheme" = "HRIC" ];
+        then
+            ./ofset 'div(phi,alpha1)'  "Gauss $scheme" $caseDir/system/fvSchemes
+        fi
+        nx=${NxList[$n]}
+        ./ofset nx "$nx" $caseDir/constant/polyMesh/blockMeshDict
+        ./ofset ny "$nx" $caseDir/constant/polyMesh/blockMeshDict
+        ./ofset nz "$nx" $caseDir/constant/polyMesh/blockMeshDict
+    done
 done

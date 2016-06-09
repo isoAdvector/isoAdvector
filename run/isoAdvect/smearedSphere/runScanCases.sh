@@ -1,24 +1,15 @@
 #!/bin/bash
-
 schemeList=(isoAdvector)
-meshList=(hex)
 
 for nn in ${!schemeList[*]}
 do
-	scheme=${schemeList[$nn]}
-
-	for mm in ${!meshList[*]}
-	do
-		mesh=${meshList[$mm]}
-		casesDir=$scheme/$mesh
-	
-		for n in $(ls $casesDir)
-		do
-			caseDir=$casesDir/$n
-			echo $caseDir
-			cd $caseDir
-			./Allrun
-			cd -
-		done
-	done
+    scheme=${schemeList[$nn]}
+    for n in $(ls -tr $scheme)
+    do
+        caseDir=$scheme/$n
+        echo $caseDir
+        cd $caseDir
+        ./Allrun
+        cd -
+    done
 done
