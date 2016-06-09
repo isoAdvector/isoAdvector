@@ -1,16 +1,17 @@
 #!/bin/bash
 
-#appList=(isoAdvector interFoam passiveAdvectionFoam passiveAdvectionFoam)
-appList=(isoAdvector)
-#schemeList=(isoAdvector MULES HRIC CICSAM)
-schemeList=(isoAdvector)
+appList=(mulesFoam)
+#appList=(isoAdvector)
+schemeList=(MULES)
+#schemeList=(isoAdvector)
 meshList=(hex tri poly)
 #meshList=(poly)
-#CoList=(0.1 0.2 0.5)
-CoList=(0.5)
+CoList=(0.1)
+#CoList=(0.5)
 
 pvsmFile=spiralDisc.pvsm
-NzList=(100 200 400)
+#NzList=(100 200 400)
+NzList=(200)
 
 for nn in ${!meshList[*]}
 do

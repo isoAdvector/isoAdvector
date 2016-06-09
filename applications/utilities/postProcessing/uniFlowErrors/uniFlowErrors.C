@@ -172,6 +172,7 @@ int main(int argc, char *argv[])
 
         if (mag(U0*runTime.time().value()) < 1e-10)
         {
+            Info << "Reading exact alpha1 from 0 directory." << endl;
             volScalarField dummy 
             (
                 IOobject
@@ -189,6 +190,7 @@ int main(int argc, char *argv[])
         else
         {
             //Calculating alpha1 volScalarField from f = f0 isosurface
+            alpha1Exact = 0;
             isoCutCell icc(mesh, f);
             icc.VolumeOfFluid(alpha1Exact, f0);
         }
