@@ -87,7 +87,9 @@ int main(int argc, char *argv[])
         }
 
         runTime++;
+        
         Info<< "Time = " << runTime.timeName() << nl << endl;
+
         t = runTime.time().value();
         dt = runTime.deltaT().value();
 
