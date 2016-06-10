@@ -56,8 +56,6 @@ int main(int argc, char *argv[])
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     Info<< "\nStarting time loop\n" << endl;
-
-    isoAdvection advector(alpha1,phi,U,isoAdvectorDict);
     scalar executionTime = runTime.elapsedCpuTime();
 
     while (runTime.run())
@@ -93,9 +91,7 @@ int main(int argc, char *argv[])
         dt = runTime.deltaT().value();
 
         //Advance alpha1 from time t to t+dt
-        advector.getTransportedVolume(dt,dVf);
-        alpha1 -= fvc::surfaceIntegrate(dVf);
-        alpha1.correctBoundaryConditions();
+        advector.advect(dt);
 
         if (printSurfCells)
         { 
@@ -122,7 +118,9 @@ int main(int argc, char *argv[])
                 lMin = ci;
             }
         }
-
+        reduce(aMin, minOp<scalar>());
+        reduce(aMax, maxOp<scalar>());
+        
         const scalar V = gSum(mesh.V()*alpha1.internalField());
         Info << "t = " << t << ",\t sum(alpha*V) = " << V
              << ",\t dev = " << 100*(1.0-V/V0) << "%"

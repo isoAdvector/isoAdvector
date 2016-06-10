@@ -76,7 +76,6 @@ int main(int argc, char *argv[])
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     Info<< "\nStarting time loop\n" << endl;
-    isoAdvection advector(alpha1,phi,U,isoAdvectorDict);
     scalar executionTime = runTime.elapsedCpuTime();
     scalar advectionTime = 0;
     
@@ -97,9 +96,7 @@ int main(int argc, char *argv[])
 
         //Advance alpha1 from time t to t+dt
         const scalar dt = runTime.deltaT().value();
-        advector.getTransportedVolume(dt,dVf);
-        alpha1 -= fvc::surfaceIntegrate(dVf);
-        alpha1.correctBoundaryConditions();
+        advector.advect(dt);
         
         if (printSurfCells)
         {
@@ -110,7 +107,8 @@ int main(int argc, char *argv[])
             advector.getBoundedCells(boundCells);
         }
         
-        Info << "1-max(alpha1) = " << 1-max(alpha1).value() << " and min(alpha1) = " << min(alpha1).value() << endl;
+        Info << "1-max(alpha1) = " << 1-gMax(alpha1.internalField()) 
+            << " and min(alpha1) = " << gMin(alpha1.internalField()) << endl;
 
         //Clip and snap alpha1 to ensure strict boundedness to machine precision
         if ( clipAlphaTol > 0.0 )
@@ -123,8 +121,9 @@ int main(int argc, char *argv[])
         }
 
         rho == alpha1*rho1 + (scalar(1) - alpha1)*rho2;
-        rhoPhi = (rho1-rho2)*dVf/dimensionedScalar("dt", dimTime, dt) + rho2*phi;
-
+//        rhoPhi = (rho1-rho2)*dVf/dimensionedScalar("dt", dimTime, dt) + rho2*phi;
+        advector.getRhoPhi(rhoPhi, rho1, rho2, runTime.deltaT());
+        
 //        #include "alphaEqnSubCycle.H"
         interface.correct();
 

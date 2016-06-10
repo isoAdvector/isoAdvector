@@ -81,18 +81,21 @@ class isoAdvection
     //- Face fluxes
     const surfaceScalarField& phi_;
 
+    //- Face volmetric water transport
+    surfaceScalarField dVf_;
+
     //- Velocity field
     const volVectorField& U_;
 
     //- How many iterations of the alpha bounding function
-    const label nAlphaBounds_;
+    label nAlphaBounds_;
 
     //- Tolerance for search of isoFace giving specified VOF value
-    const scalar vof2IsoTol_;
+    scalar vof2IsoTol_;
 
     //- Cells with surfCellTol_ < alpha1 < 1 - surfCellTol_ are treated as 
     //  surface cells
-    const scalar surfCellTol_;
+    scalar surfCellTol_;
 
     isoCutCell isoCutCell_;
     
@@ -286,8 +289,7 @@ class isoAdvection
     (
         volScalarField& alpha1,
         const surfaceScalarField& phi,
-        const volVectorField& U,
-        const dictionary& dict
+        const volVectorField& U
     );
 
 
@@ -297,6 +299,11 @@ class isoAdvection
         surfaceScalarField& dVf
     );
     
+    void advect
+    (
+        const scalar dt
+    );
+
     void getSurfaceCells
     (
         cellSet& surfCells
@@ -307,6 +314,13 @@ class isoAdvection
         cellSet& boundCells
     );
 
+    void getRhoPhi
+    (
+        surfaceScalarField& rhoPhi,
+        const dimensionedScalar rho1,
+        const dimensionedScalar rho2,
+        const dimensionedScalar dt
+    );    
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //

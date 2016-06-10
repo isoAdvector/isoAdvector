@@ -28,21 +28,6 @@
         mesh
     );
 
-	//Volume of water transported across faces in time dt
-	surfaceScalarField dVf
-	(
-		IOobject
-		(
-			"dVf",
-			mesh.time().timeName(),
-			mesh,
-			IOobject::NO_READ,
-			IOobject::NO_WRITE
-		),
-		mesh,
-		dimensionedScalar("vol", dimVol, 0)
-    );	
-
 	//Initial Volume of Fluid (VOF)
     scalar V0 = gSum(mesh.V()*alpha1.internalField());   
 
@@ -50,6 +35,8 @@
      << ", 1-max(alpha1) = " << 1 - gMax(alpha1.internalField())
      << "\t min(alpha1) = " << gMin(alpha1.internalField()) << endl;
 
+    //IsoAdvector related stuff
+    isoAdvection advector(alpha1,phi,U);
     const dictionary& isoAdvectorDict = mesh.solutionDict().subDict("isoAdvector");
     const scalar clipAlphaTol = isoAdvectorDict.lookupOrDefault<scalar>("clipAlphaTol", 1e-12);
     const bool snapAlpha = isoAdvectorDict.lookupOrDefault<bool>("snapAlpha", true);

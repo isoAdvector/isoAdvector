@@ -43,8 +43,7 @@ Foam::isoAdvection::isoAdvection
 (
     volScalarField& alpha1,
     const surfaceScalarField& phi,
-    const volVectorField& U,
-    const dictionary& dict
+    const volVectorField& U
 )
 :
     mesh_(alpha1.mesh()),
@@ -53,10 +52,23 @@ Foam::isoAdvection::isoAdvection
     vpi_(mesh_),
     ap_(mesh_.nPoints(),0.0),
     phi_(phi),
+    dVf_
+    (
+    	IOobject
+		(
+			"dVf_",
+			mesh_.time().timeName(),
+			mesh_,
+			IOobject::NO_READ,
+			IOobject::NO_WRITE
+		),
+		mesh_,
+		dimensionedScalar("vol", dimVol, 0)
+    ),
     U_(U),
-    nAlphaBounds_(dict.lookupOrDefault<label>("nAlphaBounds", 1)),
-    vof2IsoTol_(dict.lookupOrDefault<scalar>("vof2IsoTol", 1e-8)),
-    surfCellTol_(dict.lookupOrDefault<scalar>("surfCellTol", 1e-8)),
+    nAlphaBounds_(1),
+    vof2IsoTol_(1e-8),
+    surfCellTol_(1e-8),
     isoCutCell_(mesh_,ap_),
     isoCutFace_(mesh_,ap_),
     procPatchLabels_(0),
@@ -71,6 +83,13 @@ Foam::isoAdvection::isoAdvection
     bsf0_(bsFaces_.size()),
     minMagSf_(gMin(mesh_.magSf()))
 {
+    
+    //Reading isoAdvector controls from fvSolution if present
+    const dictionary& isoAdvectorDict = mesh_.solutionDict().subDict("isoAdvector");
+    nAlphaBounds_ = isoAdvectorDict.lookupOrDefault<label>("nAlphaBounds", 1);
+    vof2IsoTol_ = isoAdvectorDict.lookupOrDefault<scalar>("vof2IsoTol", 1e-8);
+    surfCellTol_ = isoAdvectorDict.lookupOrDefault<scalar>("surfCellTol", 1e-8);
+
 
     //Prepare lists used in parallel runs
     if (Pstream::parRun())
@@ -1173,6 +1192,33 @@ void Foam::isoAdvection::getTransportedVolume
 }
 
 
+void Foam::isoAdvection::advect
+(
+    const scalar dt
+)
+{
+    isoDebug(Info << "Enter advect" << endl;)
+
+    //Interpolating alpha1 cell centre values to mesh points (vertices)
+    ap_ = vpi_.interpolate(alpha1_);
+
+    //Initialising dVf with upwind values, i.e. phi[fLabel]*alpha1[upwindCell]*dt    
+    dVf_ = upwind<scalar>(mesh_, phi_).flux(alpha1_)*dimensionedScalar("dt", dimTime, dt);
+
+    //Do the isoAdvection on surface cells
+    timeIntegratedFlux(dt, dVf_);
+
+    //Syncronize processor patches
+    syncProcPatches(dVf_,phi_);
+
+    //Adjust dVf for unbounded cells
+    limitFluxes(dVf_,dt);
+    
+    alpha1_ -= fvc::surfaceIntegrate(dVf_);
+    alpha1_.correctBoundaryConditions();
+}
+
+
 void Foam::isoAdvection::getSurfaceCells
 (
     cellSet& surfCells
@@ -1199,6 +1245,18 @@ void Foam::isoAdvection::getBoundedCells
             boundCells.insert(i);
         }
     }
+}
+
+
+void Foam::isoAdvection::getRhoPhi
+(
+    surfaceScalarField& rhoPhi,
+    const dimensionedScalar rho1,
+    const dimensionedScalar rho2,
+    const dimensionedScalar dt
+)
+{
+    rhoPhi = (rho1 - rho2)*dVf_/dt + rho2*phi_;
 }
 
 // ************************************************************************* //

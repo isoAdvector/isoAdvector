@@ -133,22 +133,9 @@
     }
 
     fv::IOoptionList fvOptions(mesh);
-	
-	//Volume of water transported across faces in time dt
-	surfaceScalarField dVf
-	(
-		IOobject
-		(
-			"dVf",
-			mesh.time().timeName(),
-			mesh,
-			IOobject::NO_READ,
-			IOobject::NO_WRITE
-		),
-		mesh,
-		dimensionedScalar("vol", dimVol, 0)
-    );	
-
+    
+    //IsoAdvector related stuff
+    isoAdvection advector(alpha1,phi,U);
 	const dictionary& isoAdvectorDict = mesh.solutionDict().subDict("isoAdvector");
     const scalar clipAlphaTol = isoAdvectorDict.lookupOrDefault<scalar>("clipAlphaTol", 0);
     const bool snapAlpha = isoAdvectorDict.lookupOrDefault<bool>("snapAlpha", true);
