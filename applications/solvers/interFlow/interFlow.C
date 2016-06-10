@@ -52,9 +52,7 @@ Author
 #include "turbulenceModel.H"
 #include "pimpleControl.H"
 #include "fvIOoptionList.H"
-#include "isoAdvector.H"
-//#include "isoAdvection.H"
-//#include "isoCutter.H"
+#include "isoAdvection.H"
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -78,7 +76,7 @@ int main(int argc, char *argv[])
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     Info<< "\nStarting time loop\n" << endl;
-    isoAdvector advector(alpha1,phi,U,isoAdvectorDict);
+    isoAdvection advector(alpha1,phi,U,isoAdvectorDict);
     scalar executionTime = runTime.elapsedCpuTime();
     scalar advectionTime = 0;
     

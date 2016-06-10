@@ -35,7 +35,6 @@ Author
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
-#include "isoCutter.H"
 #include "isoCutFace.H"
 #include "isoCutCell.H"
 

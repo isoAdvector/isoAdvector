@@ -23,7 +23,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    isoAdvect
+    isoAdvector
 
 Description
     Advects a volume of fluid across an FVM mesh by fluxing fluid through its
@@ -36,8 +36,7 @@ Author
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
-#include "isoAdvector.H"
-#include "isoCutter.H"
+#include "isoAdvection.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -58,7 +57,7 @@ int main(int argc, char *argv[])
 
     Info<< "\nStarting time loop\n" << endl;
 
-    isoAdvector advector(alpha1,phi,U,isoAdvectorDict);
+    isoAdvection advector(alpha1,phi,U,isoAdvectorDict);
     scalar executionTime = runTime.elapsedCpuTime();
 
     while (runTime.run())

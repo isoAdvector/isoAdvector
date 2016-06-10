@@ -36,7 +36,6 @@ Author
 
 #include "timeSelector.H"
 #include "fvCFD.H"
-#include "isoCutter.H"
 #include "isoCutCell.H"
 #include "volPointInterpolation.H"
 using namespace std;

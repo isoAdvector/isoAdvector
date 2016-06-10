@@ -24,7 +24,7 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "isoAdvector.H"
+#include "isoAdvection.H"
 #include "volPointInterpolation.H"
 #include "interpolationCellPoint.H"
 #include "fvcSurfaceIntegrate.H"
@@ -39,7 +39,7 @@ License
 #endif
 
 
-Foam::isoAdvector::isoAdvector
+Foam::isoAdvection::isoAdvection
 (
     volScalarField& alpha1,
     const surfaceScalarField& phi,
@@ -100,7 +100,7 @@ Foam::isoAdvector::isoAdvector
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 
-void Foam::isoAdvector::timeIntegratedFlux
+void Foam::isoAdvection::timeIntegratedFlux
 (
     const scalar dt,
     surfaceScalarField& dVf
@@ -299,7 +299,7 @@ void Foam::isoAdvector::timeIntegratedFlux
 }
 
 
-bool Foam::isoAdvector::isASurfaceCell
+bool Foam::isoAdvection::isASurfaceCell
 (
     const label cellI
 )
@@ -312,7 +312,7 @@ bool Foam::isoAdvector::isASurfaceCell
 }
 
     
-Foam::scalar Foam::isoAdvector::timeIntegratedFlux
+Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 (
     const label fLabel,
     const vector& x0,
@@ -377,7 +377,7 @@ Foam::scalar Foam::isoAdvector::timeIntegratedFlux
 }
 
 
-Foam::scalar Foam::isoAdvector::timeIntegratedArea
+Foam::scalar Foam::isoAdvection::timeIntegratedArea
 (
     const pointField& fPts,
     const scalarField& pTimes,
@@ -472,7 +472,7 @@ Foam::scalar Foam::isoAdvector::timeIntegratedArea
 }
 
 
-void Foam::isoAdvector::getDownwindFaces
+void Foam::isoAdvection::getDownwindFaces
 (
     const label ci,
     DynamicList<label>& downwindFaces
@@ -506,7 +506,7 @@ void Foam::isoAdvector::getDownwindFaces
 }
 
 
-bool Foam::isoAdvector::isADownwindFace
+bool Foam::isoAdvection::isADownwindFace
 (
     const label faceI,
     const label cellI
@@ -533,7 +533,7 @@ bool Foam::isoAdvector::isADownwindFace
 }
 
 
-void Foam::isoAdvector::quadAreaCoeffs
+void Foam::isoAdvection::quadAreaCoeffs
 (
     const DynamicList<point>& pf0,
     const DynamicList<point>& pf1,
@@ -628,7 +628,7 @@ void Foam::isoAdvector::quadAreaCoeffs
 }
 
 
-void Foam::isoAdvector::subSetExtrema
+void Foam::isoAdvection::subSetExtrema
 (
     const scalarField& f,
     const labelList& labels,
@@ -654,7 +654,7 @@ void Foam::isoAdvector::subSetExtrema
 }
 
 
-void Foam::isoAdvector::limitFluxes
+void Foam::isoAdvection::limitFluxes
 (
     surfaceScalarField& dVf,
     const scalar dt
@@ -723,7 +723,7 @@ void Foam::isoAdvector::limitFluxes
 }
 
 
-void Foam::isoAdvector::boundFromAbove
+void Foam::isoAdvection::boundFromAbove
 (
     const scalarField& alpha1,
     const scalar dt,
@@ -806,7 +806,7 @@ void Foam::isoAdvector::boundFromAbove
 }
 
 
-Foam::scalar Foam::isoAdvector::netFlux
+Foam::scalar Foam::isoAdvection::netFlux
 (
     const surfaceScalarField& dVf,
     const label cLabel
@@ -834,7 +834,7 @@ Foam::scalar Foam::isoAdvector::netFlux
 }
 
 
-Foam::scalar Foam::isoAdvector::faceValue
+Foam::scalar Foam::isoAdvection::faceValue
 (
     const surfaceScalarField& f,
     const label fLabel
@@ -860,7 +860,7 @@ Foam::scalar Foam::isoAdvector::faceValue
         {
             FatalErrorIn
             (
-                "void isoAdvector::faceValue(...)"
+                "void isoAdvection::faceValue(...)"
             )   << "Cannot find patch for face " << fLabel
                 << abort(FatalError);
         }
@@ -876,7 +876,7 @@ Foam::scalar Foam::isoAdvector::faceValue
 }
 
 
-void Foam::isoAdvector::faceValue
+void Foam::isoAdvection::faceValue
 (
     surfaceScalarField& f,
     const label fLabel,
@@ -903,7 +903,7 @@ void Foam::isoAdvector::faceValue
         {
             FatalErrorIn
             (
-                "void isoAdvector::faceValue(...)"
+                "void isoAdvection::faceValue(...)"
             )   << "Cannot find patch for face " << fLabel
                 << abort(FatalError);
         }
@@ -919,7 +919,7 @@ void Foam::isoAdvector::faceValue
 }
 
 
-Foam::vector Foam::isoAdvector::faceValue
+Foam::vector Foam::isoAdvection::faceValue
 (
     const surfaceVectorField& f,
     const label fLabel
@@ -945,7 +945,7 @@ Foam::vector Foam::isoAdvector::faceValue
         {
             FatalErrorIn
             (
-                "void isoAdvector::faceValue(...)"
+                "void isoAdvection::faceValue(...)"
             )   << "Cannot find patch for face " << fLabel
                 << abort(FatalError);
         }
@@ -961,7 +961,7 @@ Foam::vector Foam::isoAdvector::faceValue
 }
 
 
-void Foam::isoAdvector::faceValue
+void Foam::isoAdvection::faceValue
 (
     surfaceVectorField& f,
     const label fLabel,
@@ -988,7 +988,7 @@ void Foam::isoAdvector::faceValue
         {
             FatalErrorIn
             (
-                "void isoAdvector::faceValue(...)"
+                "void isoAdvection::faceValue(...)"
             )   << "Cannot find patch for face " << fLabel
                 << abort(FatalError);
         }
@@ -1003,7 +1003,7 @@ void Foam::isoAdvector::faceValue
     }
 }
 
-void Foam::isoAdvector::syncProcPatches
+void Foam::isoAdvection::syncProcPatches
 (
     surfaceScalarField& dVf,
     const surfaceScalarField& phi
@@ -1119,7 +1119,7 @@ void Foam::isoAdvector::syncProcPatches
 }
 
 
-void Foam::isoAdvector::checkIfOnProcPatch
+void Foam::isoAdvection::checkIfOnProcPatch
 (
     const label faceI
 )
@@ -1148,7 +1148,7 @@ void Foam::isoAdvector::checkIfOnProcPatch
 }
 
 
-void Foam::isoAdvector::getTransportedVolume
+void Foam::isoAdvection::getTransportedVolume
 (
     const scalar dt,
     surfaceScalarField& dVf
@@ -1162,7 +1162,7 @@ void Foam::isoAdvector::getTransportedVolume
     //Initialising dVf with upwind values, i.e. phi[fLabel]*alpha1[upwindCell]*dt    
     dVf = upwind<scalar>(mesh_, phi_).flux(alpha1_)*dimensionedScalar("dt", dimTime, dt);
 
-    //Do the isoAdvector on surface cells
+    //Do the isoAdvection on surface cells
     timeIntegratedFlux(dt, dVf);
 
     //Syncronize processor patches
@@ -1173,7 +1173,7 @@ void Foam::isoAdvector::getTransportedVolume
 }
 
 
-void Foam::isoAdvector::getSurfaceCells
+void Foam::isoAdvection::getSurfaceCells
 (
     cellSet& surfCells
 )
@@ -1186,7 +1186,7 @@ void Foam::isoAdvector::getSurfaceCells
 }
 
 
-void Foam::isoAdvector::getBoundedCells
+void Foam::isoAdvection::getBoundedCells
 (
     cellSet& boundCells
 )

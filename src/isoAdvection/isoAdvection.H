@@ -23,7 +23,7 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
-    Foam::isoAdvector
+    Foam::isoAdvection
 
 Description
     Calculates the new VOF (alpha) field after time step dt given the initial
@@ -37,12 +37,12 @@ Author
     Johan Roenby, DHI, all rights reserved.
 
 SourceFiles
-    isoAdvector.C
+    isoAdvection.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef isoAdvector_H
-#define isoAdvector_H
+#ifndef isoAdvection_H
+#define isoAdvection_H
 
 #include "isoCutCell.H"
 #include "isoCutFace.H"
@@ -58,7 +58,7 @@ SourceFiles
 namespace Foam
 {
 
-class isoAdvector
+class isoAdvection
 {
 
     // Private data
@@ -282,7 +282,7 @@ class isoAdvector
 
     //- Constructors
 
-    isoAdvector
+    isoAdvection
     (
         volScalarField& alpha1,
         const surfaceScalarField& phi,
