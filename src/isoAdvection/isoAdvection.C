@@ -272,7 +272,6 @@ void Foam::isoAdvection::timeIntegratedFlux
                         bsn0_.append(n0);
                         bsUn0_.append(Un0);
                         bsf0_.append(f0);
-                        checkIfOnProcPatch(faceI);
                     }
                 }
             }
@@ -282,12 +281,13 @@ void Foam::isoAdvection::timeIntegratedFlux
     //Setting dVf for boundary faces of surface cells
     if(bsFaces_.size() > 0)
     {
-        label patchI = -1;
-        label start = -1;
-        label size = -1;
 
         forAll(bsFaces_, fi)
         {
+            //Moved from outside because of wrong assumption that bsFaces is monotonic in label numbers
+            label patchI = -1;
+            label start = -1;
+            label size = -1;
             const label fLabel = bsFaces_[fi];
 //            Info << "Boundary face: " << fLabel << endl;
             if (fLabel >= start + size)
@@ -309,6 +309,7 @@ void Foam::isoAdvection::timeIntegratedFlux
                     dVfP = timeIntegratedFlux(fLabel, bsx0_[fi],
                         bsn0_[fi], bsUn0_[fi], bsf0_[fi], dt,
                         phiP, magSf);
+                    checkIfOnProcPatch(fLabel);
                 }
             }
         }
@@ -765,6 +766,7 @@ void Foam::isoAdvection::boundFromAbove
             scalar fluidToPassOn = alphaOvershoot*Vi;
             label nFacesToPassFluidThrough = 1;
 
+            bool firstLoop = true;
             //First try to pass surplus fluid on to neighbour cells that are not filled and to which dVf < phi*dt
             while ( alphaOvershoot > aTol && nFacesToPassFluidThrough > 0 )
             {
@@ -811,9 +813,13 @@ void Foam::isoAdvection::boundFromAbove
                     scalar dVff = faceValue(dVf,fLabel);
                     dVff += sign(phi[fi])*fluidToPassThroughFace;
                     faceValue(dVf,fLabel,dVff);
-                    checkIfOnProcPatch(fLabel);
-                    correctedFaces.append(fLabel);
+                    if (firstLoop)
+                    {
+                        checkIfOnProcPatch(fLabel);
+                        correctedFaces.append(fLabel);
+                    }
                 }
+                firstLoop = false;
                 alpha1New = alpha1[ci] - netFlux(dVf,ci)/Vi;
                 alphaOvershoot = alpha1New - 1.0;
                 fluidToPassOn = alphaOvershoot*Vi;
