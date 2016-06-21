@@ -841,12 +841,13 @@ Foam::scalar Foam::isoAdvection::netFlux
 
     const labelList& fLabels = mesh_.cells()[cLabel];
 
+    const unallocLabelList& own = mesh_.owner();
     forAll (fLabels, fi)
     {
         const label fLabel = fLabels[fi];
         const scalar dVff = faceValue(dVf,fLabel);
 
-        if (mesh_.owner()[fLabel] == cLabel)
+        if (own[fLabel] == cLabel)
         {
             dV += dVff;
         }
