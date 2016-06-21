@@ -100,11 +100,26 @@ int main(int argc, char *argv[])
 		f = -sqrt(pow(mag(mesh.points()-centre),2) - pow(mag((mesh.points()-centre) & direction),2));
 		f0 = -radius;
 	}
+	else if ( surfType == "sin" )
+	{
+        const scalar lambda = isoSurfDict.lookupOrDefault<scalar>("lambda",1);
+        const scalar amplitude = isoSurfDict.lookupOrDefault<scalar>("amplitude",.1);
+        const vector up = isoSurfDict.lookupOrDefault<vector>("up",vector::zero);
+        const scalarField xx = (mesh.points()-centre) & direction/mag(direction);
+        const scalarField zz = (mesh.points()-centre) & up/mag(up);
+        scalar PI = Foam::constant::mathematical::pi;
+//        scalar PI = Foam::mathematicalConstant::pi;
+		f = amplitude*Foam::sin(2*PI*xx/lambda) - zz;
+		f0 = 0;
+	}
 	else
 	{
 		Info << "Invalid surface type specified" << endl;
 		Info << "Aborting..." << endl;
 	}
+
+    
+    Info << "surfType = " << surfType << endl;
 
     //Define function on mesh points and isovalue
 	
