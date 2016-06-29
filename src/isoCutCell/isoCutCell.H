@@ -26,9 +26,9 @@ Class
     Foam::isoCutCell
 
 Description
-    Class for cutting a cell, cellI, of an fvMesh, mesh_, at its intersection 
+    Class for cutting a cell, cellI, of an fvMesh, mesh_, at its intersection
     with an isosurface defined by the mesh point values f_ and the isovalue,
-    isoValue_. 
+    isoValue_.
 
 Author
     Johan Roenby, DHI, all rights reserved.
@@ -77,7 +77,7 @@ class isoCutCell
 
         //- An isoCutFace object to get access to its face cutting functionality
         isoCutFace isoCutFace_;
-        
+
         //- List of face labels of isoCutFaces
         DynamicList<label> isoCutFaces_;
 
@@ -86,7 +86,7 @@ class isoCutCell
 
         //- List of face centres for isoCutFaces
         DynamicList<point> isoCutFaceCentres_;
-        
+
         //- List of face area vectors for isoCutFaces
         DynamicList<vector> isoCutFaceAreas_;
 
@@ -95,10 +95,10 @@ class isoCutCell
 
         //- Points constituting the cell-isosurface intersection (isoface)
         DynamicList<point> isoFacePoints_;
-        
+
         //- Face centre of the isoface
         point isoFaceCentre_;
-        
+
         //- Face normal of the isoface by convention pointing from high to low
         //  values (i.e. opposite of the gradient vector).
         vector isoFaceArea_;
@@ -106,10 +106,10 @@ class isoCutCell
         //- Cell centre of the subcell of cellI which is "fully submerged", i.e.
         //  where the function value is higher than the isoValue_
         point subCellCentre_;
-        
+
         //- Volume of fully submerged subcell
         scalar subCellVolume_;
-        
+
         //- Volume of Fluid for cellI (subCellVolume_/mesh_.V()[cellI])
         scalar VOF_;
 
@@ -120,12 +120,12 @@ class isoCutCell
         //
         //  - -1: cell is fully below the isosurface
         //  -  0: cell is cut
-        //  - +1: cell is fully above the isosurface 
+        //  - +1: cell is fully above the isosurface
         label cellStatus_;
-        
+
         //- Boolean telling if subcell centre and volume have been calculated
         bool subCellCentreAndVolumeCalculated_;
-        
+
         //- Boolean telling if isoface centre and area have been calculated
         bool isoFaceCentreAndAreaCalculated_;
 
@@ -134,7 +134,7 @@ class isoCutCell
     void calcSubCellCentreAndVolume();
 
     void calcIsoFaceCentreAndArea();
-    
+
     void calcIsoFacePointsFromEdges();
 
 public:
@@ -173,8 +173,8 @@ public:
         scalar isoValue();
 
         void clearStorage();
-        
-        scalar vofCutCell
+
+        label vofCutCell
         (
             const label cellI,
             const scalar alpha1,
@@ -182,14 +182,6 @@ public:
             const label maxIter
         );
 
-        label vofCutCell2
-        (
-            const label cellI,
-            const scalar alpha1,
-            const scalar tol,
-            const label maxIter
-        );
-        
         void VolumeOfFluid
         (
             volScalarField& alpha1,

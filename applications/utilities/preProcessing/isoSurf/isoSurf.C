@@ -107,9 +107,7 @@ int main(int argc, char *argv[])
         const vector up = isoSurfDict.lookupOrDefault<vector>("up",vector::zero);
         const scalarField xx = (mesh.points()-centre) & direction/mag(direction);
         const scalarField zz = (mesh.points()-centre) & up/mag(up);
-        scalar PI = Foam::constant::mathematical::pi;
-//        scalar PI = Foam::mathematicalConstant::pi;
-		f = amplitude*Foam::sin(2*PI*xx/lambda) - zz;
+		f = amplitude*Foam::sin(2*M_PI*xx/lambda) - zz;
 		f0 = 0;
 	}
 	else

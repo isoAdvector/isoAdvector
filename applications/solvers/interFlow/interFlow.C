@@ -95,8 +95,7 @@ int main(int argc, char *argv[])
         twoPhaseProperties.correct();
 
         //Advance alpha1 from time t to t+dt
-        const scalar dt = runTime.deltaT().value();
-        advector.advect(dt);
+        advector.advect();
         
         if (printSurfCells)
         {
@@ -121,8 +120,7 @@ int main(int argc, char *argv[])
         }
 
         rho == alpha1*rho1 + (scalar(1) - alpha1)*rho2;
-//        rhoPhi = (rho1-rho2)*dVf/dimensionedScalar("dt", dimTime, dt) + rho2*phi;
-        advector.getRhoPhi(rhoPhi, rho1, rho2, runTime.deltaT());
+        rhoPhi = advector.getRhoPhi(rho1, rho2);
         
 //        #include "alphaEqnSubCycle.H"
         interface.correct();
@@ -146,7 +144,7 @@ int main(int argc, char *argv[])
             }
         }
 
-        contErr = fvc::surfaceIntegrate(phi)*dimensionedScalar("dt", dimTime, dt);
+        contErr = fvc::surfaceIntegrate(phi)*runTime.deltaT();
 
         runTime.write();
 

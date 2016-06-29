@@ -38,6 +38,7 @@ Author
 
 SourceFiles
     isoAdvection.C
+    isoAdvectionTemplates.C
 
 \*---------------------------------------------------------------------------*/
 
@@ -53,6 +54,7 @@ SourceFiles
 #include "interpolationCellPoint.H"
 #include "cellSet.H"
 
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -60,272 +62,325 @@ namespace Foam
 
 class isoAdvection
 {
+    // Private data types
+
+        typedef DynamicList<label> DynamicLabelList;
+        typedef DynamicList<scalar> DynamicScalarList;
+        typedef DynamicList<vector> DynamicVectorList;
+        typedef DynamicList<point> DynamicPointList;
+
 
     // Private data
 
-    //- fvMesh
-    const fvMesh& mesh_;
+        //- Reference to mesh
+        const fvMesh& mesh_;
 
-    //- VOF field
-    volScalarField& alpha1_;
+        //- Dictionary for isoAdvection controls
+        const dictionary dict_;
 
-    //- VOF field
-    scalarField& alpha1In_;
+        //- VOF field
+        volScalarField& alpha1_;
 
-    //- volPointInterpolation from cell centres to points
-    volPointInterpolation vpi_;
+        //- Often used reference to alpha1 internal field
+        scalarField& alpha1In_;
 
-    //- VOF field interpolated to mesh points
-    scalarField ap_;
+        //- Reference to flux field
+        const surfaceScalarField& phi_;
 
-    //- Face fluxes
-    const surfaceScalarField& phi_;
+        //- Reference to velocity field
+        const volVectorField& U_;
 
-    //- Face volmetric water transport
-    surfaceScalarField dVf_;
+        //- Face volmetric water transport
+        surfaceScalarField dVf_;
+        
+        
+        // Point interpolation data
 
-    //- Velocity field
-    const volVectorField& U_;
+            //- Interpolation object from cell centres to points
+            volPointInterpolation vpi_;
 
-    //- How many iterations of the alpha bounding function
-    label nAlphaBounds_;
+            //- VOF field interpolated to mesh points
+            scalarField ap_;
 
-    //- Tolerance for search of isoFace giving specified VOF value
-    scalar vof2IsoTol_;
+            
+        // Switches and tolerances. Tolerances need to go into toleranceSwitches
 
-    //- Cells with surfCellTol_ < alpha1 < 1 - surfCellTol_ are treated as 
-    //  surface cells
-    scalar surfCellTol_;
+            //- Number of alpha bounding steps
+            label nAlphaBounds_;
 
-    isoCutCell isoCutCell_;
-    
-    isoCutFace isoCutFace_;
+            //- Tolerance for search of isoFace giving specified VOF value
+            scalar vof2IsoTol_;
 
-    //- List of processor patch labels
-    labelList procPatchLabels_;
+            //- Tolerance for marking of surface cells:
+            //  Those with surfCellTol_ < alpha1 < 1 - surfCellTol_
+            scalar surfCellTol_;
 
-    //- For each patch if it is a processor patch this is a list of the face labels
-    //  on this patch that are downwind to a surface cell.
-    //  For non-processor patches the list will be empty.
-    List< DynamicList<label> > surfaceCellFacesOnProcPatches_;
-    
-    DynamicList<label> surfCells_;
 
-    //- Boolean saying if a cell has been touched by the bounding step  
-    boolList cellIsBounded_;
+        // Cell and face cutting
 
-    //- True for all surface cells and their neighbours
-    boolList checkBounding_;
-    
-    //- Storage for boundary faces downwind to a surface cell
-    DynamicList<label> bsFaces_;
-    
-    //- Storage for 
-    DynamicList<vector> bsx0_;
-    
-    //- Storage for 
-    DynamicList<vector> bsn0_;
-    
-    //- Storage for 
-    DynamicList<scalar> bsUn0_;
+            //- List of surface cells
+            DynamicLabelList surfCells_;
 
-    //- Storage for 
-    DynamicList<scalar> bsf0_;
+            //- Cell cutting object
+            isoCutCell isoCutCell_;
 
-    //- Smallest face area
-    scalar minMagSf_;
-    
+            //- Face cutting object
+            isoCutFace isoCutFace_;
+
+            //- Bool list for cells that have been touched by the bounding step
+            boolList cellIsBounded_;
+
+            //- True for all surface cells and their neighbours
+            boolList checkBounding_;
+
+            //- Storage for boundary faces downwind to a surface cell
+            DynamicLabelList bsFaces_;
+
+            //- Storage for boundary surface iso face centre
+            DynamicVectorList bsx0_;
+
+            //- Storage for boundary surface iso face normal
+            DynamicVectorList bsn0_;
+
+            //- Storage for boundary surface iso face speed
+            DynamicScalarList bsUn0_;
+
+            //- Storage for boundary surface iso value
+            DynamicScalarList bsf0_;
+
+            //- Smallest face area
+            scalar minMagSf_;
+
+
+        // Additional data for parallel runs
+
+            //- List of processor patch labels
+            DynamicLabelList procPatchLabels_;
+
+            //- For each patch if it is a processor patch this is a list of the
+            //  face labels on this patch that are downwind to a surface cell.
+            //  For non-processor patches the list will be empty.
+            List<DynamicLabelList> surfaceCellFacesOnProcPatches_;
+
+
     // Private Member Functions
 
-    //- For each face calculate volumetric face transport during dt
-    void timeIntegratedFlux
-    (
-        const scalar dt,
-        surfaceScalarField& dVf
-    );
+        // Copy control
 
-    //- For face fLabel calculate volumetric face transport during dt given the isoFace data provided as input
-    scalar timeIntegratedFlux
-    (
-        const label fLabel,
-        const vector& x0,
-        const vector& n0,
-        const scalar Un0,
-        const scalar f0,
-        const scalar dt,
-        const scalar phi,
-        const scalar magSf
-    );
+        //- Disallow default bitwise copy construct
+        isoAdvection(const isoAdvection&);
 
-    scalar timeIntegratedArea
-    (
-        const pointField& fPts,
-        const scalarField& pTimes,
-        const scalar dt,
-        const scalar magSf,
-        const scalar Un0
-    );
+        //- Disallow default bitwise copy assignement
+        void operator=(const isoAdvection&);
 
+        
+        // Advection functions
 
-    //- For cell ci return labels of faces fluxing out of this cell (based on sign of phi)
-    void getDownwindFaces
-    (
-        const label ci,
-        DynamicList<label>& downwindFaces
-    );
+            //- For each face calculate volumetric face transport during dt
+            void timeIntegratedFlux();
 
+            //- Calculate volumetric face transport during dt given the isoFace
+            //  data provided as input for face fLabel
+            scalar timeIntegratedFlux
+            (
+                const label fLabel,
+                const vector& x0,
+                const vector& n0,
+                const scalar Un0,
+                const scalar f0,
+                const scalar dt,
+                const scalar phi,
+                const scalar magSf
+            );
 
-    //Return true if faceI is downwind to cellI (baseds on phi_)
-    bool isADownwindFace
-    (
-        const label faceI,
-        const label cellI
-    );
+            //- Calculate time integrated area for a face
+            scalar timeIntegratedArea
+            (
+                const pointField& fPts,
+                const scalarField& pTimes,
+                const scalar dt,
+                const scalar magSf,
+                const scalar Un0
+            );
 
+            //- For a given cell return labels of faces fluxing out of this cell
+            //  (based on sign of phi)
+            void getDownwindFaces
+            (
+                const label ci,
+                DynamicLabelList& downwindFaces
+            );
 
-    //- For face with vertices p calculate its area and integrated area between isocutting lines with isovalues f0 and f1 given vertex values f
-    void quadAreaCoeffs
-    (
-        const DynamicList<point>& pf0,
-        const DynamicList<point>& pf1,
-        scalar& quadArea,
-        scalar& intQuadArea
-    );
+            //- For face with vertices p calculate its area and integrated area
+            //  between isocutting lines with isovalues f0 and f1 given vertex
+            //  values f
+            void quadAreaCoeffs
+            (
+                const DynamicPointList& pf0,
+                const DynamicPointList& pf1,
+                scalar& quadArea,
+                scalar& intQuadArea
+            );
+  
+            //- Find min and max of subset of scalarField f defined by labelList
+            //  label
+            void subSetExtrema
+            (
+                const scalarField& f,
+                const labelList& labels,
+                scalar& fMin,
+                scalar& fMax
+            );
 
-    //- Find min and max of subset of scalarField f defined by labelList label
-    void subSetExtrema
-    (
-        const scalarField& f,
-        const labelList& labels,
-        scalar& fMin,
-        scalar& fMax
-    );
+            // Limit fluxes
+            void limitFluxes();
 
+            // Bound fluxes
+            void boundFromAbove
+            (
+                const scalarField& alpha1,
+                surfaceScalarField& dVfcorrected,
+                DynamicLabelList& correctedFaces
+            );
 
-    void limitFluxes
-    (
-        surfaceScalarField& dVfa,
-        const scalar dt
-    );
+            //- Given the face volume transport dVf calculates the total volume
+            //  leaving a given cell. Note: cannot use dVf member because
+            //  netFlux is called also for corrected dVf
+            scalar netFlux
+            (
+                const surfaceScalarField& dVf,
+                const label cellI
+            );
 
+            //- Determine if a cell is a surface cell
+            bool isASurfaceCell(const label cellI)
+            {
+                return
+                (
+                    surfCellTol_ < alpha1In_[cellI]
+                 && alpha1In_[cellI] < 1 - surfCellTol_
+                );
+            }
 
-    void boundFromAbove
-    (
-        const scalarField& alpha1,
-        const scalar dt,
-        surfaceScalarField& dVfcorrected,
-        DynamicList<label>& correctedFaces
-    );
-
-
-    //- Given the face volume transport dVf calculates the total volume leaving cell cLabel
-    scalar netFlux
-    (
-        const surfaceScalarField& dVf,
-        const label cLabel
-    );
-
-
-    //- Determine if a cell is a surface cell
-    bool isASurfaceCell
-    (
-        const label cellI
-    );
-
-    
-    //- Return face value of a surfaceScalarField
-    scalar faceValue
-    (
-        const  surfaceScalarField& f,
-        const label fLabel
-    );
-
-
-    //- Set face value of a surfaceScalarField
-    void faceValue
-    (
-        surfaceScalarField& f,
-        const label fLabel,
-        const scalar value
-    );
+            //- Clear out isoFace data
+            void clearIsoFaceData()
+            {
+                surfCells_.clear();
+                bsFaces_.clear();
+                bsx0_.clear();
+                bsn0_.clear();
+                bsUn0_.clear();
+                bsf0_.clear();
+            }
 
 
-    //- Return face value of a surfaceScalarField
-    vector faceValue
-    (
-        const  surfaceVectorField& f,
-        const label fLabel
-    );
+        // Face value functions needed for random face access where the face can
+        // be either internal or boundary face
+
+            //- Return face value for a given Geometric surface field
+            template<typename Type>
+            Type faceValue
+            (
+                const GeometricField<Type, fvsPatchField, surfaceMesh>& f,
+                const label fLabel
+            );
+
+            //- Set face value for a given Geometric surface field
+            template<typename Type>
+            void faceValue
+            (
+                GeometricField<Type, fvsPatchField, surfaceMesh>& f,
+                const label fLabel,
+                const Type& value
+            );
 
 
-    //- Set face value of a surfaceScalarField
-    void faceValue
-    (
-        surfaceVectorField& f,
-        const label fLabel,
-        const vector value
-    );
+        // Parallel run handling functions
 
+            //- Syncronize dVf across processor boundaries using upwind value
+            void syncProcPatches
+            (
+                surfaceScalarField& dVf,
+                const surfaceScalarField& phi
+            );
 
-    //- Syncronize dVf across processor boundaries using upwind value
-    void syncProcPatches
-    (
-        surfaceScalarField& dVf,
-        const surfaceScalarField& phi
-    );
-
-
-    void checkIfOnProcPatch
-    (
-        const label faceI
-    );
+            //- Check if the face is on processor patch and append it to the
+            //  list of surface cell faces on processor patches
+            void checkIfOnProcPatch(const label faceI);
 
 
     public:
 
     //- Constructors
 
-    isoAdvection
-    (
-        volScalarField& alpha1,
-        const surfaceScalarField& phi,
-        const volVectorField& U
-    );
+        // Construt given alpha, phi and velocity field. Note: phi should be
+        // divergence free up to a sufficient tolerance
+        isoAdvection
+        (
+            volScalarField& alpha1,
+            const surfaceScalarField& phi,
+            const volVectorField& U
+        );
 
 
-    void getTransportedVolume
-    (
-        const scalar dt,
-        surfaceScalarField& dVf
-    );
-    
-    void advect
-    (
-        const scalar dt
-    );
+    //- Destructor: default
 
-    void getSurfaceCells
-    (
-        cellSet& surfCells
-    );
 
-    void getBoundedCells
-    (
-        cellSet& boundCells
-    );
+    // Member functions
 
-    void getRhoPhi
-    (
-        surfaceScalarField& rhoPhi,
-        const dimensionedScalar rho1,
-        const dimensionedScalar rho2,
-        const dimensionedScalar dt
-    );    
+        //- Advect the free surface. Updates alpha field, taking into account
+        //  multiple calls within a single time step. Note: not tested with
+        //  sucycles
+        void advect();
+
+
+        // Access functions
+
+            // Return alpha field
+            const volScalarField& alpha() const
+            {
+                return alpha1_;
+            }
+
+            //- Return cellSet of surface cells
+            void getSurfaceCells
+            (
+                cellSet& surfCells
+            );
+
+            //- Return cellSet of bounded cells
+            void getBoundedCells
+            (
+                cellSet& boundCells
+            );
+
+            // Return mass flux
+            tmp<surfaceScalarField> getRhoPhi
+            (
+                const dimensionedScalar rho1,
+                const dimensionedScalar rho2
+            )
+            {
+                return tmp<surfaceScalarField>
+                (
+                    new surfaceScalarField
+                    (
+                        "rhoPhi",
+                        (rho1 - rho2)*dVf_/mesh_.time().deltaT() + rho2*phi_
+                    )
+                );
+            }
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 } // End namespace Foam
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+#ifdef NoRepository
+#   include "isoAdvectionTemplates.C"
+#endif
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

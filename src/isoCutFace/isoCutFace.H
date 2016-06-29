@@ -26,9 +26,9 @@ Class
     Foam::isoCutFace
 
 Description
-    Class for cutting a face, faceI, of an fvMesh, mesh_, at its intersection 
+    Class for cutting a face, faceI, of an fvMesh, mesh_, at its intersection
     with an isosurface defined by the mesh point values f_ and the isovalue,
-    isoValue_. 
+    isoValue_.
 
 Author
     Johan Roenby, DHI, all rights reserved.
@@ -101,14 +101,14 @@ class isoCutFace
         //
         //  - -1: face is fully below the isosurface
         //  -  0: face is cut, i.e. has values larger and smaller than isoValue_
-        //  - +1: face is fully above the isosurface 
+        //  - +1: face is fully above the isosurface
         label faceStatus_;
-        
+
         //- Boolean telling if subface centre and area have been calculated
         bool subFaceCentreAndAreaIsCalculated_;
-        
+
     // Private Member Functions
-    
+
         void calcSubFaceCentreAndArea();
 
         //- Calculate cut points along edges of face with values f[pLabels]
@@ -171,7 +171,7 @@ public:
         DynamicList<point> surfacePoints();
 
         void clearStorage();
-        
+
         void cutPoints
         (
             const pointField& pts,

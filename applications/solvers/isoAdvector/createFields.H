@@ -46,7 +46,6 @@
 	//Copies of initial U and phi for use when flow is periodic
 	surfaceScalarField phi0 = phi;
 	volVectorField U0 = U;
-	scalar PI = Foam::constant::mathematical::pi;
     
     //Optional writing out of surface cell set and bounded cell sets
     IOobject::writeOption writeOpt = IOobject::NO_WRITE;

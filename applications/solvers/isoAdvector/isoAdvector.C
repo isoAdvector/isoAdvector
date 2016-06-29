@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
         #include "CourantNo.H"
         #include "alphaCourantNo.H"
         #include "setDeltaT.H"
-        
+
         //Setting velocity field and face fluxes for next time step
         scalar t = runTime.time().value();
         scalar dt = runTime.deltaT().value();
@@ -79,22 +79,19 @@ int main(int argc, char *argv[])
         }
         if ( period > 0.0 )
         {
-            phi = phi0*Foam::cos(2.0*PI*(t + 0.5*dt)/period);
-            U = U0*Foam::cos(2.0*PI*(t + 0.5*dt)/period);
+            phi = phi0*Foam::cos(2.0*M_PI*(t + 0.5*dt)/period);
+            U = U0*Foam::cos(2.0*M_PI*(t + 0.5*dt)/period);
         }
 
         runTime++;
-        
+
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
-        t = runTime.time().value();
-        dt = runTime.deltaT().value();
-
         //Advance alpha1 from time t to t+dt
-        advector.advect(dt);
+        advector.advect();
 
         if (printSurfCells)
-        { 
+        {
             advector.getSurfaceCells(surfCells);
         }
         if (printBoundCells)
@@ -120,9 +117,9 @@ int main(int argc, char *argv[])
         }
         reduce(aMin, minOp<scalar>());
         reduce(aMax, maxOp<scalar>());
-        
+
         const scalar V = gSum(mesh.V()*alpha1.internalField());
-        Info << "t = " << t << ",\t sum(alpha*V) = " << V
+        Info << "t = " << runTime.time().value() << ",\t sum(alpha*V) = " << V
              << ",\t dev = " << 100*(1.0-V/V0) << "%"
              << ",\t 1-max(alpha1) = " << 1-aMax << " at cell " << lMax
              << ",\t min(alpha1) = " << aMin << " at cell " << lMin << endl;
