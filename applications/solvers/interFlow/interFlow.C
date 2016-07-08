@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 //        #include "alphaEqnSubCycle.H"
         interface.correct();
 
-        advectionTime += (advectionStartTime - runTime.elapsedCpuTime());
+        advectionTime += (runTime.elapsedCpuTime() - advectionStartTime);
         
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())

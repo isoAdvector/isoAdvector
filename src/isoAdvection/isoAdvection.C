@@ -76,7 +76,7 @@ Foam::isoAdvection::isoAdvection
     // Tolerances and solution controls
     nAlphaBounds_(dict_.lookupOrDefault<label>("nAlphaBounds", 1)),
     vof2IsoTol_(dict_.lookupOrDefault<scalar>("vof2IsoTol", 1e-8)),
-    surfCellTol_(dict_.lookupOrDefault<scalar>("vof2IsoTol", 1e-8)),
+    surfCellTol_(dict_.lookupOrDefault<scalar>("surfCellTol", 1e-8)),
 
     // Cell cutting data
     surfCells_(label(0.2*mesh_.nCells())),
