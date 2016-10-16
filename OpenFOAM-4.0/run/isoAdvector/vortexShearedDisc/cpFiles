@@ -1,0 +1,33 @@
+#!/bin/bash
+
+meshes=(hex tri poly)
+#resolutions=(100 200 400)
+resolutions=(200)
+times=(4 8)
+
+#solver=isoAdvector
+solver=MULES
+
+#Co=0.5
+Co=0.1
+
+for nm in ${!meshes[*]}
+do
+    mesh=${meshes[$nm]}
+
+    for nr in ${!resolutions[*]}
+    do
+        res=${resolutions[$nr]}
+        caseDir=$solver/$mesh/N${res}Co${Co}
+        mv $caseDir/0/U $caseDir/0/U0
+        cp $caseDir/0.org/U $caseDir/0/
+
+        for nt in ${!times[*]}
+        do
+	    time=${times[$nt]}
+            echo $caseDir/0/alpha$time
+	    cp $caseDir/$time/alpha1 $caseDir/0/alpha$time
+	    sed -i "s/alpha1/alpha${time}/" $caseDir/0/alpha$time
+        done
+    done
+done

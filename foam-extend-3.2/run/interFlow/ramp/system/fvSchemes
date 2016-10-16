@@ -1,0 +1,68 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM Extend Project: Open source CFD        |
+|  \\    /   O peration     | Version:  3.1-ext                               |
+|   \\  /    A nd           | Web:      www.extend-project.de                 |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version         2.0;
+    format          ascii;
+    class           dictionary;
+    location       "system";
+    object          fvSchemes;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+ddtSchemes
+{
+    default                 Euler;
+}
+
+gradSchemes
+{
+    default                 Gauss linear;
+
+    // interface corrected schemes for mixture formulation
+    snGrad(pd)              interfaceGauss linear;
+    snGradCorr(pd)          interfaceGauss linear;
+}
+
+divSchemes
+{
+    div(phi,U)             Gauss linearUpwind Gauss linear;
+    div(phi,alpha)         Gauss vanLeer01DC;
+    div(phirb,alpha)       Gauss vofCompression;
+}
+
+laplacianSchemes
+{
+    default           Gauss linear corrected;
+
+    // interface corrected schemes for mixture formulation
+    laplacian(rAU,pd) interfaceGauss linear interfaceCorrected;
+}
+
+interpolationSchemes
+{
+    default         linear;
+}
+
+snGradSchemes
+{
+    default         corrected;
+
+    // interface corrected schemes for mixture formulation
+    snGrad(pd)      interfaceCorrected;
+}
+
+fluxRequired
+{
+    default         no;
+    pd;
+    alpha1;
+}
+
+
+// ************************************************************************* //

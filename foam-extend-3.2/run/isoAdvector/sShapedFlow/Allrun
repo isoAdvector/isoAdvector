@@ -1,0 +1,26 @@
+#!/bin/sh
+
+#./Allclean
+
+#nProc=$(sed -ne "s/^numberOfSubdomains *\(.*\);/\1/p" system/decomposeParDict)
+application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
+jobStart=$(date +"%Y%m%d%H%M")
+
+cd generateU
+wmake
+cd ..
+
+if [ ! -d "logs" ]; then
+    mkdir logs
+    cp -r 0.org 0
+    blockMesh > logs/blockMesh.log 2>&1
+    generateU/generateU > logs/generateU.log 2>&1
+    isoSurf > logs/isoSurf.log 2>&1
+else
+    mv logs logs_$jobStart
+    mkdir logs
+fi
+
+
+$application > logs/${application}.log 2>&1
+

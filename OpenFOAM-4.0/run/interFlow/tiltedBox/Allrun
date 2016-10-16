@@ -1,0 +1,9 @@
+#!/bin/sh
+
+application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
+
+mkdir logs
+
+$application > logs/${application}.log 2>&1
+
+foamToVTK -surfaceFields
