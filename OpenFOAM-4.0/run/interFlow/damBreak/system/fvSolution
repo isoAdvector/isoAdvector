@@ -1,7 +1,7 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  2.2.0                                 |
+|  \\    /   O peration     | Version:  4.0                                   |
 |   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
@@ -17,11 +17,26 @@ FoamFile
 
 solvers
 {
+    "alpha.water.*"
+    {
+        nAlphaCorr      2;
+        nAlphaSubCycles 1;
+        cAlpha          1;
+
+        MULESCorr       yes;
+        nLimiterIter    3;
+
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
+        tolerance       1e-8;
+        relTol          0;
+    }
+
     pcorr
     {
         solver          PCG;
         preconditioner  DIC;
-        tolerance       1e-10;
+        tolerance       1e-5;
         relTol          0;
     }
 
@@ -36,14 +51,13 @@ solvers
     p_rghFinal
     {
         $p_rgh;
-        tolerance       1e-07;
         relTol          0;
     }
 
     U
     {
-        solver          PBiCG;
-        preconditioner  DILU;
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
         tolerance       1e-06;
         relTol          0;
     }
@@ -58,17 +72,20 @@ isoAdvector
     snapAlpha   true;
 }
 
-
 PIMPLE
 {
-    momentumPredictor no;
-    nCorrectors     3;
+    momentumPredictor   no;
+    nOuterCorrectors    1;
+    nCorrectors         3;
     nNonOrthogonalCorrectors 0;
-    nAlphaCorr      1;
-    nAlphaSubCycles 1;
-    cAlpha          1;
-    pRefCell        0;
-    pRefValue       0;
+}
+
+relaxationFactors
+{
+    equations
+    {
+        ".*" 1;
+    }
 }
 
 

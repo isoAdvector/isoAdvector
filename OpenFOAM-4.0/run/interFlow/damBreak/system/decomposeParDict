@@ -1,7 +1,7 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  2.2.0                                 |
+|  \\    /   O peration     | Version:  4.0                                   |
 |   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
@@ -21,13 +21,13 @@ method          simple;
 
 simpleCoeffs
 {
-    n               ( 2 2 1 );
+    n               (2 2 1);
     delta           0.001;
 }
 
 hierarchicalCoeffs
 {
-    n               ( 1 1 1 );
+    n               (1 1 1);
     delta           0.001;
     order           xyz;
 }
