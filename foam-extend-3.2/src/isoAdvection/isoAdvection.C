@@ -499,7 +499,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
             ) << "Warning: Un0 is almost zero (" << Un0
               << ") - calculating dVf on face " << fLabel
               << " using subFaceFraction giving alphaf = " << alphaf
-
+              << endl;
         )
 
         return phi*dt*alphaf;
