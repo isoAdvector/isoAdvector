@@ -519,7 +519,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedArea
     const scalar Un0
 )
 {
-    isoDebug(Info << "Enter timeIntegratedArea for face " << fLabel << endl;)
+    isoDebug(Info << "Enter timeIntegratedArea with fPts = " << fPts << endl;)
 
     // Initialise time integrated area
     scalar tIntArea = 0.0;
