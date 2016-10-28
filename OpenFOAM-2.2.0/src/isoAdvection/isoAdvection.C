@@ -356,7 +356,7 @@ void Foam::isoAdvection::timeIntegratedFlux()
             }
         }
     }
-    
+        
      // Get references to boundary fields
     const surfaceScalarField::GeometricBoundaryField& phib =
         phi_.boundaryField();
@@ -486,7 +486,56 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 
         pTimes = ((fPts - x0) & n0)/Un0;
         
-        return phi/magSf*timeIntegratedArea(fPts,pTimes,dt,magSf,Un0);
+        scalar dVf = 0;
+        
+        //Check if pTimes changes direction more than twice when looping face
+        label nShifts = 0;
+        forAll(pTimes, pi)
+        {
+            label oldEdgeSign = sign(pTimes[(pi + 1) % nPoints] - pTimes[pi]);
+            label newEdgeSign = sign(pTimes[(pi + 2) % nPoints] - pTimes[(pi + 1) % nPoints]);
+            if (newEdgeSign != oldEdgeSign)
+            {
+                nShifts++;
+            }
+        }
+        if (nShifts == 2)
+        {
+            dVf = phi/magSf*timeIntegratedArea(fPts,pTimes,dt,magSf,Un0);
+        }
+        else if (nShifts > 2) //triangle decompose the face
+        {
+            pointField fPts_tri(3);
+            scalarField pTimes_tri(3);
+            fPts_tri[0] = mesh_.Cf()[fLabel];
+            pTimes_tri[0] = ((fPts_tri[0] - x0) & n0)/Un0;
+            for (label pi = 0; pi < nPoints; pi++)
+            {
+                fPts_tri[1] = fPts[pi];
+                pTimes_tri[1] = pTimes[pi];
+                fPts_tri[2] = fPts[(pi + 1) % nPoints];
+                pTimes_tri[2] = pTimes[(pi + 1) % nPoints];
+                const scalar magSf_tri = mag(0.5*(fPts_tri[2] - fPts_tri[0]) ^ (fPts_tri[1] - fPts_tri[0]));
+                const scalar phi_tri = phi*magSf_tri/magSf;
+                dVf += phi_tri/magSf_tri*timeIntegratedArea(fPts_tri,pTimes_tri,dt,magSf_tri,Un0);
+            }
+//            WarningIn
+//            (
+//                "Foam::scalar Foam::isoAdvection::timeIntegratedFlux(...)"
+//            )   << "Warning: nShifts = " << nShifts << " on face " << fLabel 
+//                << " owned by cell " << mesh_.owner()[fLabel] << endl;            
+        }
+        else
+        {
+            WarningIn
+            (
+                "Foam::scalar Foam::isoAdvection::timeIntegratedFlux(...)"
+            )   << "Warning: nShifts = " << nShifts << " on face " << fLabel
+                << " with pTimes = " << pTimes << " owned by cell " 
+                << mesh_.owner()[fLabel] << endl;
+        }
+
+        return dVf;
     }
     else
     {
