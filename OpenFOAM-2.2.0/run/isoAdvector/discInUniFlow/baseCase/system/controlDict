@@ -43,7 +43,7 @@ writeCompression uncompressed;
 
 timeFormat      general;
 
-timePrecision   14;
+timePrecision   6;
 
 graphFormat     raw;
 

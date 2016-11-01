@@ -1,11 +1,14 @@
 #!/bin/bash
 cd ${0%/*} || exit 1   # run from this directory
 
+#Compile in debug mode?
 if [ "$1" == "debug" ];
 then
     export ISODEBUG="-g -DFULL_DEBUG"
 fi
 
+#Write A LOT OF debug information to log file.
+#The info is poorly explained so you probably don't want this.
 if [ "$1" == "log" ];
 then
     export DETAILSTOLOGSWITCH=DETAILS2LOG
@@ -15,10 +18,11 @@ fi
 
 #. etc/bashrc
 
-if [ -z "$WM_PROJECT_VERSION" ]; 
+#Find out which OF version is loaded
+if [ -z "$WM_PROJECT_VERSION" ];
 then
     echo " "
-    echo "No OpenFOAM version seems to be sourced." 
+    echo "No OpenFOAM version seems to be sourced."
     echo "Please source one of the supported OpenFOAM versions."
     echo "Aborting isoAdvector installation."
     echo " "
@@ -30,6 +34,7 @@ then
     sourceDir=OpenFOAM-$WM_PROJECT_VERSION
 fi
 
+#Compile the correct isoAdvector version
 if [ -n "$sourceDir" ];
 then
     export ISOADVECTION=$PWD/$sourceDir
@@ -37,5 +42,6 @@ then
     $sourceDir/applications/Allwmake
 fi
 
-unset ISODEBUG 
+unset ISODEBUG
 unset DETAILSTOLOGSWITCH
+export ISOADVECTOR_ROOT_DIR=$PWD

@@ -1,0 +1,53 @@
+#!/bin/bash
+cd ${0%/*} || exit 1   # run from this directory
+
+#Download source
+meshSource="www.roenby.com"
+echo "Downloading isoAdvector meshes from" $meshSource " ..."
+
+#Download meshes
+coarseMeshes=(
+meshes/polyhedra_1x1x5/polyMesh_coarse.tar.gz
+meshes/tetrahedra_1x1x5/polyMesh_coarse.tar.gz
+meshes/triangularPrisms_1x01x1/polyMesh_coarse.tar.gz
+meshes/triangularPrisms_5x01x1/polyMesh_coarse.tar.gz)
+
+for nn in ${!coarseMeshes[*]};
+do
+    wget -x -nH $meshSource/${coarseMeshes[$nn]}
+done
+
+midMeshes=(
+meshes/tetrahedra_1x1x5/polyMesh_mid.tar.gz
+meshes/triangularPrisms_1x01x1/polyMesh_mid.tar.gz
+meshes/triangularPrisms_5x01x1/polyMesh_mid.tar.gz)
+
+for nn in ${!midMeshes[*]};
+do
+    wget -x -nH $meshSource/${midMeshes[$nn]}
+done
+
+fineMeshes=(
+meshes/polyhedra_1x1x5/polyMesh_fine.tar.gz
+meshes/tetrahedra_1x1x5/polyMesh_fine.tar.gz
+meshes/triangularPrisms_1x01x1/polyMesh_fine.tar.gz
+meshes/triangularPrisms_5x01x1/polyMesh_fine.tar.gz
+meshes/tetrahedra_075x065x065/polyMesh_fine.tar.gz)
+
+for nn in ${!fineMeshes[*]};
+do
+    wget -x -nH $meshSource/${fineMeshes[$nn]}
+done
+
+#Extract meshes
+echo "Extracting meshes ..."
+for n in $( find meshes -name "*tar.gz" );
+do
+    echo $n
+    subdir=$( dirname $n)
+    cd $subdir
+    fil=$( basename $n)
+    tar -xzvf $fil
+    rm $fil
+    cd -
+done

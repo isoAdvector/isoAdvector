@@ -1,9 +1,0 @@
-#!/bin/bash
-
-cp -r baseCase testCase
-cd testCase
-touch testCase.foam
-cp -r 0.org 0
-mkdir logs
-blockMesh > logs/blockMesh.log
-source Allrun

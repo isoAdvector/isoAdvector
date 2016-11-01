@@ -2,6 +2,18 @@
 
 application=$(sed -ne "s/^application\s*\(.*\);/\1/p" system/controlDict)
 
+mkdir -p logs
+
+if [ ! -d "0" ];
+then
+    cp -r 0.org 0
+fi
+
+if [ ! -f "constant/polyMesh/owner" ];
+then
+    blockMesh > logs/blockMesh.log 2>&1
+fi
+
 isoSurf > logs/isoSurf.log 2>&1
 
 $application > logs/${application}.log 2>&1

@@ -1,3 +1,8 @@
 #!/bin/sh
+cd ${0%/*} || exit 1    # run from this directory
 
-rm -rf [1-9] *.[0-9]* [0-9][0-9] [0-9][0-9].[0-9]* logs/* logs_*
+# Source tutorial clean functions
+. $WM_PROJECT_DIR/bin/tools/CleanFunctions
+
+cleanTimeDirectories
+rm -rf logs/* logs_*
