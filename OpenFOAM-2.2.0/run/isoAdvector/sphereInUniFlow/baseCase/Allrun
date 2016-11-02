@@ -20,11 +20,6 @@ then
         blockMesh > logs/blockMesh.log 2>&1
 fi
 
-cd generateU
-wmake
-cd ..
-
-generateU/generateU > logs/generateU.log 2>&1
 isoSurf > logs/isoSurf.log 2>&1
 
 $application > logs/${application}.log 2>&1

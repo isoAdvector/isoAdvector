@@ -51,3 +51,5 @@ do
     rm $fil
     cd -
 done
+
+mv meshes ..

@@ -6,10 +6,9 @@
 appList=(isoAdvector)
 #schemeList=(isoAdvector MULES HRIC CICSAM)
 schemeList=(isoAdvector)
-meshList=(hex tri poly)
-#meshList=(hex)
+meshList=(hex)
+dtList=(0.01 0.005 0.0025)
 CoList=(0.5)
-#CoList=(0.1 0.2 0.5)
 
 #End of input
 
@@ -28,15 +27,15 @@ else
 . $ISOADVECTOR_ROOT_DIR/bin/dhiFoamTools
 
 #Location of tri meshes
-triMeshDir=$ISOADVECTOR_ROOT_DIR/meshes/triangularPrisms_1x01x1
+tetMeshDir=$ISOADVECTOR_ROOT_DIR/meshes/tetrahedra_1x1x5
 
-if [ ! -d "$triMeshDir" ];
+if [ ! -d "$tetMeshDir" ];
 then
     echo " "
     echo "Warning: "
     echo "The triangular prism meshes cannot be found at the expected location:"
     echo " "
-    echo "\$ISOADVECTOR_ROOT_DIR/meshes/triangularPrisms_5x01x1"
+    echo "\$ISOADVECTOR_ROOT_DIR/meshes/tetrahedra_1x1x5"
     echo " "
     echo "Therefore only hex mesh cases will run properly."
     echo "Please make sure that you have download the meshes."
@@ -55,14 +54,13 @@ do
         #Case location
         series=$PWD/$scheme/$meshType
 
-        NzList=(100 200 400)
         if [ "$meshType" = "hex" ];
         then
-            #Domain  dimensions
-            L=1
-            H=1
+            #Domain dimensions
             NxList=(100 200 400)
-        elif [ -d "$triMeshDir" ];
+            NyList=(40 80 160)
+            NzList=(20 40 80)
+        elif [ -d "$tetMeshDir" ];
         then
             NzList=(coarse mid fine)
         else
@@ -88,6 +86,7 @@ do
 
                 foamParmSet maxAlphaCo "$Co" $caseDir/system/controlDict
                 foamParmSet application "$application" $caseDir/system/controlDict
+                foamParmSet deltaT "${dtList[$n]}" $caseDir/system/controlDict
 
                 if [ "$scheme" = "CICSAM" ];
                 then
@@ -101,23 +100,22 @@ do
                 if [ "$meshType" = "hex" ];
                 then
                     nx=${NxList[$n]}
+                    ny=${NyList[$n]}
                     nz=${NzList[$n]}
-                    foamParmSet L "$L" $caseDir/constant/polyMesh/blockMeshDict
-                    foamParmSet H "$H" $caseDir/constant/polyMesh/blockMeshDict
                     foamParmSet nx "$nx" $caseDir/constant/polyMesh/blockMeshDict
+                    foamParmSet ny "$ny" $caseDir/constant/polyMesh/blockMeshDict
                     foamParmSet nz "$nz" $caseDir/constant/polyMesh/blockMeshDict
+                    foamParmSet 'internalField' "uniform (1 0.2 0.1)" $caseDir/0.org/U
+                    foamParmSet 'centre' "(0.5 0.5 0.3)" $caseDir/system/isoSurfDict
                     cp -r $caseDir/0.org $caseDir/0
                 else
-                    cp $triMeshDir/polyMesh_${NzList[$n]}/* $caseDir/constant/polyMesh/
+                    cp $tetMeshDir/polyMesh_${NzList[$n]}/* $caseDir/constant/polyMesh/
                     cp -r $caseDir/0.org $caseDir/0
                     if [ "$meshType" = "poly" ];
                     then
                         mkdir $caseDir/logs
                         #Convert from tet to poly mesh
                         polyDualMesh -case $caseDir -overwrite 160 > $caseDir/logs/polyDualMesh.log 2>&1
-                        #Remove backmost  part of cells
-                        topoSet -case $caseDir > $caseDir/logs/topoSet.log 2>&1
-                        subsetMesh -case $caseDir -overwrite c0 -patch front > $caseDir/logs/subsetMesh.log 2>&1
                         rm -rf *.obj
                     fi
                 fi
@@ -130,5 +128,6 @@ echo " "
 echo "Cases generated. To run cases type"
 echo " "
 echo "foamRunCasesIn " $schemeList
+echo " "
 
 fi

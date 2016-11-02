@@ -130,5 +130,6 @@ echo " "
 echo "Cases generated. To run cases type"
 echo " "
 echo "foamRunCasesIn " $schemeList
+echo " "
 
 fi
