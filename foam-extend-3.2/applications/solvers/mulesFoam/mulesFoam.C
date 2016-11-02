@@ -1,26 +1,26 @@
 /*---------------------------------------------------------------------------*\
   =========                 |
-  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
-     \\/     M anipulation  |
+  \\      /  F ield         | foam-extend: Open Source CFD
+   \\    /   O peration     | Version:     3.2
+    \\  /    A nd           | Web:         http://www.foam-extend.org
+     \\/     M anipulation  | For copyright notice see file Copyright
 -------------------------------------------------------------------------------
 License
     This file is part of the IsoAdvector source code library, which is an 
 	unofficial extension to OpenFOAM.
 
-    OpenFOAM is free software: you can redistribute it and/or modify it
-    under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    foam-extend is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by the
+    Free Software Foundation, either version 3 of the License, or (at your
+    option) any later version.
 
-    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
-    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-    for more details.
+    foam-extend is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+    along with foam-extend.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
     mulesFoam
@@ -41,37 +41,34 @@ Author
 #include "interfaceProperties.H"
 #include "twoPhaseMixture.H"
 #include "turbulenceModel.H"
-#include "pimpleControl.H"
-#include "fvIOoptionList.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
 {
-    #include "setRootCase.H"
-    #include "createTime.H"
-    #include "createMesh.H"
+#   include "setRootCase.H"
+#   include "createTime.H"
+#   include "createMesh.H"
+#   include "readGravitationalAcceleration.H"
+#   include "readPIMPLEControls.H"
+#   include "initContinuityErrs.H"
+#   include "createFields.H"
+#   include "readTimeControls.H"
+#   include "correctPhi.H"
+#   include "CourantNo.H"
+#   include "setInitialDeltaT.H"
 
-    pimpleControl pimple(mesh);
-
-    #include "initContinuityErrs.H"
-    #include "createFields.H"
-    #include "readTimeControls.H"
-    #include "correctPhi.H"
-    #include "CourantNo.H"
-    #include "setInitialDeltaT.H"
-
-
-    // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     Info<< "\nStarting time loop\n" << endl;
 
     while (runTime.run())
     {
-        #include "readTimeControls.H"
-        #include "CourantNo.H"
-        #include "alphaCourantNo.H"
-        #include "setDeltaT.H"
+#       include "readPIMPLEControls.H"
+#       include "readTimeControls.H"
+#       include "CourantNo.H"
+#       include "alphaCourantNo.H"
+#       include "setDeltaT.H"
 
 		scalar t = runTime.time().value();
         scalar dt = runTime.deltaT().value();
@@ -86,35 +83,46 @@ int main(int argc, char *argv[])
 		}
 		if ( period > 0.0 )
 		{
-			phi = phi0*Foam::cos(2.0*PI*(t + 0.5*dt)/period);
-			U = U0*Foam::cos(2.0*PI*(t + 0.5*dt)/period);		
+			phi = phi0*Foam::cos(2.0*M_PI*(t + 0.5*dt)/period);
+			U = U0*Foam::cos(2.0*M_PI*(t + 0.5*dt)/period);		
 		}
 
         runTime++;
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
-        twoPhaseProperties.correct();
-
-        #include "alphaEqnSubCycle.H"
-        interface.correct();
-
-        // --- Pressure-velocity PIMPLE corrector loop
-        while (pimple.loop())
+        // Pressure-velocity corrector
+        int oCorr = 0;
+        do
         {
-            #include "UEqn.H"
+            twoPhaseProperties.correct();
 
-            // --- Pressure corrector loop
-            while (pimple.correct())
+#           include "alphaEqnSubCycle.H"
+
+#           include "UEqn.H"
+
+            // --- PISO loop
+            for (int corr = 0; corr < nCorr; corr++)
             {
-                #include "pEqn.H"
+#               include "pEqn.H"
             }
 
-            if (pimple.turbCorr())
+#           include "continuityErrs.H"
+
+            p = pd + rho*gh;
+
+            if (pd.needReference())
             {
-                turbulence->correct();
+                p += dimensionedScalar
+                (
+                    "p",
+                    p.dimensions(),
+                    pRefValue - getRefCellValue(p, pdRefCell)
+                );
             }
-        }
+
+            turbulence->correct();
+        } while (++oCorr < nOuterCorr);
 
         runTime.write();
 

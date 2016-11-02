@@ -1,9 +1,23 @@
-    Info<< "Reading field p_rgh\n" << endl;
-    volScalarField p_rgh
+    Info<< "Reading field pd\n" << endl;
+    volScalarField pd
     (
         IOobject
         (
-            "p_rgh",
+            "pd",
+            runTime.timeName(),
+            mesh,
+            IOobject::MUST_READ,
+            IOobject::AUTO_WRITE
+        ),
+        mesh
+    );
+
+    Info<< "Reading field alpha1\n" << endl;
+    volScalarField alpha1
+    (
+        IOobject
+        (
+            "alpha1",
             runTime.timeName(),
             mesh,
             IOobject::MUST_READ,
@@ -26,13 +40,11 @@
         mesh
     );
 
-    #include "createPhi.H"
+#   include "createPhi.H"
 
 
     Info<< "Reading transportProperties\n" << endl;
-    twoPhaseMixture twoPhaseProperties(U, phi);
-
-    volScalarField& alpha1(twoPhaseProperties.alpha1());
+    twoPhaseMixture twoPhaseProperties(U, phi, "alpha1");
 
     const dimensionedScalar& rho1 = twoPhaseProperties.rho1();
     const dimensionedScalar& rho2 = twoPhaseProperties.rho2();
@@ -71,31 +83,9 @@
     );
 
 
-    // Construct interface from alpha1 distribution
-    interfaceProperties interface(alpha1, U, twoPhaseProperties);
-
-
-    // Construct incompressible turbulence model
-    autoPtr<incompressible::turbulenceModel> turbulence
-    (
-        incompressible::turbulenceModel::New(U, phi, twoPhaseProperties)
-    );
-
-    #include "readGravitationalAcceleration.H"
-
-    /*
-    dimensionedVector g0(g);
-
-    // Read the data file and initialise the interpolation table
-    interpolationTable<vector> timeSeriesAcceleration
-    (
-        runTime.path()/runTime.caseConstant()/"acceleration.dat"
-    );
-    */
-
     Info<< "Calculating field g.h\n" << endl;
     volScalarField gh("gh", g & mesh.C());
-    surfaceScalarField ghf("ghf", g & mesh.Cf());
+    surfaceScalarField ghf("gh", g & mesh.Cf());
 
     volScalarField p
     (
@@ -107,34 +97,48 @@
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
-        p_rgh + rho*gh
+        pd + rho*gh
     );
 
-    label pRefCell = 0;
-    scalar pRefValue = 0.0;
+
+    label pdRefCell = 0;
+    scalar pdRefValue = 0.0;
     setRefCell
     (
-        p,
-        p_rgh,
+        pd,
         mesh.solutionDict().subDict("PIMPLE"),
-        pRefCell,
-        pRefValue
+        pdRefCell,
+        pdRefValue
     );
 
-    if (p_rgh.needReference())
+    scalar pRefValue = 0.0;
+
+    if (pd.needReference())
     {
+        pRefValue = readScalar
+        (
+            mesh.solutionDict().subDict("PIMPLE").lookup("pRefValue")
+        );
+
         p += dimensionedScalar
         (
             "p",
             p.dimensions(),
-            pRefValue - getRefCellValue(p, pRefCell)
+            pRefValue - getRefCellValue(p, pdRefCell)
         );
-        p_rgh = p - rho*gh;
     }
 
-    fv::IOoptionList fvOptions(mesh);
+    // Construct interface from alpha1 distribution
+    interfaceProperties interface(alpha1, U, twoPhaseProperties);
 
-	scalar period(0.0), reverseTime(0.0);
+     // Construct incompressible turbulence model
+    autoPtr<incompressible::turbulenceModel> turbulence
+    (
+        incompressible::turbulenceModel::New(U, phi, twoPhaseProperties)
+    );
+
+    
+    scalar period(0.0), reverseTime(0.0);
 	{
 		const dictionary& pimpleDict = mesh.solutionDict().subDict("isoAdvector");
 		period = pimpleDict.lookupOrDefault<scalar>("period", 0.0);
@@ -144,4 +148,3 @@
 	//Copies of initial U and phi for use when flow is periodic
 	surfaceScalarField phi0 = phi;
 	volVectorField U0 = U;
-	scalar PI = Foam::constant::mathematical::pi;

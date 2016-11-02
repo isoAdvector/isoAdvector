@@ -18,24 +18,24 @@ A number of videos can be found in this youtube channel:
 https://www.youtube.com/channel/UCt6Idpv4C8TTgz1iUX0prAA
 
 
-# Requirement:
+# Requirements:
 
-A version of the applications, src and run (tutorials) folders exists for each
-supported OpenFOAM version as can be seen in the main directory of the project.
-Currently the following versions are supported: OpenFOAM-4.0, 2.2.0 and
-foam-extend-3.2. The could should run with other versions with minor 
-modifications to the source code by the user. I will do my best to correct bugs
-in all versions of the code, but it is unrealistic that I will have time to 
-implement all changes and new developments to older versions of the code. The 
-code is being maintained and developed in the newest OpenFOAM version, so as
-a rule of thumb the best performance should be expected with this version, and 
-slight difference in behaviour should be expected in older version of the code.
+The isoAdvector library is compatible with several different versions of 
+OpenFOAM/foam-extend. The isoAdvector root directory contains a folder named 
+after each OpenFOAM/foam-extend version with which the isoAdvcetor code has been 
+succesfully compiled. The code will compile with other versions with minor 
+modifications. I will do my best to correct bugs in all versions of the code, 
+but it is unrealistic that I will have time to implement all changes and new 
+developments to older versions of the code. The code is being maintained and 
+developed in the newest OpenFOAM version, so as a rule of thumb the best 
+performance should be expected with this version, and slight difference in 
+behaviour should be expected in older version of the code.
 
 # Installation:
 
 0.  Source a supported OpenFOAM environment: 
 
-    source OpenFOAM-x.x.x/etc/bashrc
+        source OpenFOAM-x.x.x/etc/bashrc
 
 1.  In a linux terminal download the package with git by typing:
 
@@ -51,11 +51,19 @@ slight difference in behaviour should be expected in older version of the code.
     
 3.  Test installation with a simple test case by typing (finishes in secs):
     
-	    cd OpenFOAM-x.x.x/run/isoAdvector/discInUniFlow
-		./makeAndRunTestCase
+	    cp -r [foam version]/run/isoAdvector/discInUniFlow/baseCase ~
+        cd ~/baseCase
+        ./Allrun
 	
-    Open Paraview and color the mesh by alpha.water or alpha1 field.
+    Here [foam version] is the loaded foam version, e.g. OpenFOAM-4.0.
+    Open Paraview and color the mesh by the alpha.water/alpha1 field.
 
+If you want to test the code on unstructured meshes, a number of such meshes can
+be donwloaded by using the downloadMeshes script in the bin directory. These 
+meshes will take up ~2GB and will be placed in a folder called meshes. The 
+meshes will be loaded by the scripts in discInUniFlows, vortexSmearedDisc, 
+sphereInUniFlow and smearedSphere cases in run/isoAdvector.
+    
 # Code structure:
 
 `src/` 
@@ -103,17 +111,24 @@ slight difference in behaviour should be expected in older version of the code.
 	
 #Classes
 	
+## IsoAdvection 
+
+- Calculates the total volume of water, dVf, crossing each face in the mesh 
+  during the time interval from time t to time t + dt.
+
+## IsoCutCell
+
+- Performs cutting of a cell given an isovalue and the alpha values interpolated 
+  to the cell vertices.
+- Calculates the submerged volume of a cell for a given isovalue.
+- Calculates the isovalue given a specified target volume fraction of a cell.
+  
 ## IsoCutFace
 
-- Calculates an isosurface from a function f and a function value f0.
-- The function is defined in all vertex points of an fvMesh.
-- The routine travels through all cells and looks at each cell face edge.
-- If the f is above f0 at one vertex and below f0 at the other vertex of an 
-  edge, the edge is cut at a position determined by linear interpolation.
-- The routine calculates the polygonal "isoFace" inside the cell formed by 
-  cutting its edges in this way.
-- It also calculates the volume and cell centre of the "submerged" subcell 
-  defined as the part of the original cell where f >= f0.
+- Performs cutting of a face given an isovalue and alpha values interpolated to
+  the face vertices.
+- Calculates the submerged face area given an isovalue and alpha values 
+  interpolated to the face vertices.
 
 So far the routine assumes that a cut face is cut at two edges. For n-gons with 
 n > 3 there will in general be special situations where this is not the case. 
@@ -126,19 +141,6 @@ number of times an edge is visited is equal to twice the number of faces to
 which it belongs. The advantage is that parallelisation is trivial. It should be 
 noted that the operation performed on each edge is extremely simple.
 
-## IsoCutCell
-
-## IsoAdvection 
-
-- Calculates the total volume of water, dVf, crossing each face in the mesh 
-  during the time interval from time t to time t + dt.
-
-# Ongoing work 
-
-Add feature and improvement ideas/requests here. Some of them will be taken over 
-by the development team and converted to issues. If you see an open feature 
-request in this list that you want to take on, open an issue and leave a comment 
-in the issue tracker. 
 
 # Contributors:
 

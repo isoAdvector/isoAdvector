@@ -40,8 +40,8 @@ Author
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
-#include "fvIOoptionList.H"
-#include "simpleControl.H"
+//#include "fvIOoptionList.H"
+//#include "simpleControl.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -54,9 +54,9 @@ int main(int argc, char *argv[])
     #include "createFields.H"
 	#include "readTimeControls.H"
 
-    #include "createFvOptions.H"
+//    #include "createFvOptions.H"
 
-    simpleControl simple(mesh);
+//    simpleControl simple(mesh);
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -74,18 +74,22 @@ int main(int argc, char *argv[])
         #include "CourantNo.H"
         #include "alphaCourantNo.H"
         #include "setDeltaT.H"
+
         runTime++;
+
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
-        while (simple.correctNonOrthogonal())
+        #include "readSIMPLEControls.H"
+        
+        for (int nonOrth=0; nonOrth<=nNonOrthCorr; nonOrth++)
         {
             solve
             (
                 fvm::ddt(alpha1)
               + fvm::div(phi, alpha1)
 //              - fvm::laplacian(DT, alpha1)
-             ==
-                fvOptions(alpha1)
+//             ==
+//                fvOptions(alpha1)
             );
         }
 
@@ -105,8 +109,10 @@ int main(int argc, char *argv[])
 				lMin = ci;				
 			}
 		}
+        reduce(aMin, minOp<scalar>());
+        reduce(aMax, maxOp<scalar>());
 		
-		const scalar V = sum(mesh.V()*alpha1).value();
+        const scalar V = gSum(mesh.V()*alpha1.internalField());
 		scalar t = runTime.time().value();
         Info << "t = " << t << ",\t sum(alpha*V) = " << V
              << ",\t dev = " << 100*(1.0-V/V0) << "%" 

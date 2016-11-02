@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 
 	Foam::argList::noBanner();
     #include "setRootCase.H"
-    Foam::Time runTime(Foam::Time::controlDictName, args);
+    #include "createTime.H"
     #include "readTimeControls.H"
 	instantList instList = runTime.times();
 	//Setting time to first time which is not 'constant'

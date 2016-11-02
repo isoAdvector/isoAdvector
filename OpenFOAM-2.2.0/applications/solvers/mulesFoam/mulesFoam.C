@@ -86,8 +86,8 @@ int main(int argc, char *argv[])
 		}
 		if ( period > 0.0 )
 		{
-			phi = phi0*Foam::cos(2.0*PI*(t + 0.5*dt)/period);
-			U = U0*Foam::cos(2.0*PI*(t + 0.5*dt)/period);		
+			phi = phi0*Foam::cos(2.0*M_PI*(t + 0.5*dt)/period);
+			U = U0*Foam::cos(2.0*M_PI*(t + 0.5*dt)/period);		
 		}
 
         runTime++;

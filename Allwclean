@@ -1,5 +1,26 @@
-#!/bin/sh
+#!/bin/bash
 cd ${0%/*} || exit 1    # run from this directory
 
-applications/Allwclean
-src/Allwclean
+#Find out which OF version is loaded
+if [ -z "$WM_PROJECT_VERSION" ];
+then
+    echo " "
+    echo "No OpenFOAM version seems to be sourced."
+    echo "Please source one of the supported OpenFOAM versions."
+    echo "Aborting isoAdvector cleaning."
+    echo " "
+elif [ "$WM_PROJECT" == "foam" ];
+then
+    sourceDir=foam-extend-$WM_PROJECT_VERSION
+elif [ "$WM_PROJECT" == "OpenFOAM" ];
+then
+    sourceDir=OpenFOAM-$WM_PROJECT_VERSION
+fi
+
+#Compile the correct isoAdvector version
+if [ -n "$sourceDir" ];
+then
+    export ISOADVECTION=$PWD/$sourceDir
+    $sourceDir/src/Allwclean
+    $sourceDir/applications/Allwclean
+fi

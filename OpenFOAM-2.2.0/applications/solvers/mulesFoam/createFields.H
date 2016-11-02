@@ -144,4 +144,3 @@
 	//Copies of initial U and phi for use when flow is periodic
 	surfaceScalarField phi0 = phi;
 	volVectorField U0 = U;
-	scalar PI = Foam::constant::mathematical::pi;

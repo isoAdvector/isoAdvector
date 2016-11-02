@@ -1307,17 +1307,20 @@ void Foam::isoAdvection::getSurfaceCells
 )
 {
     surfCells.clear();
-    forAll(surfCells_,i)
+    forAll(surfCells_, i)
     {
         surfCells.insert(surfCells_[i]);
     }
 }
 
 
-const cellSet& Foam::isoAdvection::getBoundedCells() const
+void Foam::isoAdvection::getBoundedCells
+(
+    cellSet& boundCells
+)
 {
     boundCells.clear();
-    forAll(cellIsBounded_,i)
+    forAll(cellIsBounded_, i)
     {
         if (cellIsBounded_[i])
         {

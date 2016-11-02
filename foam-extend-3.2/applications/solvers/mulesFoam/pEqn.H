@@ -1,63 +1,49 @@
 {
-    volScalarField rAU("rAU", 1.0/UEqn.A());
-    surfaceScalarField rAUf("Dp", fvc::interpolate(rAU));
+    volScalarField rUA = 1.0/UEqn.A();
+    surfaceScalarField rUAf = fvc::interpolate(rUA);
 
-    volVectorField HbyA("HbyA", U);
-    HbyA = rAU*UEqn.H();
+    U = rUA*UEqn.H();
 
-    surfaceScalarField phiHbyA
+    surfaceScalarField phiU
     (
-        "phiHbyA",
-        (fvc::interpolate(HbyA) & mesh.Sf())
-      + fvc::ddtPhiCorr(rAU, rho, U, phi)
+        "phiU",
+        (fvc::interpolate(U) & mesh.Sf())
+      + fvc::ddtPhiCorr(rUA, rho, U, phi)
     );
 
-    adjustPhi(phiHbyA, U, p_rgh);
-    phi = phiHbyA;
+    adjustPhi(phiU, U, pd);
 
-    surfaceScalarField phig
-    (
+    phi = phiU +
         (
             fvc::interpolate(interface.sigmaK())*fvc::snGrad(alpha1)
           - ghf*fvc::snGrad(rho)
-        )*rAUf*mesh.magSf()
-    );
+        )*rUAf*mesh.magSf();
 
-    phiHbyA += phig;
 
-    while (pimple.correctNonOrthogonal())
+    for(int nonOrth=0; nonOrth<=nNonOrthCorr; nonOrth++)
     {
-        fvScalarMatrix p_rghEqn
+        fvScalarMatrix pdEqn
         (
-            fvm::laplacian(rAUf, p_rgh) == fvc::div(phiHbyA)
+            fvm::laplacian(rUAf, pd) == fvc::div(phi)
         );
 
-        p_rghEqn.setReference(pRefCell, getRefCellValue(p_rgh, pRefCell));
+        pdEqn.setReference(pdRefCell, pdRefValue);
 
-        p_rghEqn.solve(mesh.solver(p_rgh.select(pimple.finalInnerIter())));
-
-        if (pimple.finalNonOrthogonalIter())
+        if (corr == nCorr - 1 && nonOrth == nNonOrthCorr)
         {
-            phi = phiHbyA - p_rghEqn.flux();
+            pdEqn.solve(mesh.solutionDict().solver(pd.name() + "Final"));
+        }
+        else
+        {
+            pdEqn.solve(mesh.solutionDict().solver(pd.name()));
+        }
 
-            U = HbyA + rAU*fvc::reconstruct((phig - p_rghEqn.flux())/rAUf);
-            U.correctBoundaryConditions();
-            fvOptions.correct(U);
+        if (nonOrth == nNonOrthCorr)
+        {
+            phi -= pdEqn.flux();
         }
     }
 
-    #include "continuityErrs.H"
-
-    p == p_rgh + rho*gh;
-
-    if (p_rgh.needReference())
-    {
-        p += dimensionedScalar
-        (
-            "p",
-            p.dimensions(),
-            pRefValue - getRefCellValue(p, pRefCell)
-        );
-        p_rgh = p - rho*gh;
-    }
+    U += rUA*fvc::reconstruct((phi - phiU)/rUAf);
+    U.correctBoundaryConditions();
 }
