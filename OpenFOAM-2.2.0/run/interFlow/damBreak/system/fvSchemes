@@ -27,10 +27,12 @@ gradSchemes
 
 divSchemes
 {
-    div(rho*phi,U)  Gauss limitedLinearV 1;
+    div(rho*phi,U)  Gauss limitedLinearV 1; //OF-2.2.0
+    div(rhoPhi,U)  Gauss limitedLinearV 1; //OF-4.0
     div(phi,alpha)  Gauss vanLeer;
     div(phirb,alpha) Gauss interfaceCompression;
-    div((muEff*dev(T(grad(U))))) Gauss linear;
+    div((muEff*dev(T(grad(U))))) Gauss linear; //OF-2.2.0
+    div(((rho*nuEff)*dev2(T(grad(U))))) Gauss linear; //OF-4.0
 }
 
 laplacianSchemes
@@ -52,8 +54,10 @@ fluxRequired
 {
     default         no;
     p_rgh;
+    pd;
     pcorr;
     alpha1;
+    alpha.water;
 }
 
 

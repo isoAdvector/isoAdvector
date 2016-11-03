@@ -1,13 +1,34 @@
-#!/bin/sh
+#!/bin/bash
 
 nProc=$(sed -ne "s/^numberOfSubdomains *\(.*\);/\1/p" system/decomposeParDict)
 application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
 jobStart=$(date +"%Y%m%d%H%M")
 
 if [ ! -d "logs" ]; then
-	cp -r 0.org 0
-	mkdir logs
-	blockMesh > logs/blockMesh.log 2>&1
+
+    cp -r 0.org 0
+    mkdir logs
+    blockMesh > logs/blockMesh.log 2>&1
+
+    if [ "$WM_PROJECT" == "foam" ];
+    then
+
+        cp constant/polyMesh/cellSetDict1 system/cellSetDict
+        cp constant/polyMesh/refineMeshDict1 system/refineMeshDict
+        cellSet > logs/cellSetDict1.log 2>&1
+        refineMesh -dict -overwrite > logs/refineMeshDict1.log 2>&1
+
+        cp constant/polyMesh/cellSetDict2 system/cellSetDict
+        cp constant/polyMesh/refineMeshDict2 system/refineMeshDict
+        cellSet > logs/cellSetDict2.log 2>&1
+        refineMesh -dict -overwrite > logs/refineMeshDict2.log 2>&1
+
+        cp constant/transportProperties.old constant/transportProperties
+
+        isoSurf > logs/isoSurf.log 2>&1
+
+    elif [ "$WM_PROJECT" == "OpenFOAM" ];
+    then
         topoSet -dict constant/polyMesh/topoSetDict1 > logs/topoSetDict1.log 2>&1
         refineMesh -dict constant/polyMesh/refineMeshDict1 -overwrite > logs/refineMeshDict1.log 2>&1
 
@@ -15,17 +36,30 @@ if [ ! -d "logs" ]; then
         refineMesh -dict constant/polyMesh/refineMeshDict2 -overwrite > logs/refineMeshDict2.log 2>&1
 
         isoSurf > logs/isoSurf.log 2>&1
+        
+        OFvers=$(echo $WM_PROJECT_VERSION | cut -c1-3)
+        newVersion=$(echo "$OFvers>2.2" | bc)
+        if [ $newVersion -eq 1 ];
+        then
+            cp constant/transportProperties.new constant/transportProperties
+            mv 0/alpha1 0/alpha.water
+            sed -i 's/alpha1/alpha.water/g' 0/alpha.water
+        else
+            cp constant/transportProperties.old constant/transportProperties
+        fi
+    fi
+
 else
-	mv logs logs_$jobStart
-	mkdir logs
+    mv logs logs_$jobStart
+    mkdir logs
 fi
 
-if [ "$nProc" -gt "1" ]; 
+if [ "$nProc" -gt "1" ];
 then
-	if [ ! -d "processor0" ]; then
+    if [ ! -d "processor0" ]; then
                 decomposePar > logs/decomposePar.log 2>&1
-	fi
-	mpirun -np $nProc $application -parallel > logs/$application.log 2>&1
+    fi
+    mpirun -np $nProc $application -parallel > logs/$application.log 2>&1
 else
-	$application > logs/$application.log 2>&1
+    $application > logs/$application.log 2>&1
 fi

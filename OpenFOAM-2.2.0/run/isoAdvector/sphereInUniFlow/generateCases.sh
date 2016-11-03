@@ -6,7 +6,7 @@
 appList=(isoAdvector)
 #schemeList=(isoAdvector MULES HRIC CICSAM)
 schemeList=(isoAdvector)
-meshList=(hex)
+meshList=(tri)
 dtList=(0.01 0.005 0.0025)
 CoList=(0.5)
 

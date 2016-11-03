@@ -17,6 +17,22 @@ FoamFile
 
 solvers
 {
+
+    "alpha.water.*"
+    {
+        nAlphaCorr      2;
+        nAlphaSubCycles 1;
+        cAlpha          1;
+
+        MULESCorr       yes;
+        nLimiterIter    3;
+
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
+        tolerance       1e-8;
+        relTol          0;
+    }
+
     pcorr
     {
         solver          PCG;
@@ -25,7 +41,7 @@ solvers
         relTol          0;
     }
 
-    p_rgh
+    "(p_rgh|pd)"
     {
         solver          PCG;
         preconditioner  DIC;
@@ -33,7 +49,7 @@ solvers
         relTol          0.05;
     }
 
-    p_rghFinal
+    "(p_rghFinal|pdFinal)"
     {
         $p_rgh;
         tolerance       1e-07;
@@ -56,7 +72,6 @@ isoAdvector
     clipAlphaTol 1e-10;
     nAlphaBounds 2;
     snapAlpha   true;
-    writeToLog  true;
     period 6;
 }
 
@@ -65,13 +80,21 @@ PIMPLE
 {
     momentumPredictor no;
     nCorrectors     3;
+    nOuterCorrectors    1;
     nNonOrthogonalCorrectors 0;
     nAlphaCorr      1;
     nAlphaSubCycles 1;
     cAlpha          1;
     pRefCell        0;
     pRefValue       0;
+    pdRefCell        0;
+    pdRefValue       0;
 }
 
+//Required by foam-extend-3.2
+PISO
+{
+    cAlpha          1;
+}
 
 // ************************************************************************* //
