@@ -1,6 +1,0 @@
-#!/bin/sh
-
-rm -rf [0-9] *.[0-9]* [0-9][0-9] [0-9][0-9].[0-9]* logs logs_*
-cd constant/polyMesh
-rm -rf boundary owner neighbour faces points
-cd -

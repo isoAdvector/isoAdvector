@@ -37,9 +37,9 @@ fi
 #Compile the correct isoAdvector version
 if [ -n "$sourceDir" ];
 then
-    export ISOADVECTION=$PWD/$sourceDir
-    $sourceDir/src/Allwmake
-    $sourceDir/applications/Allwmake
+    export ISOADVECTION=$PWD/src/$sourceDir
+    src/$sourceDir/Allwmake
+    applications/$sourceDir/Allwmake
 fi
 
 unset ISODEBUG

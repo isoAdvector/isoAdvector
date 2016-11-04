@@ -1,8 +1,0 @@
-#!/bin/bash
-
-for caseDir in $(ls -d N*Co0[0-9] )
-do 
-    cd $caseDir
-    uniFlowErrors > logs/errors.log &
-    cd ..
-done

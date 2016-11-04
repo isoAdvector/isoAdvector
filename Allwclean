@@ -20,7 +20,7 @@ fi
 #Compile the correct isoAdvector version
 if [ -n "$sourceDir" ];
 then
-    export ISOADVECTION=$PWD/$sourceDir
-    $sourceDir/src/Allwclean
-    $sourceDir/applications/Allwclean
+    export ISOADVECTION=$PWD/src/$sourceDir
+    src/$sourceDir/Allwclean
+    applications/$sourceDir/Allwclean
 fi

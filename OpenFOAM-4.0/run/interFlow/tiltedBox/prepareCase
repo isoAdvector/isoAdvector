@@ -1,6 +1,0 @@
-#!/bin/sh
-
-blockMesh
-transformPoints -yawPitchRoll '(0 30 0)'
-isoSurf
-cp 0/alpha1 0/alpha1.org2

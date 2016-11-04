@@ -1,4 +1,4 @@
-Welcome to the IsoAdvector project
+# Welcome to the IsoAdvector project
 
 # What is IsoAdvector?
 
@@ -8,8 +8,19 @@ unstructured meshes with no requirements on cell shapes. IsoAdvector is meant as
 a replacement for the interface compression with the MULES limiter implemented 
 in the interFoam family of solvers.
 
-The ideas behind and performance of the IsoAdvector scheme is documented in this
-article:
+The ideas behind and performance of the isoAdvector scheme is documented in:
+
+@article{Roenby2016Comp,
+  title={A Computational Method for Sharp Interface Advection},
+  author={Roenby, Johan and Bredmose, Henri and Jasak, Hrvoje},
+  booktitle={Royal Society Open Science},
+  pages={XX},
+  doi={YY},
+  year={2016},
+  organization={The Royal Society}
+}
+
+This article will soon be available online. A preprint can be found here:
 
 https://arxiv.org/abs/1601.05392
 
@@ -20,16 +31,9 @@ https://www.youtube.com/channel/UCt6Idpv4C8TTgz1iUX0prAA
 
 # Requirements:
 
-The isoAdvector library is compatible with several different versions of 
-OpenFOAM/foam-extend. The isoAdvector root directory contains a folder named 
-after each OpenFOAM/foam-extend version with which the isoAdvcetor code has been 
-succesfully compiled. The code will compile with other versions with minor 
-modifications. I will do my best to correct bugs in all versions of the code, 
-but it is unrealistic that I will have time to implement all changes and new 
-developments to older versions of the code. The code is being maintained and 
-developed in the newest OpenFOAM version, so as a rule of thumb the best 
-performance should be expected with this version, and slight difference in 
-behaviour should be expected in older version of the code.
+The isoAdvector code is currently compatible with OpenFOAM-2.2.0, OpenFOAM 4.0 
+and foam-extend-3.2. The code should also compile with other foam versions with
+only minor modifications.
 
 # Installation:
 
@@ -58,11 +62,19 @@ behaviour should be expected in older version of the code.
     Here [foam version] is the loaded foam version, e.g. OpenFOAM-4.0.
     Open Paraview and color the mesh by the alpha.water/alpha1 field.
 
-If you want to test the code on unstructured meshes, a number of such meshes can
-be donwloaded by using the downloadMeshes script in the bin directory. These 
-meshes will take up ~2GB and will be placed in a folder called meshes. The 
-meshes will be loaded by the scripts in discInUniFlows, vortexSmearedDisc, 
-sphereInUniFlow and smearedSphere cases in run/isoAdvector.
+4.  (Optional) If you want to test the code on unstructured meshes, a number of 
+    such meshes can be donwloaded by using the downloadMeshes script in the bin 
+    directory. These meshes will take up ~2GB and will be placed in a folder 
+    called meshes. The meshes will be loaded by the scripts in discInUniFlows, 
+    vortexSmearedDisc, sphereInUniFlow and smearedSphere cases in 
+    run/isoAdvector.
+
+    Alternatively, the meshes can be downloaded directly from here:
+
+        http://dx.doi.org/10.5061/dryad.66840
+
+    The downloaded meshes.tar.gz file should be extracted to the isoadvector 
+    root directory.
     
 # Code structure:
 
@@ -79,26 +91,28 @@ sphereInUniFlow and smearedSphere cases in run/isoAdvector.
 
 `applications/` 
 
-- `applications/solvers/isoAdvector` 
+- `solvers/isoAdvector` 
     - Solves the volume fraction advection equation in either steady flow or 
       periodic predefined flow with the option of changing the flow direction at
       a specified time.
-- `applications/solvers/mulesFoam`
+- `solvers/mulesFoam`
     - This is like isoAdvector, but using MULES instead of isoAdvector. Based on
       interFoam.
-- `applications/solvers/passiveAdvectionFoam` 
+- `solvers/passiveAdvectionFoam` 
     - This is essentially scalarTransportFoam but using alpha1 instead of T and 
       without diffusion term. Used to run test cases with predefined velocity 
       field using the CICSAM and HRIC schemes.
-- `applications/solvers/interFlow` 
+- `solvers/interFlow` 
     - This is essentially the original interFoam solver with MULES replaced by 
       isoAdvector for interface advection. No changes to PIMPLE loop.
-- `applications/utilities/preProcessing/isoSurf` 
+- `utilities/preProcessing/isoSurf` 
     - Sets the initial volume fraction field for either a sphere, a cylinder or 
       a plane. See isoSurfDict for usage.
-- `applications/utilities/postProcessing/uniFlowErrors`
+- `utilities/postProcessing/uniFlowErrors`
     - For cases with spheres and discs in steady uniform flow calculates errors 
       relative to exact VOF solution.
+- `test/isoCutTester`
+    - Application for testing isoCutFace and isoCutCell classes.
 
 `run/`
 
@@ -108,7 +122,9 @@ sphereInUniFlow and smearedSphere cases in run/isoAdvector.
 - `interFlow/` 
     - Contains test cases using interFlow coupling IsoAdvector with the PIMPLE 
       algorithm for the pressure-velocity coupling.
-	
+- `isoCutTester/`
+    - Case for testing the isoCutFace and isoCutCell classes.
+      
 #Classes
 	
 ## IsoAdvection 
@@ -130,23 +146,20 @@ sphereInUniFlow and smearedSphere cases in run/isoAdvector.
 - Calculates the submerged face area given an isovalue and alpha values 
   interpolated to the face vertices.
 
-So far the routine assumes that a cut face is cut at two edges. For n-gons with 
-n > 3 there will in general be special situations where this is not the case. 
-The function should then triangulate such faces interpolating the function to 
-the face centre and do the face cutting on the triangular faces.
-
-The routine was deliberately build to travel through all cells instead of all 
-faces or edges to obtain its results. The downside of this strategy is that the 
-number of times an edge is visited is equal to twice the number of faces to 
-which it belongs. The advantage is that parallelisation is trivial. It should be 
-noted that the operation performed on each edge is extremely simple.
-
-
 # Contributors:
 
 * Johan Roenby <jro@dhigroup.com> (Inventor and main developer)
 * Hrvoje Jasak <hrvoje.jasak@fsb.hr> (Consistent treatment of boundary faces 
-  including processor boundaries, code clean up)
+  including processor boundaries, parallelisation, code clean up)
+* Henrik Bredmose <hbre@dtu.dk> (Assisted in the conceptual development)
 * Vuko Vukcevic <vuko.vukcevic@fsb.hr> (Code review, profiling, porting to 
-  foam-extend, bug fixing)
+  foam-extend, bug fixing, testing)
 * Tomislav Maric <tomislav@sourceflux.de> (Source file rearrangement)
+
+# Acknowledgement
+
+The isoAdvector concept and code was developed at DHI and was funded by a Sapere 
+Aude postdoc grant to Johan Roenby from The Danish Council for Independent 
+Research | Technology and Production Sciences (Grant-ID: DFF – 1337-00118). 
+Co-funding is also provided by the GTS grant to DHI from the Danish Agency for 
+Science, Technology and Innovation.
