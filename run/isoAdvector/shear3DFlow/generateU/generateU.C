@@ -1,0 +1,129 @@
+/*---------------------------------------------------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+License
+    This file is not part of OpenFOAM.
+
+    OpenFOAM is free software: you can redistribute it and/or modify it
+    under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+    for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+
+Application
+    generateU
+    
+Description
+    Generates velocity field for the classical test case with a sphere 
+    deformed into a shape with long tongues and back again.
+
+Author
+    Johan Roenby, DHI, all rights reserved.
+
+\*---------------------------------------------------------------------------*/
+
+#include "fvCFD.H"
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+int main(int argc, char *argv[])
+{
+    #include "setRootCase.H"
+    #include "createTime.H"
+    #include "createMesh.H"
+
+    Info<< "Reading field U\n" << endl;
+        
+    volVectorField U
+    (
+        IOobject
+        (
+            "U",
+            runTime.timeName(),
+            mesh,
+            IOobject::READ_IF_PRESENT,
+            IOobject::NO_WRITE
+        ),
+        mesh
+    );
+
+    scalar PI = Foam::constant::mathematical::pi;
+    {
+        scalarField X = mesh.C().component(0);
+        scalarField Y = mesh.C().component(1);
+        scalarField Z = mesh.C().component(2);
+        scalarField u = 2.0*pow(sin(PI*X),2)*sin(2.0*PI*Y)*sin(2.0*PI*Z);
+        scalarField v = -sin(2.0*PI*X)*pow(sin(PI*Y),2)*sin(2.0*PI*Z);
+        scalarField w = -sin(2.0*PI*X)*sin(2.0*PI*Y)*pow(sin(PI*Z),2);
+        forAll(U,ci)
+        {
+            U[ci] = u[ci]*vector(1.0,0.0,0.0) + v[ci]*vector(0.0,1.0,0.0) + w[ci]*vector(0.0,0.0,1.0);
+        }
+    }
+    
+    Info<< "Reading/calculating face flux field phi\n" << endl;
+
+    surfaceScalarField phi
+    (
+        IOobject
+        (
+            "phi",
+            runTime.timeName(),
+            mesh,
+            IOobject::READ_IF_PRESENT,
+            IOobject::NO_WRITE
+        ),
+        linearInterpolate(U) & mesh.Sf()
+    );
+
+    {
+        scalarField Xf = mesh.Cf().component(0);
+        scalarField Yf = mesh.Cf().component(1);
+        scalarField Zf = mesh.Cf().component(2);
+        scalarField uf = sin(2*PI*Yf)*pow(sin(PI*Xf),2);
+        scalarField vf = -sin(2.0*PI*Xf)*pow(sin(PI*Yf),2);
+        scalarField rf = sqrt(pow(Xf-0.5,2) + pow(Yf-0.5,2));
+        scalarField wf = pow((1-rf/0.5),2);
+        forAll(phi,fi)
+        {
+            vector Uf = uf[fi]*vector(1.0,0.0,0.0) + vf[fi]*vector(0.0,1.0,0.0) + wf[fi]*vector(0.0,0.0,1.0);
+            phi[fi] = (Uf & (mesh.Sf()[fi]));
+        }
+    }
+
+    scalarField sumPhi = fvc::surfaceIntegrate(phi);    
+    scalar maxMagSumPhi(0.0);
+    label maxLabel(0);
+    forAll(sumPhi,ci)
+    {
+        scalar msp = mag(sumPhi[ci]);
+        if (msp > maxMagSumPhi )
+        {
+            maxMagSumPhi = msp;
+            maxLabel = ci;
+        }
+    }
+    Info << "maxMagSumPhi/cellVol = " << maxMagSumPhi/mesh.V()[maxLabel] << endl;
+    
+	ISstream::defaultPrecision(18);
+
+    U.write();
+    phi.write();
+    
+    Info<< "End\n" << endl;
+
+    return 0;
+}
+
+// ************************************************************************* //
