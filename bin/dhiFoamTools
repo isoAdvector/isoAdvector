@@ -1,32 +1,25 @@
-#---------------------------------*- sh -*-------------------------------------
-# =========                 |
-# \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-#  \\    /   O peration     |
-#   \\  /    A nd           | Copyright (C) 2011-2012 OpenFOAM Foundation
-#    \\/     M anipulation  |
-#------------------------------------------------------------------------------
 # License
 #     This file is part of the IsoAdvector source code library, which is an
 #     unofficial extension to OpenFOAM.
 #
-#     OpenFOAM is free software: you can redistribute it and/or modify it
+#     IsoAdvector is free software: you can redistribute it and/or modify it
 #     under the terms of the GNU General Public License as published by
 #     the Free Software Foundation, either version 3 of the License, or
 #     (at your option) any later version.
 #
-#     OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+#     IsoAdvector is distributed in the hope that it will be useful, but WITHOUT
 #     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 #     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 #     for more details.
 #
 #     You should have received a copy of the GNU General Public License
-#     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+#     along with IsoAdvector.  If not, see <http://www.gnu.org/licenses/>.
 #
 # Script
 #     dhiFoamTools
 #
 # Description
-#     Miscellaneous utility functions for OpenFOAM cases
+#     Miscellaneous utility functions for IsoAdvector code and cases
 #------------------------------------------------------------------------------
 
 foamParmSet()
@@ -46,6 +39,34 @@ foamRunCasesIn()
             cd $caseDir
             ./Allrun &
             cd -
+        done
+    done
+}
+
+replaceHeader()
+{
+    firstCharacters=$(head -1 ${1}  | cut -c 1-4)
+    scriptDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    tmpFileName=tmp_"$(date +%s)"
+    ln=$(grep -n "<http://www.gnu.org/licenses/>." ${1} | cut -f1 -d:)
+    if [ "$firstCharacters" = "/*--" ] && [ ! -z $ln ];
+    then
+        echo "Replacing header for " ${1} "..."
+        sed -i "1,${ln}d" ${1}
+        cat $scriptDir/header ${1} > $tmpFileName; mv $tmpFileName ${1}
+    else
+        echo ${1} " does not have a properly formatted header to replace."
+    fi
+}
+
+replaceAllHeaders()
+{
+    for var in "$@";
+    do
+        echo "$var"
+        for n in $( find $var -name "*.H" -o -name "*.C" );
+        do
+            replaceHeader $n
         done
     done
 }

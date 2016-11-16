@@ -34,7 +34,6 @@ can be found in this youtube channel:
 
 https://www.youtube.com/channel/UCt6Idpv4C8TTgz1iUX0prAA
 
-
 ## Requirements:
 
 The isoAdvector code is currently compatible with OpenFOAM-2.2.0, OpenFOAM 4.0 

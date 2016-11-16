@@ -1,29 +1,24 @@
 /*---------------------------------------------------------------------------*\
-  =========                 |
-  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
-     \\/     M anipulation  |
--------------------------------------------------------------------------------
-License
-    This file is part of the IsoAdvector source code library, which is an
-    unofficial extension to OpenFOAM.
 
-    OpenFOAM is free software: you can redistribute it and/or modify it
+License
+    This file is part of IsoAdvector, which is an unofficial extension to
+    OpenFOAM.
+
+    IsoAdvector is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+    IsoAdvector is distributed in the hope that it will be useful, but WITHOUT
     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
     for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+    along with IsoAdvector.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    interFoam
+    interFlow
 
 Description
     Solver for 2 incompressible, isothermal immiscible fluids using a VOF
@@ -35,7 +30,10 @@ Description
     Turbulence modelling is generic, i.e. laminar, RAS or LES may be selected.
 
     For a two-fluid approach see twoPhaseEulerFoam.
-    
+
+    This solver is essentially the interFoam solver with MULES replaced by
+    IsoAdvector for the interface advection step.
+
 Author
     Johan Roenby, DHI, all rights reserved.
 

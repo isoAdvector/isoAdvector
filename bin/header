@@ -16,22 +16,3 @@ License
 
     You should have received a copy of the GNU General Public License
     along with IsoAdvector. If not, see <http://www.gnu.org/licenses/>.
-
-\*---------------------------------------------------------------------------*/
-
-#include "PhiScheme.H"
-#include "vofCompression.H"
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-namespace Foam
-{
-    makePhiSurfaceInterpolationScheme
-    (
-        vofCompression,
-        vofCompressionLimiter,
-        scalar
-    )
-}
-
-// ************************************************************************* //
