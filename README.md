@@ -1,6 +1,6 @@
 # Welcome to the IsoAdvector project
 
-# What is IsoAdvector?
+## What is IsoAdvector?
 
 IsoAdvector is a geometric Volume-of-Fluid method for advection of a sharp 
 interface between two incompressible fluids. It works on both structured and 
@@ -8,34 +8,40 @@ unstructured meshes with no requirements on cell shapes. IsoAdvector is meant as
 a replacement for the interface compression with the MULES limiter implemented 
 in the interFoam family of solvers.
 
+The isoAdvector concept and code was developed at DHI and was funded by a Sapere
+Aude postdoc grant to Johan Roenby from The Danish Council for Independent
+Research | Technology and Production Sciences (Grant-ID: DFF - 1337-00118B - FTP).
+Co-funding is also provided by the GTS grant to DHI from the Danish Agency for
+Science, Technology and Innovation.
+
 The ideas behind and performance of the isoAdvector scheme is documented in:
 
-@article{Roenby2016Comp,
-  title={A Computational Method for Sharp Interface Advection},
-  author={Roenby, Johan and Bredmose, Henri and Jasak, Hrvoje},
-  booktitle={Royal Society Open Science},
-  pages={XX},
-  doi={YY},
-  year={2016},
-  organization={The Royal Society}
+Roenby J, Bredmose H, Jasak H. 2016 A computational method for sharp interface 
+advection. R. Soc. open sci. 3: 160405. [http://dx.doi.org/10.1098/rsos.160405](http://dx.doi.org/10.1098/rsos.160405)
+
+@article{Roenby160405,
+    author={Roenby, Johan and Bredmose, Henrik and Jasak, Hrvoje},
+    title={A computational method for sharp interface advection},
+    volume={3},
+    year={2016},
+    doi={10.1098/rsos.160405},
+    publisher = {The Royal Society},
+    journal = {Royal Society Open Science}
 }
 
-This article will soon be available online. A preprint can be found here:
-
-https://arxiv.org/abs/1601.05392
-
-A number of videos can be found in this youtube channel:
+Videos showing isoAdvector's performance with a number of standard test cases 
+can be found in this youtube channel:
 
 https://www.youtube.com/channel/UCt6Idpv4C8TTgz1iUX0prAA
 
 
-# Requirements:
+## Requirements:
 
 The isoAdvector code is currently compatible with OpenFOAM-2.2.0, OpenFOAM 4.0 
 and foam-extend-3.2. The code should also compile with other foam versions with
 only minor modifications.
 
-# Installation:
+## Installation:
 
 0.  Source a supported OpenFOAM environment: 
 
@@ -54,12 +60,11 @@ only minor modifications.
     compiled to your FOAM_USER_LIBBIN.
     
 3.  Test installation with a simple test case by typing (finishes in secs):
-    
-	    cp -r [foam version]/run/isoAdvector/discInUniFlow/baseCase ~
+
+        cp -r run/isoAdvector/discInUniFlow/baseCase ~
         cd ~/baseCase
         ./Allrun
 	
-    Here [foam version] is the loaded foam version, e.g. OpenFOAM-4.0.
     Open Paraview and color the mesh by the alpha.water/alpha1 field.
 
 4.  (Optional) If you want to test the code on unstructured meshes, a number of 
@@ -76,14 +81,14 @@ only minor modifications.
     The downloaded meshes.tar.gz file should be extracted to the isoadvector 
     root directory.
     
-# Code structure:
+## Code structure:
 
 `src/` 
 
 * Contains the three classes implement the IsoAdvector advection scheme:
     - `isoCutFace`
     - `isoCutCell` 
-    - `isoAdvection` 
+    - `isoAdvection`
   These are compiled into a library named `libIsoAdvection`. 
 * For comparison we also include the CICSAM, HRIC and mHRIC algebraic VOF 
   schemes in `finiteVolume` directory. These are compiled into a library called
@@ -125,28 +130,28 @@ only minor modifications.
 - `isoCutTester/`
     - Case for testing the isoCutFace and isoCutCell classes.
       
-#Classes
+## Classes
 	
-## IsoAdvection 
+###  IsoAdvection 
 
 - Calculates the total volume of water, dVf, crossing each face in the mesh 
   during the time interval from time t to time t + dt.
 
-## IsoCutCell
+### IsoCutCell
 
 - Performs cutting of a cell given an isovalue and the alpha values interpolated 
   to the cell vertices.
 - Calculates the submerged volume of a cell for a given isovalue.
 - Calculates the isovalue given a specified target volume fraction of a cell.
   
-## IsoCutFace
+### IsoCutFace
 
 - Performs cutting of a face given an isovalue and alpha values interpolated to
   the face vertices.
 - Calculates the submerged face area given an isovalue and alpha values 
   interpolated to the face vertices.
 
-# Contributors:
+## Contributors:
 
 * Johan Roenby <jro@dhigroup.com> (Inventor and main developer)
 * Hrvoje Jasak <hrvoje.jasak@fsb.hr> (Consistent treatment of boundary faces 
@@ -155,11 +160,3 @@ only minor modifications.
 * Vuko Vukcevic <vuko.vukcevic@fsb.hr> (Code review, profiling, porting to 
   foam-extend, bug fixing, testing)
 * Tomislav Maric <tomislav@sourceflux.de> (Source file rearrangement)
-
-# Acknowledgement
-
-The isoAdvector concept and code was developed at DHI and was funded by a Sapere 
-Aude postdoc grant to Johan Roenby from The Danish Council for Independent 
-Research | Technology and Production Sciences (Grant-ID: DFF – 1337-00118). 
-Co-funding is also provided by the GTS grant to DHI from the Danish Agency for 
-Science, Technology and Innovation.

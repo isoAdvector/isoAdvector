@@ -26,12 +26,22 @@ Class
     Foam::isoAdvection
 
 Description
-    Calculates the new VOF (alpha) field after time step dt given the initial
+    Calculates the new VOF (alpha1) field after time step dt given the initial
     VOF field and a velocityField U and face fluxes phi. The fluid transport
     calculation is based on an idea of using isosurfaces to estimate the
     internal distribution of fluid in cells and advecting such isosurfaces
     across the mesh faces with the velocity field interpolated to the
     isosurfaces.
+
+    @article{Roenby160405,
+        author={Roenby, Johan and Bredmose, Henrik and Jasak, Hrvoje},
+        title={A computational method for sharp interface advection},
+        volume={3},
+        year={2016},
+        doi={10.1098/rsos.160405},
+	publisher = {The Royal Society},
+	journal = {Royal Society Open Science}
+    }
 
 Author
     Johan Roenby, DHI, all rights reserved.
