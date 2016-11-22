@@ -38,7 +38,7 @@ only minor modifications.
 
 1.  In a linux terminal download the package with git by typing:
 
-        git clone https://bitbucket.org/dhifoam/isoadvector.git
+        git clone https://github.com/isoAdvector/isoAdvector.git
 
 2.  Execute the Allwmake script by typing (will finish in a ~1 min):
 
