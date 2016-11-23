@@ -1,4 +1,6 @@
 /*---------------------------------------------------------------------------*\
+|             isoAdvector | Copyright (C) 2016 Johan Roenby, DHI              |
+-------------------------------------------------------------------------------
 
 License
     This file is part of IsoAdvector, which is an unofficial extension to

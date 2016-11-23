@@ -1,4 +1,6 @@
 /*---------------------------------------------------------------------------*\
+|             isoAdvector | Copyright (C) 2016 Johan Roenby, DHI              |
+-------------------------------------------------------------------------------
 
 License
     This file is part of IsoAdvector, which is an unofficial extension to
@@ -15,7 +17,7 @@ License
     for more details.
 
     You should have received a copy of the GNU General Public License
-    along with IsoAdvector.  If not, see <http://www.gnu.org/licenses/>.
+    along with IsoAdvector. If not, see <http://www.gnu.org/licenses/>.
 
 \*---------------------------------------------------------------------------*/
 
