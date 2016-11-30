@@ -19,19 +19,13 @@ actions
 (
     {
         name    c0;
-        type    cellSet;
+        type    faceSet;
         action  new;
-        source  boxToCell;
+        source  boxToFace;
         sourceInfo
         {
-            box (-1e10 -1e10 -1e10) (1e10 0 1e10);
+            box (-1e10 -.01 -1e10) (1e10 .01 1e10);
         }
-    }
-
-    {
-        name    c0;
-        type    cellSet;
-        action  invert;
     }
 );
 

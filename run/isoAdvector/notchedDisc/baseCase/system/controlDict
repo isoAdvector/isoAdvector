@@ -1,4 +1,4 @@
-	/*--------------------------------*- C++ -*----------------------------------*\
+/*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
 |  \\    /   O peration     | Version:  2.0.1                                 |
@@ -11,7 +11,7 @@ FoamFile
     version         2.0;
     format          ascii;
     class           dictionary;
-	location		"system";
+    location        "system";
     object          controlDict;
 }
 
@@ -29,9 +29,9 @@ endTime         1;
 
 writeControl    adjustableRunTime;
 
-writeInterval   .02;
+writeInterval   .1;
 
-deltaT          1e-3;
+deltaT          .5e-4;
 
 purgeWrite      0;
 
@@ -43,7 +43,7 @@ writeCompression uncompressed;
 
 timeFormat      general;
 
-timePrecision   14;
+timePrecision   6;
 
 graphFormat     raw;
 
@@ -52,9 +52,9 @@ runTimeModifiable no;
 adjustTimeStep  yes;
 
 maxCo           1e6;
-maxAlphaCo      .75;
+maxAlphaCo      0.5;
 
-maxDeltaT       .5;
+maxDeltaT       .05;
 
 libs ( "libVOFInterpolationSchemes.so" );
 

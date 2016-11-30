@@ -23,10 +23,10 @@ License
 
 Application
     generateU
-    
+
 Description
-    Generates velocity field for the classical test case with a sphere 
-    deformed into a shape with long tongues and back again.
+    Generates velocity field for the classical test case with a notched disc
+    in a rigid body rotation flow.
 
 Author
     Johan Roenby, DHI, all rights reserved.
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     #include "createMesh.H"
 
     Info<< "Reading field U\n" << endl;
-        
+
     volVectorField U
     (
         IOobject
@@ -58,19 +58,20 @@ int main(int argc, char *argv[])
         mesh
     );
 
-    scalar PI = Foam::constant::mathematical::pi;
+    Info<< "Calculating field U\n" << endl;
     {
-        scalarField X = mesh.C().component(0);
-        scalarField Z = mesh.C().component(2);
-        scalarField u = -2*PI*(Z-.5);
-        scalarField w = 2*PI*(X-.5);
-        forAll(U,ci)
+        const volVectorField& C = mesh.C();
+        forAll(U, ci)
         {
-            U[ci] = u[ci]*vector(1.0,0.0,0.0) + 0.0*vector(0.0,1.0,0.0) + w[ci]*vector(0.0,0.0,1.0);
+            scalar X = C[ci].component(vector::X);
+            scalar Z = C[ci].component(vector::Z);
+            scalar u = -2*M_PI*(Z-.5);
+            scalar w = 2*M_PI*(X-.5);
+            U[ci] =  u*vector(1,0,0) + w*vector(0,0,1);
         }
     }
-/*    
-    Info<< "Reading/calculating face flux field phi\n" << endl;
+
+    Info<< "Reading field phi\n" << endl;
 
     surfaceScalarField phi
     (
@@ -82,47 +83,77 @@ int main(int argc, char *argv[])
             IOobject::READ_IF_PRESENT,
             IOobject::AUTO_WRITE
         ),
-        linearInterpolate(U) & mesh.Sf()
+        0*(linearInterpolate(U) & mesh.Sf())
     );
 
+    Info<< "Calculating field phi\n" << endl;
+
+    const surfaceVectorField& Cf = mesh.Cf();
+    const surfaceVectorField& Sf = mesh.Sf();
+    forAll(phi, fi)
     {
-        const scalarField x = mesh.points().component(0);
-        const scalarField y = mesh.points().component(1);
-        const scalarField z = mesh.points().component(2);
-        scalarField psi = 2*PI*(x-.5)*(z-.5);
-        forAll(phi,fi)
+        scalar X = Cf[fi].component(vector::X);
+        scalar Z = Cf[fi].component(vector::Z);
+        scalar u = -2*M_PI*(Z-.5);
+        scalar w = 2*M_PI*(X-.5);
+        vector Uf =  u*vector(1,0,0) + w*vector(0,0,1);
+        phi[fi] = Uf & Sf[fi];
+    }
+    
+    surfaceScalarField::GeometricBoundaryField& phip = phi.boundaryField();
+
+    forAll(phip, patchi)
+    {
+        const polyPatch& pp = mesh.boundaryMesh()[patchi];
+        if
+        (
+            !isA<processorPolyPatch>(pp)
+         && !isA<emptyPolyPatch>(pp)
+        )
         {
-            phi[fi] = 0.0;
-            labelList faceLabels = mesh.faces()[fi];
-            label nPoints = faceLabels.size();
-            forAll(faceLabels,pi)
+            fvsPatchScalarField& phib = phip[patchi];
+            const fvsPatchVectorField& Cf = mesh.Cf().boundaryField()[patchi];
+            const fvsPatchVectorField& Sf = mesh.Sf().boundaryField()[patchi];
+
+            forAll(phib, fi)
             {
-                label pl1 = faceLabels[pi];
-                label pl2 = faceLabels[(pi+1) % nPoints];
-                phi[fi] += 0.5*(psi[pl1]+psi[pl2])*(y[pl2]-y[pl1]);
+                scalar X = Cf[fi].component(vector::X);
+                scalar Z = Cf[fi].component(vector::Z);
+                scalar u = -2*M_PI*(Z-.5);
+                scalar w = 2*M_PI*(X-.5);
+                vector Uf =  u*vector(1,0,0) + w*vector(0,0,1);
+                phib[fi] = Uf & Sf[fi];
             }
         }
     }
-    scalarField sumPhi = fvc::surfaceIntegrate(phi);    
-    scalar maxMagSumPhi(0.0);
-    label maxLabel(0);
-    forAll(sumPhi,ci)
-    {
-        scalar msp = mag(sumPhi[ci]);
-        if (msp > maxMagSumPhi )
-        {
-            maxMagSumPhi = msp;
-            maxLabel = ci;
-        }
-    }
-    Info << "maxMagSumPhi/cellVol = " << maxMagSumPhi/mesh.V()[maxLabel] << endl;
     
-    ISstream::defaultPrecision(18);
+/*    
+    //Checking that phi's of a cell sum to zero
+    //For the polygonal meshes there are some strange continuity errors but 
+    //these only seem to appear at the boundary and are therefore irrelevant 
+    //for this test case.
+    volScalarField sumPhiByV
+    (
+        IOobject
+        (
+            "sumPhiByV",
+            runTime.timeName(),
+            mesh,
+            IOobject::READ_IF_PRESENT,
+            IOobject::AUTO_WRITE
+        ),
+        fvc::surfaceIntegrate(phi)
+    );
 
-    phi.write();
+    sumPhiByV = fvc::surfaceIntegrate(phi);
+    Info << "max(sum(phi)/V) = " << max(sumPhiByV) << endl;
+    sumPhiByV.write();
 */
+
+    Info<< "Writing U and phi\n" << endl;
+    phi.write();
     U.write();
-    
+
     Info<< "End\n" << endl;
 
     return 0;

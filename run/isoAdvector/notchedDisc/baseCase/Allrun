@@ -4,18 +4,18 @@ application=$(sed -ne "s/^application\s*\(.*\);/\1/p" system/controlDict)
 jobStart=$(date +"%Y_%m_%d_%H_%M")
 
 if [ ! -d "logs" ]; then
-        mkdir logs
+    mkdir logs
 else
-        mv logs logs_$jobStart
-        mkdir logs
+    mv logs logs_$jobStart
+    mkdir logs
 fi
 
 if [ ! -d "0" ]; then
-        cp -r 0.org 0
+    cp -r 0.org 0
 fi
 
 if [ ! -f "constant/polyMesh/points" ]; then
-        blockMesh > logs/blockMesh 2>&1
+    blockMesh > logs/blockMesh 2>&1
 fi
 
 cd generateU

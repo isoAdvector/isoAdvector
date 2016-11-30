@@ -62,9 +62,8 @@ isoAdvector
     isoFaceTol	1e-8;
     surfCellTol	1e-8;
     clipAlphaTol 1e-12;
-    nAlphaBounds 4;
+    nAlphaBounds 3;
     snapAlpha	true;
-    period	0;
 }
 
 PIMPLE
