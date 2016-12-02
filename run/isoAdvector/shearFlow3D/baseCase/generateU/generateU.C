@@ -63,9 +63,11 @@ int main(int argc, char *argv[])
         scalarField X = mesh.C().component(0);
         scalarField Y = mesh.C().component(1);
         scalarField Z = mesh.C().component(2);
-        scalarField u = 2.0*pow(sin(PI*X),2)*sin(2.0*PI*Y)*sin(2.0*PI*Z);
-        scalarField v = -sin(2.0*PI*X)*pow(sin(PI*Y),2)*sin(2.0*PI*Z);
-        scalarField w = -sin(2.0*PI*X)*sin(2.0*PI*Y)*pow(sin(PI*Z),2);
+        scalarField u = sin(2*PI*Y)*pow(sin(PI*X),2);
+        scalarField v = -sin(2.0*PI*X)*pow(sin(PI*Y),2);
+        scalarField r = sqrt(pow(X-0.5,2) + pow(Y-0.5,2));
+        scalarField w = pow((1-r/0.5),2);
+
         forAll(U,ci)
         {
             U[ci] = u[ci]*vector(1.0,0.0,0.0) + v[ci]*vector(0.0,1.0,0.0) + w[ci]*vector(0.0,0.0,1.0);

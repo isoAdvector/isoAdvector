@@ -21,11 +21,7 @@ internalField   uniform (0 0 0);
 
 boundaryField
 {
-    rim
-    {
-        type            zeroGradient;
-    }
-    frontAndBack
+    sides
     {
         type            zeroGradient;
     }

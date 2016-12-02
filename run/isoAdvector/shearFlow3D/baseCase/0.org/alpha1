@@ -20,14 +20,10 @@ internalField   uniform 0;
 
 boundaryField
 {
-    rim
+    sides
     {
         type    fixedValue;
         value   uniform 0;
-    }
-    frontAndBack
-    {
-        type    zeroGradient;
     }
 }
 
