@@ -278,14 +278,16 @@ Foam::tmp<Foam::surfaceScalarField> Foam::HRIC::limiter
     );
     surfaceScalarField& lim = tLimiter.ref();
 
-    volVectorField gradc = fvc::grad(phi);
+    volVectorField gradc(fvc::grad(phi));
 
-    surfaceScalarField Cof =
+    surfaceScalarField Cof
+    (
         mesh.time().deltaT()
        *upwind<scalar>(mesh, faceFlux_).interpolate
         (
             fvc::surfaceIntegrate(faceFlux_)
-        );
+        )
+    );
 
     const surfaceScalarField& CDweights = mesh.surfaceInterpolation::weights();
 
@@ -328,23 +330,31 @@ Foam::tmp<Foam::surfaceScalarField> Foam::HRIC::limiter
             const scalarField& pFaceFlux =
                 this->faceFlux_.boundaryField()[patchi];
 
-            scalarField pphiP =
-                phi.boundaryField()[patchi].patchInternalField();
+            scalarField pphiP
+            (
+                phi.boundaryField()[patchi].patchInternalField()
+            );
 
-            scalarField pphiN =
-                phi.boundaryField()[patchi].patchNeighbourField();
+            scalarField pphiN
+            (
+                phi.boundaryField()[patchi].patchNeighbourField()
+            );
 
-            vectorField pGradcP =
-                gradc.boundaryField()[patchi].patchInternalField();
+            vectorField pGradcP
+            (
+                gradc.boundaryField()[patchi].patchInternalField()
+            );
 
-            vectorField pGradcN =
-                gradc.boundaryField()[patchi].patchNeighbourField();
+            vectorField pGradcN
+            (
+                gradc.boundaryField()[patchi].patchNeighbourField()
+            );
 
             const scalarField& pCof = Cof.boundaryField()[patchi];
 
             // Build the d-vectors
             // Better version of d-vectors: Zeljko Tukovic, 25/Apr/2010
-            vectorField pd = bLim[patchi].patch().delta();
+            vectorField pd(bLim[patchi].patch().delta());
 
             forAll(pLim, faceI)
             {
@@ -385,14 +395,16 @@ Foam::tmp<Foam::surfaceScalarField> Foam::HRIC::weights
     );
     surfaceScalarField& weightingFactors = tWeightingFactors.ref();
 
-    volVectorField gradc = fvc::grad(phi);
+    volVectorField gradc(fvc::grad(phi));
 
-    surfaceScalarField Cof =
+    surfaceScalarField Cof
+    (
         mesh.time().deltaT()
        *upwind<scalar>(mesh, faceFlux_).interpolate
         (
             fvc::surfaceIntegrate(faceFlux_)
-        );
+        )
+    );
 
     const surfaceScalarField& CDweights = mesh.surfaceInterpolation::weights();
 
@@ -435,23 +447,31 @@ Foam::tmp<Foam::surfaceScalarField> Foam::HRIC::weights
             const scalarField& pFaceFlux =
                 this->faceFlux_.boundaryField()[patchi];
 
-            scalarField pphiP =
-                phi.boundaryField()[patchi].patchInternalField();
+            scalarField pphiP
+            (
+                phi.boundaryField()[patchi].patchInternalField()
+            );
 
-            scalarField pphiN =
-                phi.boundaryField()[patchi].patchNeighbourField();
+            scalarField pphiN
+            (
+                phi.boundaryField()[patchi].patchNeighbourField()
+            );
 
-            vectorField pGradcP =
-                gradc.boundaryField()[patchi].patchInternalField();
+            vectorField pGradcP
+            (
+                gradc.boundaryField()[patchi].patchInternalField()
+            );
 
-            vectorField pGradcN =
-                gradc.boundaryField()[patchi].patchNeighbourField();
+            vectorField pGradcN
+            (
+                gradc.boundaryField()[patchi].patchNeighbourField()
+            );
 
             const scalarField& pCof = Cof.boundaryField()[patchi];
 
             // Build the d-vectors
             // Better version of d-vectors: Zeljko Tukovic, 25/Apr/2010
-            vectorField pd = bWeights[patchi].patch().delta();
+            vectorField pd(bWeights[patchi].patch().delta());
 
             forAll(pWeights, faceI)
             {
