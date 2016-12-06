@@ -773,7 +773,7 @@ void Foam::isoCutCell::VolumeOfFluid
         if (mesh_.boundary()[patchI].size() > 0)
         {
             const label start = mesh_.boundary()[patchI].patch().start();
-            fvPatchScalarField& alphaBP = alpha1.boundaryField()[patchI];            
+            fvPatchScalarField& alphaBP = alpha1.boundaryField()[patchI];
             const fvsPatchScalarField& magSfBP =
                 mesh_.magSf().boundaryField()[patchI];
 
@@ -783,7 +783,7 @@ void Foam::isoCutCell::VolumeOfFluid
                 const label faceStatus = isoCutFace_.calcSubFace(fLabel, f0);
                 if (faceStatus != 1) //I.e. if face not entirely above isosurface
                 {
-                    alphaBP[faceI] = 
+                    alphaBP[faceI] =
                         mag(isoCutFace_.subFaceArea())/magSfBP[faceI];
                 }
             }

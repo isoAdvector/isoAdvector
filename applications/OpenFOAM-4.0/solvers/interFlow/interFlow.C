@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
             #include "alphaCourantNo.H"
             #include "setDeltaT.H"
         }
-        
+
         runTime++;
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
             if ( clipAlphaTol > 0.0 )
             {
                 alpha1 = alpha1*
-                    pos(alpha1-clipAlphaTol)*neg(alpha1-(1.0-clipAlphaTol)) 
+                    pos(alpha1-clipAlphaTol)*neg(alpha1-(1.0-clipAlphaTol))
                     + pos(alpha1-(1.0-clipAlphaTol));
             }
             if ( snapAlpha )
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 
             rho == alpha1*rho1 + (scalar(1) - alpha1)*rho2;
             rhoPhi = advector.getRhoPhi(rho1, rho2);
-            
+
             mixture.correct();
 
             #include "UEqn.H"
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
         Info << "t = " << runTime.time().value() << ",\t sum(alpha*V) = " << V
              << ",\t dev = " << 100*(1.0 - V/V0) << "%"
              << ",\t 1-max(alpha1) = " << 1 - gMax(alpha1.internalField())
-             << ",\t min(alpha1) = " << gMin(alpha1.internalField()) 
+             << ",\t min(alpha1) = " << gMin(alpha1.internalField())
              << endl;
 
         if (printSurfCells)
