@@ -22,9 +22,9 @@ Application
 
 Description
     This solver is just interFoam taking a number of extra input paramters.
-	The sole purpose of the solver is to compare the behaviour of MULES for 
+	The sole purpose of the solver is to compare the behaviour of MULES for
 	pure advection problems with the corresponding IsoAdvector results.
-	
+
 Author
     Johan Roenby, DHI, all rights reserved
 
@@ -34,7 +34,7 @@ Author
 #include "MULES.H"
 #include "subCycle.H"
 #include "interfaceProperties.H"
-#include "twoPhaseMixture.H"
+#include "incompressibleTwoPhaseMixture.H"
 #include "turbulenceModel.H"
 #include "pimpleControl.H"
 #include "fvIOoptionList.H"
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 		if ( period > 0.0 )
 		{
 			phi = phi0*Foam::cos(2.0*M_PI*(t + 0.5*dt)/period);
-			U = U0*Foam::cos(2.0*M_PI*(t + 0.5*dt)/period);		
+			U = U0*Foam::cos(2.0*M_PI*(t + 0.5*dt)/period);
 		}
 
         runTime++;
