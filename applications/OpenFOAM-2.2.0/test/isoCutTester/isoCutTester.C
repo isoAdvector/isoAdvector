@@ -42,7 +42,7 @@ void writePly
 )
 {
     //Writing faces to ply file for inspection in paraview
-    
+
     autoPtr<OFstream> plyFilePtr;
     plyFilePtr.reset(new OFstream(fileDir + "/" + fileName + ".ply"));
     plyFilePtr() << "ply" << endl;
@@ -81,7 +81,7 @@ void writePly
         }
         plyFilePtr() << "" << endl;
         np += nPoints;
-    }    
+    }
 }
 
 int main(int argc, char *argv[])
@@ -160,16 +160,16 @@ int main(int argc, char *argv[])
                 if (mag(sfpi[pi] - sfpi[(pi + 1) % nPoints]) < 1e-10)
                 {
                     Info << "Warning: Possible dublicate points for subface "
-                        << "of face " << fi << " with owner " 
-                        << mesh.owner()[fi] << ". Diff = " 
+                        << "of face " << fi << " with owner "
+                        << mesh.owner()[fi] << ". Diff = "
                         << sfpi[(pi + 1) % nPoints] - sfpi[pi] << endl;
                 }
                 if (mag(mag(sfpi[pi]-centre) - radius) > .1)
                 {
                     Info << "Warning: A point is far from isoface"
-                        << " for face " << fi << " with owner " 
-                        << mesh.owner()[fi] << ". |r-r0| = " 
-                        << mag(mag(sfpi[pi]-centre) - radius) << endl;                    
+                        << " for face " << fi << " with owner "
+                        << mesh.owner()[fi] << ". |r-r0| = "
+                        << mag(mag(sfpi[pi]-centre) - radius) << endl;
                 }
             }
         }
@@ -194,27 +194,27 @@ int main(int argc, char *argv[])
                 if (mag(sfpi[pi] - sfpi[(pi + 1) % nPoints]) < 1e-10)
                 {
                     Info << "Warning: Possible dublicate points for subface "
-                        << "of face " << fi << " with owner " 
-                        << mesh.owner()[fi] << ". Diff = " 
+                        << "of face " << fi << " with owner "
+                        << mesh.owner()[fi] << ". Diff = "
                         << sfpi[(pi + 1) % nPoints] - sfpi[pi] << endl;
                 }
                 if (mag(mag(sfpi[pi]-centre) - radius) > .1)
                 {
                     Info << "Warning: A point is far from isoface"
-                        << " for face " << fi << " with owner " 
-                        << mesh.owner()[fi] << ". |r-r0| = " 
-                        << mag(mag(sfpi[pi]-centre) - radius) << endl;                    
+                        << " for face " << fi << " with owner "
+                        << mesh.owner()[fi] << ". |r-r0| = "
+                        << mag(mag(sfpi[pi]-centre) - radius) << endl;
                 }
             }
         }
     }
-    
-    writePly(subFaces,"subFaces", ".");   
-    writePly(subFaces2,"subFaces2",".");    
+
+    writePly(subFaces,"subFaces", ".");
+    writePly(subFaces2,"subFaces2",".");
 
     //Testing isoCutCell
     isoCutCell icc(mesh,f);
-        
+
     DynamicList< List<point> > isoFaces(mesh.nCells());
     forAll(mesh.cells(),ci)
     {
@@ -234,14 +234,14 @@ int main(int argc, char *argv[])
                 if (mag(ifpi[pi] - ifpi[(pi + 1) % nPoints]) < 1e-10)
                 {
                     Info << "Warning: Possible dublicate points for isoface "
-                        << " of cell " << ci << ": " << ifpi[pi] << " and " 
+                        << " of cell " << ci << ": " << ifpi[pi] << " and "
                         << ifpi[(pi + 1) % nPoints] << endl;
                 }
             }
         }
     }
-    writePly(isoFaces,"isoFaces",".");    
-    
+    writePly(isoFaces,"isoFaces",".");
+
     Info<< "End\n" << endl;
 
     return 0;

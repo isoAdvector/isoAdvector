@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
         vector Uf =  u*vector(1,0,0) + w*vector(0,0,1);
         phi[fi] = Uf & Sf[fi];
     }
-    
+
     surfaceScalarField::GeometricBoundaryField& phip = phi.boundaryField();
 
     forAll(phip, patchi)
@@ -126,11 +126,11 @@ int main(int argc, char *argv[])
             }
         }
     }
-    
-/*    
+
+/*
     //Checking that phi's of a cell sum to zero
-    //For the polygonal meshes there are some strange continuity errors but 
-    //these only seem to appear at the boundary and are therefore irrelevant 
+    //For the polygonal meshes there are some strange continuity errors but
+    //these only seem to appear at the boundary and are therefore irrelevant
     //for this test case.
     volScalarField sumPhiByV
     (

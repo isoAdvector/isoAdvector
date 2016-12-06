@@ -23,9 +23,9 @@ License
 
 Application
     generateU
-    
+
 Description
-    Generates velocity field for the classical test case with a sphere 
+    Generates velocity field for the classical test case with a sphere
     deformed into a shape with long tongues and back again.
 
 Author
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     #include "createMesh.H"
 
     Info<< "Reading field U\n" << endl;
-        
+
     volVectorField U
     (
         IOobject
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 		scalarField Z = mesh.C().component(2);
 		scalarField u = 0.25*(4.0*X-2.0 + pow(4.0*Z-2.0,3));
 		scalarField w = -0.25*(4.0*Z-2.0 + pow(4.0*X-2.0,3));
-		
+
 		//Setting U in all cells
 		forAll(U,ci)
 		{
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 		}
 
     }
-    
+
 	Info<< "Reading/calculating face flux field phi\n" << endl;
 
 	surfaceScalarField phi
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 				phi[fi] += 0.5*(psi[pl1]+psi[pl2])*(y[pl2]-y[pl1]);
 			}
 		}
-		
+
 		//Setting phi on boundary patches
 		forAll(phi.boundaryField(), patchI)
 		{
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 		}
 
 	}
-	
+
 	scalarField sumPhi = fvc::surfaceIntegrate(phi);
 	scalar maxMagSumPhi(0.0);
 	label maxLabel(0);
@@ -156,12 +156,12 @@ int main(int argc, char *argv[])
 		}
 	}
 	Info << "maxMagSumPhi/Vi = " << maxMagSumPhi << " at cell " << maxLabel << endl;
-    
+
 	ISstream::defaultPrecision(18);
 
     U.write();
     phi.write();
-    
+
     Info<< "End\n" << endl;
 
     return 0;

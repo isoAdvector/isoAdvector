@@ -23,15 +23,15 @@ Application
 Description
 	Based on scalarTransportFoam
     Solves a transport equation for a passive scalar
-	Modified to 
-	1. run with dimensionless alpha1 field 
+	Modified to
+	1. run with dimensionless alpha1 field
 	2. run with adaptive timestep
 	3. no diffusion term
-    Used to 
-	
+    Used to
+
 Author
 	Johan Roenby, DHI, all rights reserved
-	
+
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
@@ -43,7 +43,7 @@ Author
 
 int main(int argc, char *argv[])
 {
-	
+
     #include "setRootCase.H"
     #include "createTime.H"
     #include "createMesh.H"
@@ -98,19 +98,19 @@ int main(int argc, char *argv[])
 			else if ( alpha1[ci] < aMin )
 			{
 				aMin = alpha1[ci];
-				lMin = ci;				
+				lMin = ci;
 			}
 		}
-		
+
 		const scalar V = sum(mesh.V()*alpha1).value();
 		scalar t = runTime.time().value();
         Info << "t = " << t << ",\t sum(alpha*V) = " << V
-             << ",\t dev = " << 100*(1.0-V/V0) << "%" 
+             << ",\t dev = " << 100*(1.0-V/V0) << "%"
              << ",\t 1-max(alpha1) = " << 1-aMax << " at cell " << lMax
              << ",\t min(alpha1) = " << aMin << " at cell " << lMin << endl;
-		
+
         runTime.write();
-		
+
 		Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
 		<< "  ClockTime = " << runTime.elapsedClockTime() << " s"
 		<< nl << endl;

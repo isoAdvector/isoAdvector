@@ -23,9 +23,9 @@ License
 
 Application
     generateU
-    
+
 Description
-    Generates velocity field for the classical test case with a sphere 
+    Generates velocity field for the classical test case with a sphere
     deformed into a shape with long tongues and back again.
 
 Author
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     #include "createMesh.H"
 
     Info<< "Reading field U\n" << endl;
-        
+
     volVectorField U
     (
         IOobject
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
             U[ci] = u[ci]*vector(1.0,0.0,0.0) + v[ci]*vector(0.0,1.0,0.0) + w[ci]*vector(0.0,0.0,1.0);
         }
     }
-    
+
     Info<< "Reading/calculating face flux field phi\n" << endl;
 
     surfaceScalarField phi
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    scalarField sumPhi = fvc::surfaceIntegrate(phi);    
+    scalarField sumPhi = fvc::surfaceIntegrate(phi);
     scalar maxMagSumPhi(0.0);
     label maxLabel(0);
     forAll(sumPhi,ci)
@@ -114,12 +114,12 @@ int main(int argc, char *argv[])
         }
     }
     Info << "maxMagSumPhi/cellVol = " << maxMagSumPhi/mesh.V()[maxLabel] << endl;
-    
+
 	ISstream::defaultPrecision(18);
 
     U.write();
     phi.write();
-    
+
     Info<< "End\n" << endl;
 
     return 0;

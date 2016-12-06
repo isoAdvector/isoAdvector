@@ -48,6 +48,7 @@ __py*
 # *.[oa]
 # *~
 linux*
+darwin*
 lnInclude
 *.dep
 *.swp

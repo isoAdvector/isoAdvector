@@ -472,7 +472,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     // Note: changed to direct access to points from the face
     const pointField fPts(pLabels.points(mesh_.points()));
     const label nPoints = fPts.size();
-    
+
     scalarField pTimes(fPts.size());
     if (mag(Un0) > 1e-12) // Note: tolerances
     {
@@ -480,9 +480,9 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
         // distance to the initial surface and the surface normal velocity
 
         pTimes = ((fPts - x0) & n0)/Un0;
-        
+
         scalar dVf = 0;
-        
+
         //Check if pTimes changes direction more than twice when looping face
         label nShifts = 0;
         forAll(pTimes, pi)
@@ -517,8 +517,8 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 //            WarningIn
 //            (
 //                "Foam::scalar Foam::isoAdvection::timeIntegratedFlux(...)"
-//            )   << "Warning: nShifts = " << nShifts << " on face " << fLabel 
-//                << " owned by cell " << mesh_.owner()[fLabel] << endl;            
+//            )   << "Warning: nShifts = " << nShifts << " on face " << fLabel
+//                << " owned by cell " << mesh_.owner()[fLabel] << endl;
         }
         else
         {
@@ -526,7 +526,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
             (
                 "Foam::scalar Foam::isoAdvection::timeIntegratedFlux(...)"
             )   << "Warning: nShifts = " << nShifts << " on face " << fLabel
-                << " with pTimes = " << pTimes << " owned by cell " 
+                << " with pTimes = " << pTimes << " owned by cell "
                 << mesh_.owner()[fLabel] << endl;
         }
 
@@ -1324,7 +1324,7 @@ void Foam::isoAdvection::getBoundedCells
             boundCells.insert(i);
         }
     }
-    
+
 }
 
 

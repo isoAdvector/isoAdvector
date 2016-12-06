@@ -21,7 +21,7 @@ Application
     isoSurf
 
 Description
-    Uses isoCutter to create a volume fraction field from either a cylinder, 
+    Uses isoCutter to create a volume fraction field from either a cylinder,
     a sphere or a plane.
 
 Author
@@ -74,9 +74,9 @@ int main(int argc, char *argv[])
 	const vector direction = isoSurfDict.lookupOrDefault<vector>("direction",vector::zero);
 	const scalar radius = isoSurfDict.lookupOrDefault<scalar>("radius",0.0);
 
-	const scalarField x = mesh.points().component(0);
-    const scalarField y = mesh.points().component(1);
-    const scalarField z = mesh.points().component(2);
+	const scalarField x(mesh.points().component(0));
+    const scalarField y(mesh.points().component(1));
+    const scalarField z(mesh.points().component(2));
     scalar f0 = 0.0;
 	scalarField f(x.size());
 
@@ -100,35 +100,35 @@ int main(int argc, char *argv[])
         const scalar lambda = isoSurfDict.lookupOrDefault<scalar>("lambda",1);
         const scalar amplitude = isoSurfDict.lookupOrDefault<scalar>("amplitude",.1);
         const vector up = isoSurfDict.lookupOrDefault<vector>("up",vector::zero);
-        const scalarField xx = (mesh.points()-centre) & direction/mag(direction);
-        const scalarField zz = (mesh.points()-centre) & up/mag(up);
+        const scalarField xx((mesh.points()-centre) & direction/mag(direction));
+        const scalarField zz((mesh.points()-centre) & up/mag(up));
 		f = amplitude*Foam::sin(2*M_PI*xx/lambda) - zz;
 		f0 = 0;
 	}
 	else
 	{
-		Info << "Invalid surface type specified" << endl;
-		Info << "Aborting..." << endl;
+		Info<< "Invalid surface type specified" << endl;
+		Info<< "Aborting..." << endl;
 	}
 
-    
-    Info << "surfType = " << surfType << endl;
+
+    Info<< "surfType = " << surfType << endl;
 
     //Define function on mesh points and isovalue
-	
+
 	//Calculating alpha1 volScalarField from f = f0 isosurface
     isoCutCell icc(mesh,f);
     icc.VolumeOfFluid(alpha1, f0);
-	
+
 	ISstream::defaultPrecision(18);
-	
+
     alpha1.write(); //Writing volScalarField alpha1
 
     const scalarField& alpha = alpha1.internalField();
-	Info << "sum(alpha*V) = " << gSum(mesh.V()*alpha)
-	 << ", 1-max(alpha1) = " << 1 - gMax(alpha)
-	 << "\t min(alpha1) = " << gMin(alpha) << endl;
-	
+	Info<< "sum(alpha*V) = " << gSum(mesh.V()*alpha)
+        << ", 1-max(alpha1) = " << 1 - gMax(alpha)
+        << "\t min(alpha1) = " << gMin(alpha) << endl;
+
     Info<< "End\n" << endl;
 
     return 0;

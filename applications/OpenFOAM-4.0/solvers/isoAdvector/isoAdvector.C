@@ -24,7 +24,7 @@ Description
     Advects a volume of fluid across an FVM mesh by fluxing fluid through its
     faces. Fluid transport across faces during a time step is estimated from
     the cell cutting of isosurfaces of the VOF field.
-    
+
 Author
     Johan Roenby, DHI, all rights reserved.
 
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
         #include "CourantNo.H"
         #include "alphaCourantNo.H"
         #include "setDeltaT.H"
-        
+
         //Setting velocity field and face fluxes for next time step
         scalar t = runTime.time().value();
         scalar dt = runTime.deltaT().value();
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
             phi = phi0*Foam::cos(2.0*M_PI*(t + 0.5*dt)/period);
             U = U0*Foam::cos(2.0*M_PI*(t + 0.5*dt)/period);
         }
-        
+
         runTime++;
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
         if ( clipAlphaTol > 0.0 )
         {
             alpha1 = alpha1*
-                pos(alpha1-clipAlphaTol)*neg(alpha1-(1.0-clipAlphaTol)) 
+                pos(alpha1-clipAlphaTol)*neg(alpha1-(1.0-clipAlphaTol))
                 + pos(alpha1-(1.0-clipAlphaTol));
         }
         if ( snapAlpha )
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
         Info << "t = " << runTime.time().value() << ",\t sum(alpha*V) = " << V
              << ",\t dev = " << 100*(1.0 - V/V0) << "%"
              << ",\t 1-max(alpha1) = " << 1 - gMax(alpha1.internalField())
-             << ",\t min(alpha1) = " << gMin(alpha1.internalField()) 
+             << ",\t min(alpha1) = " << gMin(alpha1.internalField())
              << endl;
 
         if (printSurfCells)

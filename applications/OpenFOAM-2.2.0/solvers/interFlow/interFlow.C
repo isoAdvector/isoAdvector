@@ -43,7 +43,7 @@ Author
 #include "MULES.H"
 #include "subCycle.H"
 #include "interfaceProperties.H"
-#include "twoPhaseMixture.H"
+#include "incompressibleTwoPhaseMixture.H"
 #include "turbulenceModel.H"
 #include "pimpleControl.H"
 #include "fvIOoptionList.H"
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     Info<< "\nStarting time loop\n" << endl;
     scalar executionTime = runTime.elapsedCpuTime();
     scalar advectionTime = 0;
-    
+
     while (runTime.run())
     {
         #include "readTimeControls.H"
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
 
         //Advance alpha1 from time t to t+dt
         advector.advect();
-        
+
         if (printSurfCells)
         {
             advector.getSurfaceCells(surfCells);
@@ -100,8 +100,8 @@ int main(int argc, char *argv[])
         {
             advector.getBoundedCells(boundCells);
         }
-        
-        Info << "1-max(alpha1) = " << 1-gMax(alpha1.internalField()) 
+
+        Info << "1-max(alpha1) = " << 1-gMax(alpha1.internalField())
             << " and min(alpha1) = " << gMin(alpha1.internalField()) << endl;
 
         //Clip and snap alpha1 to ensure strict boundedness to machine precision
@@ -116,12 +116,12 @@ int main(int argc, char *argv[])
 
         rho == alpha1*rho1 + (scalar(1) - alpha1)*rho2;
         rhoPhi = advector.getRhoPhi(rho1, rho2);
-        
+
 //        #include "alphaEqnSubCycle.H"
         interface.correct();
 
         advectionTime += (runTime.elapsedCpuTime() - advectionStartTime);
-        
+
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
         {
