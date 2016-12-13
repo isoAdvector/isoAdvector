@@ -14,7 +14,7 @@ then
     sourceDir=foam-extend-$WM_PROJECT_VERSION
 elif [ "$WM_PROJECT" == "OpenFOAM" ];
 then
-    sourceDir=OpenFOAM-$WM_PROJECT_VERSION
+    sourceDir=OpenFOAM-${WM_PROJECT_VERSION/\.x/\.0}
 fi
 
 #Compile the correct isoAdvector version
