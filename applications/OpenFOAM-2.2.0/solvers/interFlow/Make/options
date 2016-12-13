@@ -9,10 +9,13 @@ EXE_INC = $(ISODBUG) \
     -I$(LIB_SRC)/fvOptions/lnInclude \
     -I$(LIB_SRC)/sampling/lnInclude
 
+ifneq ($(WM_PROJECT_VERSION),2.2.0)
+EXE_INC += -DINCOMPRESSIBLE_TWO_PHASE_MIXTURE -I$(LIB_SRC)/transportModels/twoPhaseMixture/lnInclude
+endif
+
 EXE_LIBS = \
     -L$(FOAM_USER_LIBBIN) \
     -linterfaceProperties \
-    -ltwoPhaseInterfaceProperties \
     -lincompressibleTransportModels \
     -lincompressibleTurbulenceModel \
     -lincompressibleRASModels \
@@ -22,3 +25,9 @@ EXE_LIBS = \
     -lfvOptions \
     -lsampling \
     -lisoAdvection
+
+ifneq ($(WM_PROJECT_VERSION),2.2.0)
+EXE_LIBS += -ltwoPhaseProperties -ltwoPhaseMixture
+else
+EXE_LIBS += -ltwoPhaseInterfaceProperties
+endif
