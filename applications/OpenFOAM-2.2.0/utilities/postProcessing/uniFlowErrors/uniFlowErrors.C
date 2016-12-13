@@ -21,7 +21,7 @@ Application
     uniFlowErrors
 
 Description
-    Calculate discrepancy from exact VOF solution for a plane, cylinder or 
+    Calculate discrepancy from exact VOF solution for a plane, cylinder or
 	sphere in a uniform velocity field.
 
 Author
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     #include "readTimeControls.H"
 	instantList instList = runTime.times();
 	//Setting time to first time which is not 'constant'
-	runTime.setTime(instList[1],0); 	
+	runTime.setTime(instList[1],0);
     Foam::fvMesh mesh
     (
         Foam::IOobject
@@ -59,10 +59,10 @@ int main(int argc, char *argv[])
             Foam::IOobject::MUST_READ
         )
     );
-	
+
 //	scalar delta0 = Foam::pow(sum(mesh.V()).value(),1.0/3.0);
 //	Info << "Average edge lengt = " << delta0 << endl;
-	
+
 //	Info<< "Reading field alpha1\n" << endl;
 	volScalarField alpha1
 	(
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 	);
 	scalar V0 = sum(mesh.V()*alpha1).value();
 	Info << "Initial water volume V0 = " << V0 << endl;
-	
+
 //	Info<< "Reading field U\n" << endl;
     volVectorField U
     (
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 	Info << "Velocity U0 = " << U0 << endl;
 
     volScalarField alpha1Exact = alpha1; //Values are overwritten
-	
+
 //	Info<< "Reading isoSurfDict\n" << endl;
 	IOdictionary isoSurfDict
 	(
@@ -116,9 +116,9 @@ int main(int argc, char *argv[])
 	const vector direction = isoSurfDict.lookupOrDefault<vector>("direction",vector::zero);
 	const scalar radius = isoSurfDict.lookupOrDefault<scalar>("radius",0.0);
 
-	const scalarField x = mesh.points().component(0);
-    const scalarField y = mesh.points().component(1);
-    const scalarField z = mesh.points().component(2);
+	const scalarField x(mesh.points().component(0));
+    const scalarField y(mesh.points().component(1));
+    const scalarField z(mesh.points().component(2));
     scalar f0 = 0.0;
 	scalarField f(x.size());
 
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 			),
 			mesh
 		);
-		
+
 		vector centre = centre0 + U0*runTime.time().value();
 		if ( surfType == "plane" )
 		{
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
         if (mag(U0*runTime.time().value()) < 1e-10)
         {
             Info << "Reading exact alpha1 from 0 directory." << endl;
-            volScalarField dummy 
+            volScalarField dummy
             (
                 IOobject
                 (
@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
                 ),
                 mesh
             );
-            alpha1Exact = dummy;            
+            alpha1Exact = dummy;
         }
         else
         {
@@ -192,37 +192,37 @@ int main(int argc, char *argv[])
 		scalar E1 = sum(mag(alpha1Exact-alpha1)*mesh.V());
 		vector cmExact = (sum(alpha1Exact*mesh.V()*mesh.C())/sum(mesh.V())).value();
 		vector cm = (sum(alpha1*mesh.V()*mesh.C())/sum(mesh.V())).value();
-		
+
         isoCutCell icc(mesh, f);
         icc.VolumeOfFluid(alpha1Exact, f0);
-        
+
         volPointInterpolation vpi(mesh);
 		scalarField ap = vpi.interpolate(alpha1);
         isoCutCell icc2(mesh, ap);
-		
+
 		//Volume if alpha = 0.1 isosurface for calculated solution
         volScalarField alpha101 = alpha1;
-		icc2.VolumeOfFluid(alpha101, .01);	
+		icc2.VolumeOfFluid(alpha101, .01);
 		scalar V01 = sum(mesh.V()*alpha101).value();
 
-		//Volume if alpha = .99 isosurface for calculated solution		
+		//Volume if alpha = .99 isosurface for calculated solution
         volScalarField alpha199 = alpha1;
-		icc2.VolumeOfFluid(alpha199, .99);	
+		icc2.VolumeOfFluid(alpha199, .99);
 		scalar V99 = sum(mesh.V()*alpha199).value();
 
 		scalarField apExact = vpi.interpolate(alpha1Exact);
         isoCutCell icc3(mesh, apExact);
-		
+
 		//Volume if alpha = 0.1 isosurface for exact solution
         volScalarField alpha1Exact01 = alpha1;
-		icc3.VolumeOfFluid(alpha1Exact01, .01);	
+		icc3.VolumeOfFluid(alpha1Exact01, .01);
 		scalar V01Exact = sum(mesh.V()*alpha1Exact01).value();
 
-		//Volume if alpha = .99 isosurface for exact solution		
+		//Volume if alpha = .99 isosurface for exact solution
         volScalarField alpha1Exact99 = alpha1; //Convenience copy: values are overwritten in next line
-		icc3.VolumeOfFluid(alpha1Exact99, .99);	
+		icc3.VolumeOfFluid(alpha1Exact99, .99);
 		scalar V99Exact = sum(mesh.V()*alpha1Exact99).value();
-		
+
 //		scalar PI = Foam::constant::mathematical::pi;
 //		scalar delta = Foam::pow(3.0/(4.0*PI)*V01,1.0/3.0) - Foam::pow(3.0/(4.0*PI)*V99,1.0/3.0);
 //		scalar deltaExact = Foam::pow(3.0/(4.0*PI)*V01Exact,1.0/3.0) - Foam::pow(3.0/(4.0*PI)*V99Exact,1.0/3.0);
@@ -230,17 +230,17 @@ int main(int argc, char *argv[])
 		scalar dV = V01 - V99;
 
 		Info << "Time: " << runTime.time().value() << endl;
-		 
-        int w = 9;	
+
+        int w = 9;
 //		cout << "E1 "
-		cout << setw(w) << "E1/V0     " 
-			 << setw(w) << "dVrel     " 
-			 << setw(w) << "aMin      " 
-			 << setw(w) << "1-aMax    " 
-			 << setw(w) << "dWrel     " 
-//			 << "dW " 
+		cout << setw(w) << "E1/V0     "
+			 << setw(w) << "dVrel     "
+			 << setw(w) << "aMin      "
+			 << setw(w) << "1-aMax    "
+			 << setw(w) << "dWrel     "
+//			 << "dW "
 //			 << "dWEx "
-//			 << "dCM" 
+//			 << "dCM"
             << endl;
 
 //		cout << setprecision(2) << E1 << " "
@@ -251,12 +251,12 @@ int main(int argc, char *argv[])
 			 << setw(w) << setprecision(2) << (dV-dVExact)/(dVExact+SMALL) << " "
 //			 << setprecision(2) << dV << " "
 //			 << setprecision(2) << dVExact << " "
-//		     << setprecision(2) << mag(cm-cmExact) 
+//		     << setprecision(2) << mag(cm-cmExact)
              << endl;
-			 
+
 //			<< ",\td_Ex/d0 = " << deltaExact/delta0 << endl;
 //			<< ",\t(V01-Ex)/Ex = " << (V01-V01Exact)/V01Exact
-//			<< ",\t(V99-Ex)/Ex = " << (V99-V99Exact)/V99Exact << endl;		 
+//			<< ",\t(V99-Ex)/Ex = " << (V99-V99Exact)/V99Exact << endl;
 	}
 
     return 0;
