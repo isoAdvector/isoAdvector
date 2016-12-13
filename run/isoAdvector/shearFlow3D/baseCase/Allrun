@@ -3,7 +3,7 @@
 #./Allclean
 
 #nProc=$(sed -ne "s/^numberOfSubdomains *\(.*\);/\1/p" system/decomposeParDict)
-application=$(sed -ne "s/^application\s*\(.*\);/\1/p" system/controlDict)
+application=$(sed -E -n "s%^application[[:space:]]+([^[:space:]]+);%\1%p" system/controlDict)
 jobStart=$(date +"%Y%m%d%H%M")
 
 cd generateU
@@ -23,6 +23,11 @@ else
     mkdir logs
 fi
 
-
-$application > logs/${application}.log 2>&1
-
+if [ -n "$application" ]
+then
+    $application > logs/${application}.log 2>&1
+else
+    echo
+    echo "Can not get application name to run. Exiting."
+    echo
+fi

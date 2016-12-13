@@ -1,7 +1,7 @@
 #!/bin/bash
 
-nProc=$(sed -ne "s/^numberOfSubdomains *\(.*\);/\1/p" system/decomposeParDict)
-application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
+nProc=$(sed -E -n "s%^numberOfSubdomains[[:space:]]+([^[:space:]]+);%\1%p" system/decomposeParDict)
+application=$(sed -E -n "s%^application[[:space:]]+([^[:space:]]+);%\1%p" system/controlDict)
 jobStart=$(date +"%Y%m%d%H%M")
 
 if [ ! -d "logs" ]; then
@@ -36,14 +36,15 @@ if [ ! -d "logs" ]; then
         refineMesh -dict constant/polyMesh/refineMeshDict2 -overwrite > logs/refineMeshDict2.log 2>&1
 
         isoSurf > logs/isoSurf.log 2>&1
-        
-        OFvers=$(echo $WM_PROJECT_VERSION | cut -c1-3)
+
+        OFvers=$(echo ${WM_PROJECT_VERSION/\.x/} | cut -c1-3)
         newVersion=$(echo "$OFvers>2.2" | bc)
-        if [ $newVersion -eq 1 ];
+        if [ "x$newVersion" = "x1" ];
         then
             cp constant/transportProperties.new constant/transportProperties
             mv 0/alpha1 0/alpha.water
-            sed -i 's/alpha1/alpha.water/g' 0/alpha.water
+            sed -i~ 's/alpha1/alpha.water/g' 0/alpha.water
+            rm -f 0/alpha.water~
         else
             cp constant/transportProperties.old constant/transportProperties
         fi
@@ -54,12 +55,19 @@ else
     mkdir logs
 fi
 
-if [ "$nProc" -gt "1" ];
+if [ -n "$application" ]
 then
-    if [ ! -d "processor0" ]; then
-                decomposePar > logs/decomposePar.log 2>&1
+    if [ "$nProc" -gt "1" ];
+    then
+        if [ ! -d "processor0" ]; then
+            decomposePar > logs/decomposePar.log 2>&1
+        fi
+        mpirun -np $nProc $application -parallel > logs/$application.log 2>&1
+    else
+        $application > logs/$application.log 2>&1
     fi
-    mpirun -np $nProc $application -parallel > logs/$application.log 2>&1
 else
-    $application > logs/$application.log 2>&1
+    echo
+    echo "Can not get application to run. Exiting."
+    echo
 fi
