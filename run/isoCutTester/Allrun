@@ -2,8 +2,8 @@
 
 #./Allclean
 
-nProc=$(sed -ne "s/^numberOfSubdomains *\(.*\);/\1/p" system/decomposeParDict)
-application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
+nProc=$(sed -E -n "s%^numberOfSubdomains[[:space:]]+([^[:space:]]+);%\1%p" system/decomposeParDict)
+application=$(sed -E -n "s%^application[[:space:]]+([^[:space:]]+);%\1%p" system/controlDict)
 jobStart=$(date +"%Y%m%d%H%M")
 
 if [ ! -d "logs" ]; then

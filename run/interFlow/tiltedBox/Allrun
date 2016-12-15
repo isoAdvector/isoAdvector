@@ -1,9 +1,13 @@
 #!/bin/sh
 
-application=$(sed -ne "s/^application *\(.*\);/\1/p" system/controlDict)
+application=$(sed -E -n "s%^application[[:space:]]+([^[:space:]]+);%\1%p" system/controlDict)
+
 
 mkdir logs
 
-$application > logs/${application}.log 2>&1
+if [ -n "$application" ]
+then
+    $application > logs/${application}.log 2>&1
 
-foamToVTK -surfaceFields
+    foamToVTK -surfaceFields
+fi
