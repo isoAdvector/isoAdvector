@@ -31,15 +31,17 @@ then
     sourceDir=foam-extend-$WM_PROJECT_VERSION
 elif [ "$WM_PROJECT" == "OpenFOAM" ];
 then
-    sourceDir=OpenFOAM-${WM_PROJECT_VERSION/\.x/\.0}
+#    sourceDir=OpenFOAM-${WM_PROJECT_VERSION/\.x/\.0}
+    sourceDir=OpenFOAM
 fi
 
 #Compile the correct isoAdvector version
 if [ -n "$sourceDir" ];
 then
+    export NEW_API_SWITCH=newAPI
     export ISOADVECTION=$PWD/src/$sourceDir
     src/$sourceDir/Allwmake
-    applications/$sourceDir/Allwmake
+#    applications/$sourceDir/Allwmake
 fi
 
 unset ISODEBUG
