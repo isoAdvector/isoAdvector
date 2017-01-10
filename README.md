@@ -17,7 +17,8 @@ Science, Technology and Innovation.
 The ideas behind and performance of the isoAdvector scheme is documented in:
 
 Roenby J, Bredmose H, Jasak H. 2016 A computational method for sharp interface 
-advection. R. Soc. open sci. 3: 160405. [http://dx.doi.org/10.1098/rsos.160405](http://dx.doi.org/10.1098/rsos.160405)
+advection. R. Soc. open sci. 3: 160405. 
+[http://dx.doi.org/10.1098/rsos.160405](http://dx.doi.org/10.1098/rsos.160405)
 
 Videos showing isoAdvector's performance with a number of standard test cases 
 can be found in this youtube channel:
@@ -26,9 +27,17 @@ https://www.youtube.com/channel/UCt6Idpv4C8TTgz1iUX0prAA
 
 ## Requirements:
 
-The isoAdvector code is currently compatible with OpenFOAM-2.2.0, OpenFOAM 4.0 
-and foam-extend-3.2. The code should also compile with other foam versions with
-only minor modifications.
+The isoAdvector src library should compile with any OpenFOAM version between 
+2.2.0 and 4.0. To generate the src for the old API stile (internalField() 
+instead of ref() etc.) you must first run the bin/convertToOldAPI script with 
+the version number as an arguement, e.g.:
+
+    cd bin
+    ./convertToOldAPI 2.2.0
+
+Currently the applications/solvers exit in versions compatible with 
+OpenFOAM-2.2.0, OpenFOAM 4.0 and foam-extend-3.2. It should be relatively 
+straightforward to port the solvers to other versions.
 
 ## Installation:
 
@@ -143,9 +152,10 @@ only minor modifications.
 ## Contributors:
 
 * Johan Roenby <jro@dhigroup.com> (Inventor and main developer)
-* Hrvoje Jasak <hrvoje.jasak@fsb.hr> (Consistent treatment of boundary faces 
-  including processor boundaries, parallelisation, code clean up)
-* Henrik Bredmose <hbre@dtu.dk> (Assisted in the conceptual development)
+* Hrvoje Jasak <hrvoje.jasak@fsb.hr> (General coding guidance, consistent 
+  treatment of boundary faces including processor boundaries, parallelisation, 
+  code clean up, provided algebraic schemes, CICSAM, HRIC etc.)
+* Henrik Bredmose <hbre@dtu.dk> (Participated in the conceptual development)
 * Vuko Vukcevic <vuko.vukcevic@fsb.hr> (Code review, profiling, porting to 
   foam-extend, bug fixing, testing)
 * Tomislav Maric <tomislav@sourceflux.de> (Source file rearrangement)
