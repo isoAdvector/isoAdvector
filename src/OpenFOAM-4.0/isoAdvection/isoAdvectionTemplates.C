@@ -81,7 +81,6 @@ void Foam::isoAdvection::faceValue
 {
     if (mesh_.isInternalFace(fLabel))
     {
-//        f.internalField()[fLabel] = value;
         f.ref()[fLabel] = value;
     }
     else

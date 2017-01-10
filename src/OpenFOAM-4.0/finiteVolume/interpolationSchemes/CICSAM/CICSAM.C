@@ -233,7 +233,8 @@ Foam::tmp<Foam::surfaceScalarField> Foam::CICSAM::limiter
             dimless
         )
     );
-//    surfaceScalarField& lim = tLimiter();
+
+    //Note: Changing this line may mess up conversion to old API style
     surfaceScalarField& lim = tLimiter.ref();
 
     volVectorField gradc(fvc::grad(phi));
@@ -284,7 +285,6 @@ Foam::tmp<Foam::surfaceScalarField> Foam::CICSAM::limiter
         );
     }
 
-//    surfaceScalarField::GeometricBoundaryField& bLim = lim.boundaryField();
     surfaceScalarField::Boundary& bLim = lim.boundaryFieldRef();
 
     forAll(bLim, patchi)
@@ -361,6 +361,7 @@ Foam::tmp<Foam::surfaceScalarField> Foam::CICSAM::weights
     (
         new surfaceScalarField(mesh.surfaceInterpolation::weights())
     );
+    //Note: Changing this line may mess up conversion to old API style
     surfaceScalarField& weightingFactors = tWeightingFactors.ref();
 
     volVectorField gradc(fvc::grad(phi));

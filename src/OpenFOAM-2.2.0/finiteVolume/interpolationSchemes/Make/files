@@ -1,6 +1,0 @@
-CICSAM/CICSAM.C
-HRIC/HRIC.C
-mHRIC/mHRIC.C
-vofCompression/vofCompression.C
-
-LIB = $(FOAM_USER_LIBBIN)/libVOFInterpolationSchemes

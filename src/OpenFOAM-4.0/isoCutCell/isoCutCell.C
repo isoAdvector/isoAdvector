@@ -737,7 +737,7 @@ void Foam::isoCutCell::VolumeOfFluid
 )
 {
     //Setting internal field
-    scalarField& alphaIn = alpha1;
+    scalarField& alphaIn = alpha1.ref();
     forAll(alphaIn, ci)
     {
         const label cellStatus = calcSubCell(ci,f0);

@@ -1,8 +1,7 @@
 EXE_INC = $(ISODEBUG) \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/meshTools/lnInclude \
-    -D$(DETAILSTOLOGSWITCH) \
-    -D$(NEW_API_SWITCH)
+    -D$(DETAILSTOLOGSWITCH)
 
 EXE_LIBS = \
     -lfiniteVolume \
