@@ -1,5 +1,11 @@
 /*---------------------------------------------------------------------------*\
-|             isoAdvector | Copyright (C) 2016 Johan Roenby, DHI              |
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | Copyright (C) 2016 OpenCFD Ltd.
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+                isoAdvector | Copyright (C) 2016 Johan Roenby, DHI
 -------------------------------------------------------------------------------
 
 License
@@ -29,44 +35,36 @@ template<typename Type>
 Type Foam::isoAdvection::faceValue
 (
     const GeometricField<Type, fvsPatchField, surfaceMesh>& f,
-    const label fLabel
-)
+    const label facei
+) const
 {
-    if (mesh_.isInternalFace(fLabel))
+    if (mesh_.isInternalFace(facei))
     {
-        return f.internalField()[fLabel];
+        return f.primitiveField()[facei];
     }
     else
     {
+        const polyBoundaryMesh& pbm = mesh_.boundaryMesh();
+
         // Boundary face. Find out which face of which patch
-        const label patchI = mesh_.boundaryMesh().whichPatch(fLabel);
+        const label patchi = pbm.whichPatch(facei);
 
-        // Handle empty patches
-        if (mesh_.boundary()[patchI].size() == 0)
+        if (patchi < 0 || patchi >= pbm.size())
         {
-            return 0;
-        }
-
-        if (patchI < 0 || patchI >= mesh_.boundaryMesh().size())
-        {
-            FatalErrorIn
-            (
-                "Type isoAdvection::faceValue\n"
-                "(\n"
-                "    const GeometricField<Type, fvsPatchField, surfaceMesh>&\n"
-                "    const label\n"
-                ")\n"
-            )   << "Cannot find patch for face " << fLabel
+            FatalErrorInFunction
+                << "Cannot find patch for face " << facei
                 << abort(FatalError);
         }
 
-        const label faceI =
-            mesh_.boundaryMesh()[patchI].whichFace
-            (
-                fLabel
-            );
+        // Handle empty patches
+        const polyPatch& pp = pbm[patchi];
+        if (isA<emptyPolyPatch>(pp) || pp.empty())
+        {
+            return pTraits<Type>::zero;
+        }
 
-        return f.boundaryField()[patchI][faceI];
+        const label patchFacei = pp.whichFace(facei);
+        return f.boundaryField()[patchi][patchFacei];
     }
 }
 
@@ -75,46 +73,38 @@ template<typename Type>
 void Foam::isoAdvection::faceValue
 (
     GeometricField<Type, fvsPatchField, surfaceMesh>& f,
-    const label fLabel,
+    const label facei,
     const Type& value
-)
+) const
 {
-    if (mesh_.isInternalFace(fLabel))
+    if (mesh_.isInternalFace(facei))
     {
-        f.ref()[fLabel] = value;
+        f.primitiveFieldRef()[facei] = value;
     }
     else
     {
+        const polyBoundaryMesh& pbm = mesh_.boundaryMesh();
+
         // Boundary face. Find out which face of which patch
-        const label patchI = mesh_.boundaryMesh().whichPatch(fLabel);
+        const label patchi = pbm.whichPatch(facei);
+
+        if (patchi < 0 || patchi >= pbm.size())
+        {
+            FatalErrorInFunction
+                << "Cannot find patch for face " << facei
+                << abort(FatalError);
+        }
 
         // Handle empty patches
-        if (mesh_.boundary()[patchI].size() == 0)
+        const polyPatch& pp = pbm[patchi];
+        if (isA<emptyPolyPatch>(pp) || pp.empty())
         {
             return;
         }
 
-        if (patchI < 0 || patchI >= mesh_.boundaryMesh().size())
-        {
-            FatalErrorIn
-            (
-                "void isoAdvection::faceValue\n"
-                "(\n"
-                "    const GeometricField<Type, fvsPatchField, surfaceMesh>&\n"
-                "    const label\n"
-                "    const Type\n"
-                ")\n"
-            )   << "Cannot find patch for face " << fLabel
-                << abort(FatalError);
-        }
+        const label patchFacei = pp.whichFace(facei);
 
-        const label faceI =
-            mesh_.boundaryMesh()[patchI].whichFace
-            (
-                fLabel
-            );
-
-        f.boundaryFieldRef()[patchI][faceI] = value;
+        f.boundaryFieldRef()[patchi][patchFacei] = value;
     }
 }
 

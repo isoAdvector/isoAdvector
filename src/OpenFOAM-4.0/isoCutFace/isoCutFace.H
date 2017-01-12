@@ -49,12 +49,11 @@ namespace Foam
 {
 
 /*---------------------------------------------------------------------------*\
-            Class isoCutFaces Declaration
+                        Class isoCutFaces Declaration
 \*---------------------------------------------------------------------------*/
 
 class isoCutFace
 {
-
     // Private data
 
         //- Mesh whose cells and faces to cut at their intersection with an isoface
@@ -64,7 +63,6 @@ class isoCutFace
         label faceI_;
 
         //- Isofunction values at mesh points. f_size() = mesh_.nPoints().
-//        scalarField& f_;
         scalarField& f_;
 
         //- Isovalue used to cut face or cell
@@ -104,6 +102,7 @@ class isoCutFace
         //- Boolean telling if subface centre and area have been calculated
         bool subFaceCentreAndAreaIsCalculated_;
 
+
     // Private Member Functions
 
         void calcSubFaceCentreAndArea();
@@ -116,17 +115,10 @@ class isoCutFace
             const labelList& pLabels
         );
 
-        void subFacePoints
-        (
-            const pointField& points,
-            const labelList& pLabels
-        );
+        void subFacePoints(const pointField& points, const labelList& pLabels);
 
-        void surfacePoints
-        (
-            const pointField& points,
-            const labelList& pLabels
-        );
+        void surfacePoints(const pointField& points, const labelList& pLabels);
+
 
 public:
 
@@ -134,21 +126,13 @@ public:
 
         //- Construct from fvMesh and a scalarField
         //  Length of scalarField should equal number of mesh points
-        isoCutFace
-        (
-            const fvMesh& mesh,
-            scalarField& f
-        );
+        isoCutFace(const fvMesh& mesh, scalarField& f);
 
 
-        //Member functions
+    // Member functions
 
         //- Calculate cut points along edges of faceI
-        label calcSubFace
-        (
-            const label faceI,
-            const scalar isoValue
-        );
+        label calcSubFace(const label faceI, const scalar isoValue);
 
         //- Calculate cut points along edges of face with values f.
         //  Does not use the fvMesh or scalarField provided in the constructor.
@@ -176,8 +160,6 @@ public:
             const scalar f0,
             DynamicList<point>& cutPoints
         );
-
-
 };
 
 

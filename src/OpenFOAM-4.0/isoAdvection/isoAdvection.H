@@ -1,5 +1,11 @@
 /*---------------------------------------------------------------------------*\
-|             isoAdvector | Copyright (C) 2016 Johan Roenby, DHI              |
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | Copyright (C) 2016 OpenCFD Ltd.
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+                isoAdvector | Copyright (C) 2016 Johan Roenby, DHI
 -------------------------------------------------------------------------------
 
 License
@@ -60,6 +66,7 @@ SourceFiles
 #include "OFstream.H"
 #include "interpolationCellPoint.H"
 #include "cellSet.H"
+#include "className.H"
 
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -97,10 +104,10 @@ class isoAdvection
         //- Reference to velocity field
         const volVectorField& U_;
 
-        //- Face volmetric water transport
+        //- Face volumetric water transport
         surfaceScalarField dVf_;
-        
-        
+
+
         // Point interpolation data
 
             //- Interpolation object from cell centres to points
@@ -109,7 +116,7 @@ class isoAdvection
             //- VOF field interpolated to mesh points
             scalarField ap_;
 
-            
+
         // Switches and tolerances. Tolerances need to go into toleranceSwitches
 
             //- Number of alpha bounding steps
@@ -177,20 +184,20 @@ class isoAdvection
         //- Disallow default bitwise copy construct
         isoAdvection(const isoAdvection&);
 
-        //- Disallow default bitwise copy assignement
+        //- Disallow default bitwise copy assignment
         void operator=(const isoAdvection&);
 
-        
+
         // Advection functions
 
             //- For each face calculate volumetric face transport during dt
             void timeIntegratedFlux();
 
             //- Calculate volumetric face transport during dt given the isoFace
-            //  data provided as input for face fLabel
+            //  data provided as input for face facei
             scalar timeIntegratedFlux
             (
-                const label fLabel,
+                const label facei,
                 const vector& x0,
                 const vector& n0,
                 const scalar Un0,
@@ -216,7 +223,7 @@ class isoAdvection
             (
                 const label ci,
                 DynamicLabelList& downwindFaces
-            );
+            ) const;
 
             //- For face with vertices p calculate its area and integrated area
             //  between isocutting lines with isovalues f0 and f1 given vertex
@@ -227,17 +234,17 @@ class isoAdvection
                 const DynamicPointList& pf1,
                 scalar& quadArea,
                 scalar& intQuadArea
-            );
-  
-            //- Find min and max of subset of scalarField f defined by labelList
-            //  label
+            ) const;
+
+            //- Find min and max of subset of scalarField f defined by
+            //  labelList label
             void subSetExtrema
             (
                 const scalarField& f,
                 const labelList& labels,
                 scalar& fMin,
                 scalar& fMax
-            );
+            ) const;
 
             // Limit fluxes
             void limitFluxes();
@@ -256,16 +263,16 @@ class isoAdvection
             scalar netFlux
             (
                 const surfaceScalarField& dVf,
-                const label cellI
-            );
+                const label celli
+            ) const;
 
             //- Determine if a cell is a surface cell
-            bool isASurfaceCell(const label cellI)
+            bool isASurfaceCell(const label celli) const
             {
                 return
                 (
-                    surfCellTol_ < alpha1In_[cellI]
-                 && alpha1In_[cellI] < 1 - surfCellTol_
+                    surfCellTol_ < alpha1In_[celli]
+                 && alpha1In_[celli] < 1 - surfCellTol_
                 );
             }
 
@@ -281,30 +288,30 @@ class isoAdvection
             }
 
 
-        // Face value functions needed for random face access where the face can
-        // be either internal or boundary face
+        // Face value functions needed for random face access where the face
+        // can be either internal or boundary face
 
             //- Return face value for a given Geometric surface field
             template<typename Type>
             Type faceValue
             (
                 const GeometricField<Type, fvsPatchField, surfaceMesh>& f,
-                const label fLabel
-            );
+                const label facei
+            ) const;
 
             //- Set face value for a given Geometric surface field
             template<typename Type>
             void faceValue
             (
                 GeometricField<Type, fvsPatchField, surfaceMesh>& f,
-                const label fLabel,
+                const label facei,
                 const Type& value
-            );
+            ) const;
 
 
         // Parallel run handling functions
 
-            //- Syncronize dVf across processor boundaries using upwind value
+            //- Synchronize dVf across processor boundaries using upwind value
             void syncProcPatches
             (
                 surfaceScalarField& dVf,
@@ -313,14 +320,17 @@ class isoAdvection
 
             //- Check if the face is on processor patch and append it to the
             //  list of surface cell faces on processor patches
-            void checkIfOnProcPatch(const label faceI);
+            void checkIfOnProcPatch(const label facei);
 
 
-    public:
+public:
+
+    //- Runtime type information
+    TypeName("isoAdvection");
 
     //- Constructors
 
-        // Construt given alpha, phi and velocity field. Note: phi should be
+        //- Construct given alpha, phi and velocity field. Note: phi should be
         // divergence free up to a sufficient tolerance
         isoAdvection
         (
@@ -330,43 +340,39 @@ class isoAdvection
         );
 
 
-    //- Destructor: default
+    //- Destructor
+    virtual ~isoAdvection()
+    {}
 
 
     // Member functions
 
         //- Advect the free surface. Updates alpha field, taking into account
         //  multiple calls within a single time step. Note: not tested with
-        //  sucycles
+        //  subcycles
         void advect();
 
 
         // Access functions
 
-            // Return alpha field
+            //- Return alpha field
             const volScalarField& alpha() const
             {
                 return alpha1_;
             }
 
             //- Return cellSet of surface cells
-            void getSurfaceCells
-            (
-                cellSet& surfCells
-            );
+            void getSurfaceCells(cellSet& surfCells) const;
 
             //- Return cellSet of bounded cells
-            void getBoundedCells
-            (
-                cellSet& boundCells
-            );
+            void getBoundedCells(cellSet& boundCells) const;
 
-            // Return mass flux
+            //- Return mass flux
             tmp<surfaceScalarField> getRhoPhi
             (
                 const dimensionedScalar rho1,
                 const dimensionedScalar rho2
-            )
+            ) const
             {
                 return tmp<surfaceScalarField>
                 (

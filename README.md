@@ -152,10 +152,11 @@ straightforward to port the solvers to other versions.
 ## Contributors:
 
 * Johan Roenby <jro@dhigroup.com> (Inventor and main developer)
-* Hrvoje Jasak <hrvoje.jasak@fsb.hr> (General coding guidance, consistent 
-  treatment of boundary faces including processor boundaries, parallelisation, 
-  code clean up, provided algebraic schemes, CICSAM, HRIC etc.)
-* Henrik Bredmose <hbre@dtu.dk> (Participated in the conceptual development)
-* Vuko Vukcevic <vuko.vukcevic@fsb.hr> (Code review, profiling, porting to 
-  foam-extend, bug fixing, testing)
-* Tomislav Maric <tomislav@sourceflux.de> (Source file rearrangement)
+* Hrvoje Jasak (General coding guidance, consistent treatment of boundary faces 
+  including processor boundaries, parallelisation, code clean up, provided 
+  algebraic schemes, CICSAM, HRIC etc.)
+* Henrik Bredmose (Participated in conceptual development)
+* Vuko Vukcevic (Code review, profiling, porting to foam-extend, bug fixing, 
+  testing)
+* Tomislav Maric (Source file rearrangement)
+* Andrew Heather (Code clean up, porting to OpenFOAM+)

@@ -23,7 +23,7 @@ Class
     Foam::isoCutCell
 
 Description
-    Class for cutting a cell, cellI, of an fvMesh, mesh_, at its intersection
+    Class for cutting a cell, celli, of an fvMesh, mesh_, at its intersection
     with an isosurface defined by the mesh point values f_ and the isovalue,
     isoValue_.
 
@@ -51,12 +51,11 @@ namespace Foam
 {
 
 /*---------------------------------------------------------------------------*\
-            Class isoCutCell Declaration
+                        Class isoCutCell Declaration
 \*---------------------------------------------------------------------------*/
 
 class isoCutCell
 {
-
     // Private data
 
         //- Mesh whose cells and faces to cut at their intersection with an
@@ -100,14 +99,14 @@ class isoCutCell
         //  values (i.e. opposite of the gradient vector).
         vector isoFaceArea_;
 
-        //- Cell centre of the subcell of cellI which is "fully submerged", i.e.
+        //- Cell centre of the subcell of celli which is "fully submerged", i.e.
         //  where the function value is higher than the isoValue_
         point subCellCentre_;
 
         //- Volume of fully submerged subcell
         scalar subCellVolume_;
 
-        //- Volume of Fluid for cellI (subCellVolume_/mesh_.V()[cellI])
+        //- Volume of Fluid for celli (subCellVolume_/mesh_.V()[celli])
         scalar VOF_;
 
         //- List of fully submerged faces
@@ -126,13 +125,15 @@ class isoCutCell
         //- Boolean telling if isoface centre and area have been calculated
         bool isoFaceCentreAndAreaCalculated_;
 
-        // Private Member Functions
 
-    void calcSubCellCentreAndVolume();
+    // Private Member Functions
 
-    void calcIsoFaceCentreAndArea();
+            void calcSubCellCentreAndVolume();
 
-    void calcIsoFacePointsFromEdges();
+            void calcIsoFaceCentreAndArea();
+
+            void calcIsoFacePointsFromEdges();
+
 
 public:
 
@@ -140,20 +141,12 @@ public:
 
         //- Construct from fvMesh and a scalarField
         //  Length of scalarField should equal number of mesh points
-        isoCutCell
-        (
-            const fvMesh&,
-            scalarField&
-        );
+        isoCutCell(const fvMesh&, scalarField&);
 
 
-        //Member functions
+    // Member functions
 
-        label calcSubCell
-        (
-            const label cellI,
-            const scalar isoValue
-        );
+        label calcSubCell(const label celli, const scalar isoValue);
 
         point subCellCentre();
 
@@ -167,23 +160,19 @@ public:
 
         scalar VolumeOfFluid();
 
-        scalar isoValue();
+        scalar isoValue() const;
 
         void clearStorage();
 
         label vofCutCell
         (
-            const label cellI,
+            const label celli,
             const scalar alpha1,
             const scalar tol,
             const label maxIter
         );
 
-        void VolumeOfFluid
-        (
-            volScalarField& alpha1,
-            const scalar f0
-        );
+        void VolumeOfFluid(volScalarField& alpha1, const scalar f0);
 };
 
 

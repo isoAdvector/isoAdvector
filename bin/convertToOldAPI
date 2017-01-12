@@ -32,4 +32,11 @@ else
     grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tLimiter.internalField()" $targetDir | xargs sed -i 's/tLimiter\.internalField()/tLimiter()/g'
 
     grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tWeightingFactors.internalField()" $targetDir | xargs sed -i 's/tWeightingFactors\.internalField()/tWeightingFactors()/g'
+
+    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "FatalErrorInFunction" $targetDir | xargs sed -i 's/FatalErrorInFunction/FatalErrorIn(__FUNCTION__)/g'
+
+#Removed all DebugInFunction since they were not essential and I found  no obivous replacement in previous OF versions
+#    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "DebugInFunction" $targetDir | xargs sed -i 's/DebugInFunction/DebugIn(__FUNCTION__)/g'
+
+    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "WarningInFunction" $targetDir | xargs sed -i 's/WarningInFunction/WarningIn(__FUNCTION__)/g'
 fi
