@@ -14,13 +14,28 @@ then
     sourceDir=foam-extend-$WM_PROJECT_VERSION
 elif [ "$WM_PROJECT" == "OpenFOAM" ];
 then
-    sourceDir=OpenFOAM-${WM_PROJECT_VERSION}
+    if [[ "$WM_PROJECT_VERSION" == "4."* ]] || \
+       [ "$WM_PROJECT_VERSION" == "v1612" ] || \
+       [ "$WM_PROJECT_VERSION" == "plus" ];
+    then
+        sourceDir=OpenFOAM
+    else
+        sourceDir=OpenFOAM-${WM_PROJECT_VERSION}
+    fi
 fi
 
 #Compile the correct isoAdvector version
 if [ -n "$sourceDir" ];
 then
-    export ISOADVECTION=$PWD/src/$sourceDir
-    src/$sourceDir/Allwclean
-#    applications/$sourceDir/Allwclean
+    ISOADVECTION=$PWD/src/$sourceDir
+    if [ -d "$ISOADVECTION" ]; then
+        export ISOADVECTION
+        src/${sourceDir}/Allwclean
+#        applications/$sourceDir/Allwclean
+    else
+       echo
+       echo "The directory $ISOADVECTION does not exist."
+       echo "Aborting cleaning."
+       echo
+    fi
 fi

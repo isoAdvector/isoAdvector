@@ -15,7 +15,7 @@ else
     echo "Placing new source in $targetDir."
     echo
     
-    cp -r ../src/OpenFOAM-4.0 $targetDir
+    cp -r ../src/OpenFOAM $targetDir
 
     grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".ref()" $targetDir | xargs sed -i 's/\.ref()/\.internalField()/g'
 
