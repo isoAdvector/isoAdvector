@@ -36,6 +36,8 @@ License
 // * * * * * * * * * * * * * * Debugging * * * * * * * * * * * * * //
 
 #ifndef DebugInfo
+//Taken from OpenFOAM-4.0/src/OpenFOAM/db/error/messageStream.H to make code
+//compile with older OF versions.
 #define DebugInfo                                                              \
     if (debug) Info
 #endif
