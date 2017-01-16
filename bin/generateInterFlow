@@ -1,33 +1,32 @@
 #!/bin/bash
 cd ${0%/*} || exit 1   # run from this directory
 
-
-#ofversion=${1:-2.2.0}
-#targetDir=../applications/OpenFOAM-${ofversion}/interFlow
 newSolverName=interFlow
 targetDir=../applications/OpenFOAM/solvers/$newSolverName
 
-#if [ -d "$targetDir" ]; then
-#    echo
-#    echo "Directory $targetDir already exists. Please remove it and try again."
-#    echo
-#else
-    echo
-    echo "Generating $newSolverName solver in $targetDir."
-    echo
+echo
+echo "Generating $newSolverName solver in $targetDir."
+echo
 
-    sourceDir=$(dirname $(find "$FOAM_SOLVERS" -name "interFoam.C"))
-    mkdir -p $targetDir
-    cp -r $sourceDir/{*.C,*.H,Make} $targetDir
-    chmod -R u+w $targetDir
-    mv ${targetDir}/interFoam.C ${targetDir}/${newSolverName}.C
-    grep -rl --exclude \*.dep --exclude-dir \*Include\* "interFoam" $targetDir | xargs sed -i "s/interFoam/${newSolverName}/g"
-    grep -rl --exclude \*.dep --exclude-dir \*Include\* "FOAM_APPBIN" $targetDir | xargs sed -i 's/FOAM_APPBIN/FOAM_USER_APPBIN/g'
-    grep -rl --exclude \*.dep --exclude-dir \*Include\* "FOAM_LIBBIN" $targetDir | xargs sed -i 's/FOAM_LIBBIN/FOAM_USER_LIBBIN/g'
-    sed -i '0,/#include.*$/s//#include "isoAdvection.H"\n&/' ${targetDir}/${newSolverName}.C
-    sed -i '0,/EXE_INC.*$/s//&\n    -I$\(ISOADVECTION\)\/lnInclude \\/' ${targetDir}/Make/options
-    sed -i '0,/EXE_LIB.*$/s//&\n    -lisoAdvection \\/' ${targetDir}/Make/options
-    sed -i '0,/EXE_LIB.*$/s//&\n    -L$\(FOAM_USER_LIBBIN\) \\/' ${targetDir}/Make/options
-    echo '#include "createIsoAdvection.H"' >> ${targetDir}/createFields.H
-    sed -i 's/"alphaEqnSubCycle.H"/"advectInterface.H"/' ${targetDir}/interFlow.C
-#fi
+#Find interFoam in $FOAM_SOLVERS and copy to targetDir
+sourceDir=$(dirname $(find "$FOAM_SOLVERS" -name "interFoam.C"))
+mkdir -p $targetDir
+cp -r $sourceDir/{*.C,*.H,Make} $targetDir
+#Make sure you have write permission on the new solver dir
+chmod -R u+w $targetDir
+#Rename interFoam to newSolverName
+mv ${targetDir}/interFoam.C ${targetDir}/${newSolverName}.C
+grep -rl --exclude \*.dep --exclude-dir \*Include\* "interFoam" $targetDir | xargs sed -i "s/interFoam/${newSolverName}/g"
+#Change FOAM_APPBIN and FOAM_LIBBIN to FOAM_USER_APPBIN and FOAM_USER_LIBBIN
+grep -rl --exclude \*.dep --exclude-dir \*Include\* "FOAM_APPBIN" $targetDir | xargs sed -i 's/FOAM_APPBIN/FOAM_USER_APPBIN/g'
+grep -rl --exclude \*.dep --exclude-dir \*Include\* "FOAM_LIBBIN" $targetDir | xargs sed -i 's/FOAM_LIBBIN/FOAM_USER_LIBBIN/g'
+#Insert isoAdvection.H as first header file in new solver
+sed -i '0,/#include.*$/s//#include "isoAdvection.H"\n&/' ${targetDir}/${newSolverName}.C
+#Modify Make/options to include isoAdvector stuff
+sed -i '0,/EXE_INC.*$/s//&\n    -I$\(ISOADVECTION\)\/lnInclude \\/' ${targetDir}/Make/options
+sed -i '0,/EXE_LIB.*$/s//&\n    -lisoAdvection \\/' ${targetDir}/Make/options
+sed -i '0,/EXE_LIB.*$/s//&\n    -L$\(FOAM_USER_LIBBIN\) \\/' ${targetDir}/Make/options
+#Append createIsoAdvection.H to createFields.H
+echo '#include "createIsoAdvection.H"' >> ${targetDir}/createFields.H
+#Replace alphaEqnSubCycle.H with advectInterface.H in interFlow.C
+sed -i 's/"alphaEqnSubCycle.H"/"advectInterface.H"/' ${targetDir}/${newSolverName}.C

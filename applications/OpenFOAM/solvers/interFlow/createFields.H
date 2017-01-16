@@ -30,10 +30,9 @@
 
 
     Info<< "Reading transportProperties\n" << endl;
-    incompressibleTwoPhaseMixture twoPhaseProperties(U, phi);
+    twoPhaseMixture twoPhaseProperties(U, phi);
 
     volScalarField& alpha1(twoPhaseProperties.alpha1());
-    volScalarField& alpha2(twoPhaseProperties.alpha2());
 
     const dimensionedScalar& rho1 = twoPhaseProperties.rho1();
     const dimensionedScalar& rho2 = twoPhaseProperties.rho2();
@@ -49,24 +48,26 @@
             mesh,
             IOobject::READ_IF_PRESENT
         ),
-        alpha1*rho1 + alpha2*rho2,
+        alpha1*rho1 + (scalar(1) - alpha1)*rho2,
         alpha1.boundaryField().types()
     );
     rho.oldTime();
 
 
     // Mass flux
+    // Initialisation does not matter because rhoPhi is reset after the
+    // alpha1 solution before it is used in the U equation.
     surfaceScalarField rhoPhi
     (
         IOobject
         (
-            "rhoPhi",
+            "rho*phi",
             runTime.timeName(),
             mesh,
             IOobject::NO_READ,
             IOobject::NO_WRITE
         ),
-        fvc::interpolate(rho)*phi
+        rho1*phi
     );
 
 
@@ -132,7 +133,4 @@
     }
 
     fv::IOoptionList fvOptions(mesh);
-
-
-    tmp<surfaceScalarField> tphiAlphaCorr0;
 #include "createIsoAdvection.H"

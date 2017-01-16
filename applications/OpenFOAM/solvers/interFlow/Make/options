@@ -1,6 +1,5 @@
-EXE_INC = -ggdb3 \
+EXE_INC = \
     -I$(ISOADVECTION)/lnInclude \
-    -I$(LIB_SRC)/transportModels/twoPhaseMixture/lnInclude \
     -I$(LIB_SRC)/transportModels \
     -I$(LIB_SRC)/transportModels/incompressible/lnInclude \
     -I$(LIB_SRC)/transportModels/interfaceProperties/lnInclude \
@@ -13,9 +12,8 @@ EXE_INC = -ggdb3 \
 EXE_LIBS = \
     -L$(FOAM_USER_LIBBIN) \
     -lisoAdvection \
-    -ltwoPhaseMixture \
     -linterfaceProperties \
-    -ltwoPhaseProperties \
+    -ltwoPhaseInterfaceProperties \
     -lincompressibleTransportModels \
     -lincompressibleTurbulenceModel \
     -lincompressibleRASModels \

@@ -1,17 +1,10 @@
+label nAlphaCorr(readLabel(pimple.dict().lookup("nAlphaCorr")));
+label nAlphaSubCycles(readLabel(pimple.dict().lookup("nAlphaSubCycles")));
+
 if (nAlphaSubCycles > 1)
 {
     dimensionedScalar totalDeltaT = runTime.deltaT();
-    surfaceScalarField rhoPhiSum
-    (
-        IOobject
-        (
-            "rhoPhiSum",
-            runTime.timeName(),
-            mesh
-        ),
-        mesh,
-        dimensionedScalar("0", rhoPhi.dimensions(), 0)
-    );
+    surfaceScalarField rhoPhiSum(0.0*rhoPhi);
 
     for
     (
@@ -30,4 +23,4 @@ else
     #include "alphaEqn.H"
 }
 
-rho == alpha1*rho1 + alpha2*rho2;
+rho == alpha1*rho1 + (scalar(1) - alpha1)*rho2;

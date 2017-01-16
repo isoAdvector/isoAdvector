@@ -10,48 +10,62 @@ FoamFile
     version     2.0;
     format      ascii;
     class       dictionary;
-    location    "system";
-    object      controlDict;
+    object      blockMeshDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     interFlow;
+convertToMeters 1;
 
-startFrom       latestTime;
+x1 0;
+x2 1;
+y1 0;
+y2 1;
+z1 0;
+z2 1;
+nx 64;
+ny 64;
+nz 64;
 
-startTime       0;
+vertices
+(
+    ($x1 $y1 $z1)
+    ($x2 $y1 $z1)
+    ($x2 $y2 $z1)
+    ($x1 $y2 $z1)
+    ($x1 $y1 $z2)
+    ($x2 $y1 $z2)
+    ($x2 $y2 $z2)
+    ($x1 $y2 $z2)
+);
 
-stopAt          endTime;
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) ($nx $ny $nz) simpleGrading (1 1 1)
+);
 
-endTime         2;
+edges
+(
+);
 
-deltaT          0.001;
+boundary
+(
+    sides
+    {
+        type patch;
+        faces
+        (
+            (4 5 6 7)
+            (0 4 7 3)
+            (1 2 6 5)
+            (0 3 2 1)
+            (0 1 5 4)
+            (2 3 7 6)
+        );
+    }
+);
 
-writeControl    adjustableRunTime;
-
-writeInterval   0.01;
-
-purgeWrite      0;
-
-writeFormat     ascii;
-
-writePrecision  6;
-
-writeCompression uncompressed;
-
-timeFormat      general;
-
-timePrecision   6;
-
-runTimeModifiable yes;
-
-adjustTimeStep  yes;
-
-maxCo           0.5;
-maxAlphaCo      0.5;
-
-maxDeltaT       1;
-
-libs ( "libVOFInterpolationSchemes.so" );
+mergePatchPairs
+(
+);
 
 // ************************************************************************* //
