@@ -1,21 +1,25 @@
 /*---------------------------------------------------------------------------*\
-
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
 License
-    This file is part of IsoAdvector, which is an unofficial extension to
-    OpenFOAM.
+    This file is part of OpenFOAM.
 
-    IsoAdvector is free software: you can redistribute it and/or modify it
+    OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    IsoAdvector is distributed in the hope that it will be useful, but WITHOUT
+    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
     for more details.
 
     You should have received a copy of the GNU General Public License
-    along with IsoAdvector.  If not, see <http://www.gnu.org/licenses/>.
+    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
     interFlow
@@ -31,15 +35,9 @@ Description
 
     For a two-fluid approach see twoPhaseEulerFoam.
 
-    This solver is essentially the interFoam solver with MULES replaced by
-    IsoAdvector for the interface advection step.
-
-Author
-    Johan Roenby, DHI, all rights reserved.
-
-
 \*---------------------------------------------------------------------------*/
 
+#include "isoAdvection.H"
 #include "fvCFD.H"
 #include "CMULES.H"
 #include "EulerDdtScheme.H"
@@ -53,7 +51,6 @@ Author
 #include "CorrectPhi.H"
 #include "localEulerDdtScheme.H"
 #include "fvcSmooth.H"
-#include "isoAdvection.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -84,8 +81,6 @@ int main(int argc, char *argv[])
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
     Info<< "\nStarting time loop\n" << endl;
-    scalar executionTime = runTime.elapsedCpuTime();
-    scalar advectionTime = 0;
 
     while (runTime.run())
     {
@@ -101,7 +96,7 @@ int main(int argc, char *argv[])
             #include "alphaCourantNo.H"
             #include "setDeltaT.H"
         }
-        
+
         runTime++;
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
@@ -109,29 +104,9 @@ int main(int argc, char *argv[])
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
         {
-            //Advance alpha1 from time t to t+dt
-            scalar advectionStartTime = runTime.elapsedCpuTime();
-            advector.advect();
-            advectionTime += (runTime.elapsedCpuTime() - advectionStartTime);
-//            #include "alphaControls.H"
-//            #include "alphaEqnSubCycle.H"
+            #include "alphaControls.H"
+            #include "advectInterface.H"
 
-            //Clip and snap alpha1 to ensure strict boundedness to machine precision
-            alpha1Org = alpha1;
-            if ( clipAlphaTol > 0.0 )
-            {
-                alpha1 = alpha1*
-                    pos(alpha1-clipAlphaTol)*neg(alpha1-(1.0-clipAlphaTol)) 
-                    + pos(alpha1-(1.0-clipAlphaTol));
-            }
-            if ( snapAlpha )
-            {
-                alpha1 = min(1.0,max(0.0,alpha1));
-            }
-
-            rho == alpha1*rho1 + (scalar(1) - alpha1)*rho2;
-            rhoPhi = advector.getRhoPhi(rho1, rho2);
-            
             mixture.correct();
 
             #include "UEqn.H"
@@ -148,35 +123,11 @@ int main(int argc, char *argv[])
             }
         }
 
-        alpha1 = alpha1Org;
-        const scalar V = gSum(mesh.V().field()*alpha1.internalField());
-        Info << "t = " << runTime.time().value() << ",\t sum(alpha*V) = " << V
-             << ",\t dev = " << 100*(1.0 - V/V0) << "%"
-             << ",\t 1-max(alpha1) = " << 1 - gMax(alpha1.internalField())
-             << ",\t min(alpha1) = " << gMin(alpha1.internalField()) 
-             << endl;
-
-        if (printSurfCells)
-        {
-            advector.getSurfaceCells(surfCells);
-        }
-
-       if (printBoundCells)
-        {
-            advector.getBoundedCells(boundCells);
-        }
-
-        contErr = fvc::surfaceIntegrate(phi)*runTime.deltaT();
-
         runTime.write();
 
-        scalar newExecutionTime = runTime.elapsedCpuTime();
-        Info<< "ExecutionTime = " << newExecutionTime << " s,"
-            << " ClockTime = " << runTime.elapsedClockTime() << " s,"
-            << " timeStepTime = " << newExecutionTime - executionTime << " s,"
-            << " advection fraction: " << 100*advectionTime/newExecutionTime
-            << "%" << nl << endl;
-        executionTime = runTime.elapsedCpuTime();
+        Info<< "ExecutionTime = " << runTime.elapsedCpuTime() << " s"
+            << "  ClockTime = " << runTime.elapsedClockTime() << " s"
+            << nl << endl;
     }
 
     Info<< "End\n" << endl;

@@ -1,4 +1,4 @@
-EXE_INC = $(ISODBUG) \
+EXE_INC = \
     -I$(ISOADVECTION)/lnInclude \
     -I$(LIB_SRC)/transportModels/twoPhaseMixture/lnInclude \
     -I$(LIB_SRC)/transportModels \
@@ -13,11 +13,11 @@ EXE_INC = $(ISODBUG) \
 
 EXE_LIBS = \
     -L$(FOAM_USER_LIBBIN) \
+    -lisoAdvection \
     -limmiscibleIncompressibleTwoPhaseMixture \
     -lturbulenceModels \
     -lincompressibleTurbulenceModels \
     -lfiniteVolume \
     -lfvOptions \
     -lmeshTools \
-    -lsampling \
-    -lisoAdvection
+    -lsampling
