@@ -32,7 +32,8 @@ then
     if [ -d "$ISOADVECTION" ]; then
         export ISOADVECTION
         src/${sourceDir}/Allwmake
-        applications/$sourceDir/Allwmake
+#        applications/$sourceDir/Allwmake
+        applications/OpenFOAM/Allwmake
     else
        echo
        echo "The directory $ISOADVECTION does not exist"

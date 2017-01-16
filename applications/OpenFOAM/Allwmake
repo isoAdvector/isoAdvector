@@ -1,7 +1,7 @@
 #!/bin/sh
 cd ${0%/*} || exit 1    # run from this directory
 
-set -x 
+set -x
 
 wmake all solvers/interFlow
 #wmake all test

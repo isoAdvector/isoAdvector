@@ -19,7 +19,7 @@ targetDir=../applications/OpenFOAM/solvers/$newSolverName
     sourceDir=$(dirname $(find "$FOAM_SOLVERS" -name "interFoam.C"))
     mkdir -p $targetDir
     cp -r $sourceDir/{*.C,*.H,Make} $targetDir
-
+    chmod -R u+w $targetDir
     mv ${targetDir}/interFoam.C ${targetDir}/${newSolverName}.C
     grep -rl --exclude \*.dep --exclude-dir \*Include\* "interFoam" $targetDir | xargs sed -i "s/interFoam/${newSolverName}/g"
     grep -rl --exclude \*.dep --exclude-dir \*Include\* "FOAM_APPBIN" $targetDir | xargs sed -i 's/FOAM_APPBIN/FOAM_USER_APPBIN/g'

@@ -13,14 +13,6 @@ if (nAlphaSubCycles > 1)
         dimensionedScalar("0", rhoPhi.dimensions(), 0)
     );
 
-    tmp<volScalarField> trSubDeltaT;
-
-    if (LTS)
-    {
-        trSubDeltaT =
-            fv::localEulerDdt::localRSubDeltaT(mesh, nAlphaSubCycles);
-    }
-
     for
     (
         subCycle<volScalarField> alphaSubCycle(alpha1, nAlphaSubCycles);

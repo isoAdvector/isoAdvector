@@ -32,6 +32,7 @@ then
         export ISOADVECTION
         src/${sourceDir}/Allwclean
 #        applications/$sourceDir/Allwclean
+        applications/OpenFOAM/Allwclean
     else
        echo
        echo "The directory $ISOADVECTION does not exist."

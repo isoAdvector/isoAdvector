@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -40,43 +40,31 @@ Description
 #include "isoAdvection.H"
 #include "fvCFD.H"
 #include "CMULES.H"
-#include "EulerDdtScheme.H"
-#include "localEulerDdtScheme.H"
-#include "CrankNicolsonDdtScheme.H"
 #include "subCycle.H"
-#include "immiscibleIncompressibleTwoPhaseMixture.H"
-#include "turbulentTransportModel.H"
+#include "interfaceProperties.H"
+#include "incompressibleTwoPhaseMixture.H"
+#include "turbulenceModel.H"
 #include "pimpleControl.H"
-#include "fvOptions.H"
-#include "CorrectPhi.H"
-#include "localEulerDdtScheme.H"
-#include "fvcSmooth.H"
+#include "fvIOoptionList.H"
+#include "fixedFluxPressureFvPatchScalarField.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
 {
-    #include "postProcess.H"
-
     #include "setRootCase.H"
     #include "createTime.H"
     #include "createMesh.H"
-    #include "createControl.H"
-    #include "createTimeControls.H"
-    #include "createRDeltaT.H"
+
+    pimpleControl pimple(mesh);
+
     #include "initContinuityErrs.H"
     #include "createFields.H"
-    #include "createFvOptions.H"
+    #include "readTimeControls.H"
+    #include "createPrghCorrTypes.H"
     #include "correctPhi.H"
-
-    turbulence->validate();
-
-    if (!LTS)
-    {
-        #include "readTimeControls.H"
-        #include "CourantNo.H"
-        #include "setInitialDeltaT.H"
-    }
+    #include "CourantNo.H"
+    #include "setInitialDeltaT.H"
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -85,17 +73,9 @@ int main(int argc, char *argv[])
     while (runTime.run())
     {
         #include "readTimeControls.H"
-
-        if (LTS)
-        {
-            #include "setRDeltaT.H"
-        }
-        else
-        {
-            #include "CourantNo.H"
-            #include "alphaCourantNo.H"
-            #include "setDeltaT.H"
-        }
+        #include "CourantNo.H"
+        #include "alphaCourantNo.H"
+        #include "setDeltaT.H"
 
         runTime++;
 
@@ -105,9 +85,14 @@ int main(int argc, char *argv[])
         while (pimple.loop())
         {
             #include "alphaControls.H"
-            #include "advectInterface.H"
 
-            mixture.correct();
+            if (pimple.firstIter() || alphaOuterCorrectors)
+            {
+                twoPhaseProperties.correct();
+
+                #include "advectInterface.H"
+                interface.correct();
+            }
 
             #include "UEqn.H"
 
