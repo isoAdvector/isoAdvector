@@ -15,12 +15,6 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-/*
-defaultFieldValues
-(
-    volScalarFieldValue alpha1 0
-);
-*/
 regions
 (
     boxToCell

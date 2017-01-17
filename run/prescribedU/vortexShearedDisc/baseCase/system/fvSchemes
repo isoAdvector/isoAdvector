@@ -28,10 +28,13 @@ gradSchemes
 divSchemes
 {
     div(rho*phi,U)  Gauss limitedLinearV 1;
+    div(rhoPhi,U)   Gauss limitedLinearV 1; //OF-4.0
     div(phi,alpha)  Gauss vanLeer;
     div(phi,alpha1)  Gauss HRIC;
+    div(phi,alpha.water)  Gauss HRIC;
     div(phirb,alpha) Gauss interfaceCompression;
     div((muEff*dev(T(grad(U))))) Gauss linear;
+    div(((rho*nuEff)*dev2(T(grad(U))))) Gauss linear; //OF-4.0
 }
 
 laplacianSchemes

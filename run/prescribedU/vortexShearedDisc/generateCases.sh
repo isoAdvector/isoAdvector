@@ -91,11 +91,18 @@ do
 
                 if [ "$scheme" = "CICSAM" ];
                 then
-                    foamParmSet 'div(phi,alpha1)'  "Gauss $scheme 0.5" $caseDir/system/fvSchemes
+                    foamParmSet 'interfaceMethod'  "fvSchemes" $caseDir/system/fvSolution
+                    foamParmSet 'div(phi,alpha.water)'  "Gauss $scheme 0.5" $caseDir/system/fvSchemes
                 fi
                 if [ "$scheme" = "HRIC" ];
                 then
-                    foamParmSet 'div(phi,alpha1)'  "Gauss $scheme" $caseDir/system/fvSchemes
+                    foamParmSet 'interfaceMethod'  "fvSchemes" $caseDir/system/fvSolution
+                    foamParmSet 'div(phi,alpha.water)'  "Gauss $scheme" $caseDir/system/fvSchemes
+                fi
+
+                if [ "$scheme" = "MULES" ];
+                then
+                    foamParmSet 'interfaceMethod'  "MULES" $caseDir/system/fvSolution
                 fi
 
                 if [ "$meshType" = "hex" ];

@@ -260,8 +260,8 @@ Foam::tmp<Foam::surfaceScalarField> Foam::CICSAM::limiter
 
     const surfaceScalarField& CDweights = mesh.surfaceInterpolation::weights();
 
-    const unallocLabelList& owner = mesh.owner();
-    const unallocLabelList& neighbour = mesh.neighbour();
+    const UList<label>& owner = mesh.owner();
+    const UList<label>& neighbour = mesh.neighbour();
 
     const vectorField& C = mesh.C();
 
@@ -377,8 +377,8 @@ Foam::tmp<Foam::surfaceScalarField> Foam::CICSAM::weights
 
     const surfaceScalarField& CDweights = mesh.surfaceInterpolation::weights();
 
-    const unallocLabelList& owner = mesh.owner();
-    const unallocLabelList& neighbour = mesh.neighbour();
+    const UList<label>& owner = mesh.owner();
+    const UList<label>& neighbour = mesh.neighbour();
 
     const vectorField& C = mesh.C();
 

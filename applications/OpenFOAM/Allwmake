@@ -4,6 +4,6 @@ cd ${0%/*} || exit 1    # run from this directory
 set -x
 
 wmake all solvers/interFlow
-#wmake all test
-#wmake all utilities/preProcessing
-#wmake all utilities/postProcessing
+wmake all test
+wmake all utilities/preProcessing
+wmake all utilities/postProcessing

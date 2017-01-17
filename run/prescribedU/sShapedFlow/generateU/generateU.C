@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 			scalarField Zb = Cf.component(2);
 			scalarField ub = 0.25*(4.0*Xb-2.0 + pow(4.0*Zb-2.0,3));
 			scalarField wb = -0.25*(4.0*Zb-2.0 + pow(4.0*Xb-2.0,3));
-			vectorField& Ub = U.boundaryField()[patchI];
+			vectorField& Ub = U.boundaryFieldRef()[patchI];
 			forAll(Ub,fi)
 			{
 				Ub[fi] = ub[fi]*vector(1.0,0.0,0.0) + 0.0*vector(0.0,1.0,0.0) + wb[fi]*vector(0.0,0.0,1.0);
@@ -102,46 +102,17 @@ int main(int argc, char *argv[])
 		linearInterpolate(U) & mesh.Sf()
 	);
 
-	{
-		const scalarField x = mesh.points().component(0);
-		const scalarField y = mesh.points().component(1);
-		const scalarField z = mesh.points().component(2);
-		scalarField psi = 0.25*(4.0*x*z - 2.0*x - 2.0*z + pow(1.0-2.0*z,4) + pow(1.0-2.0*x,4));
-
-		//Setting phi on internal faces
-		forAll(phi,fi)
-		{
-			phi[fi] = 0.0;
-			labelList pointLabels = mesh.faces()[fi];
-			label nPoints = pointLabels.size();
-			forAll(pointLabels,pi)
-			{
-				label pl1 = pointLabels[pi];
-				label pl2 = pointLabels[(pi+1) % nPoints];
-				phi[fi] += 0.5*(psi[pl1]+psi[pl2])*(y[pl2]-y[pl1]);
-			}
-		}
-		
-		//Setting phi on boundary patches
-		forAll(phi.boundaryField(), patchI)
-		{
-		    scalarField& phib = phi.boundaryField()[patchI];
-		    forAll(phib,fi)
-		    {
-				phib[fi] = 0.0;
-				const label start = mesh.boundary()[patchI].start();
-				const labelList& pointLabels = mesh.faces()[start + fi];
-				label nPoints = pointLabels.size();
-				forAll(pointLabels,pi)
-				{
-					label pl1 = pointLabels[pi];
-					label pl2 = pointLabels[(pi+1) % nPoints];
-					phib[fi] += 0.5*(psi[pl1]+psi[pl2])*(y[pl2]-y[pl1]);
-				}
-		    }
-		}
-
-	}
+    {
+        scalarField Xf = mesh.Cf().component(0);
+        scalarField Zf = mesh.Cf().component(2);
+        scalarField uf = 0.25*(4.0*Xf-2.0 + pow(4.0*Zf-2.0,3));
+		scalarField wf = -0.25*(4.0*Zf-2.0 + pow(4.0*Xf-2.0,3));
+        forAll(phi,fi)
+        {
+            vector Uf = uf[fi]*vector(1.0,0.0,0.0) + wf[fi]*vector(0.0,0.0,1.0);
+            phi[fi] = (Uf & (mesh.Sf()[fi]));
+        }
+    }
 	
 	scalarField sumPhi = fvc::surfaceIntegrate(phi);
 	scalar maxMagSumPhi(0.0);

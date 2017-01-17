@@ -10,6 +10,8 @@ mkdir -p logs
     || blockMesh > logs/blockMesh.log 2>&1
 
 isoSurf > logs/isoSurf.log 2>&1
+cp 0/alpha1 0/alpha.water
+sed -i 's/alpha1/alpha.water/' 0/alpha.water
 
 if [ -n "$application" ]
 then

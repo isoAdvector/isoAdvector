@@ -26,7 +26,7 @@ Application
     
 Description
     Generates velocity field for the classical test case with a sphere 
-    deformed into a shape with long tongues and back again.
+    deformed into a spiralling sheet and back again.
 
 Author
     Johan Roenby, DHI, all rights reserved.
@@ -58,19 +58,19 @@ int main(int argc, char *argv[])
         mesh
     );
 
-    scalar PI = Foam::constant::mathematical::pi;
     {
         scalarField X = mesh.C().component(0);
         scalarField Y = mesh.C().component(1);
         scalarField Z = mesh.C().component(2);
-        scalarField u = sin(2*PI*Y)*pow(sin(PI*X),2);
-        scalarField v = -sin(2.0*PI*X)*pow(sin(PI*Y),2);
+        scalarField u = sin(2*M_PI*Y)*pow(sin(M_PI*X),2);
+        scalarField v = -sin(2.0*M_PI*X)*pow(sin(M_PI*Y),2);
         scalarField r = sqrt(pow(X-0.5,2) + pow(Y-0.5,2));
         scalarField w = pow((1-r/0.5),2);
 
         forAll(U,ci)
         {
-            U[ci] = u[ci]*vector(1.0,0.0,0.0) + v[ci]*vector(0.0,1.0,0.0) + w[ci]*vector(0.0,0.0,1.0);
+            U[ci] = u[ci]*vector(1.0,0.0,0.0) + v[ci]*vector(0.0,1.0,0.0) 
+                + w[ci]*vector(0.0,0.0,1.0);
         }
     }
     
@@ -93,13 +93,14 @@ int main(int argc, char *argv[])
         scalarField Xf = mesh.Cf().component(0);
         scalarField Yf = mesh.Cf().component(1);
         scalarField Zf = mesh.Cf().component(2);
-        scalarField uf = sin(2*PI*Yf)*pow(sin(PI*Xf),2);
-        scalarField vf = -sin(2.0*PI*Xf)*pow(sin(PI*Yf),2);
+        scalarField uf = sin(2*M_PI*Yf)*pow(sin(M_PI*Xf),2);
+        scalarField vf = -sin(2.0*M_PI*Xf)*pow(sin(M_PI*Yf),2);
         scalarField rf = sqrt(pow(Xf-0.5,2) + pow(Yf-0.5,2));
         scalarField wf = pow((1-rf/0.5),2);
         forAll(phi,fi)
         {
-            vector Uf = uf[fi]*vector(1.0,0.0,0.0) + vf[fi]*vector(0.0,1.0,0.0) + wf[fi]*vector(0.0,0.0,1.0);
+            vector Uf = uf[fi]*vector(1.0,0.0,0.0) + vf[fi]*vector(0.0,1.0,0.0) 
+                + wf[fi]*vector(0.0,0.0,1.0);
             phi[fi] = (Uf & (mesh.Sf()[fi]));
         }
     }

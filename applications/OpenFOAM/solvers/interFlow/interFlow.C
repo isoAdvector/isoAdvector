@@ -2,7 +2,7 @@
   =========                 |
   \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
    \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
+    \\  /    A nd           | Copyright (C) 2011-2016 OpenFOAM Foundation
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
 License
@@ -24,6 +24,9 @@ License
 Application
     interFlow
 
+Group
+    grpMultiphaseSolvers
+
 Description
     Solver for 2 incompressible, isothermal immiscible fluids using a VOF
     (volume of fluid) phase-fraction based interface capturing approach.
@@ -39,31 +42,43 @@ Description
 
 #include "isoAdvection.H"
 #include "fvCFD.H"
-#include "MULES.H"
+#include "CMULES.H"
+#include "EulerDdtScheme.H"
+#include "localEulerDdtScheme.H"
+#include "CrankNicolsonDdtScheme.H"
 #include "subCycle.H"
-#include "interfaceProperties.H"
-#include "twoPhaseMixture.H"
-#include "turbulenceModel.H"
+#include "immiscibleIncompressibleTwoPhaseMixture.H"
+#include "turbulentTransportModel.H"
 #include "pimpleControl.H"
-#include "fvIOoptionList.H"
+#include "fvOptions.H"
+#include "CorrectPhi.H"
+#include "localEulerDdtScheme.H"
+#include "fvcSmooth.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
 {
+    #include "postProcess.H"
+
     #include "setRootCase.H"
     #include "createTime.H"
     #include "createMesh.H"
-
-    pimpleControl pimple(mesh);
-
+    #include "createControl.H"
+    #include "createTimeControls.H"
     #include "initContinuityErrs.H"
     #include "createFields.H"
-    #include "readTimeControls.H"
+    #include "createFvOptions.H"
     #include "correctPhi.H"
-    #include "CourantNo.H"
-    #include "setInitialDeltaT.H"
 
+    turbulence->validate();
+
+    if (!LTS)
+    {
+        #include "readTimeControls.H"
+        #include "CourantNo.H"
+        #include "setInitialDeltaT.H"
+    }
 
     // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -72,22 +87,30 @@ int main(int argc, char *argv[])
     while (runTime.run())
     {
         #include "readTimeControls.H"
-        #include "CourantNo.H"
-        #include "alphaCourantNo.H"
-        #include "setDeltaT.H"
+
+        if (LTS)
+        {
+            #include "setRDeltaT.H"
+        }
+        else
+        {
+            #include "CourantNo.H"
+            #include "alphaCourantNo.H"
+            #include "setDeltaT.H"
+        }
 
         runTime++;
 
         Info<< "Time = " << runTime.timeName() << nl << endl;
 
-        twoPhaseProperties.correct();
-
-        #include "advectInterface.H"
-        interface.correct();
-
         // --- Pressure-velocity PIMPLE corrector loop
         while (pimple.loop())
         {
+            #include "alphaControls.H"
+            #include "advectInterface.H"
+
+            mixture.correct();
+
             #include "UEqn.H"
 
             // --- Pressure corrector loop

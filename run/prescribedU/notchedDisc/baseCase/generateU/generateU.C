@@ -100,9 +100,10 @@ int main(int argc, char *argv[])
         phi[fi] = Uf & Sf[fi];
     }
     
-    surfaceScalarField::GeometricBoundaryField& phip = phi.boundaryField();
+//    surfaceScalarField::GeometricBoundaryField& phip = phi.boundaryField();
+//    surfaceScalarField::Boundary& phip = phi.boundaryFieldRef();
 
-    forAll(phip, patchi)
+    forAll(mesh.boundary(), patchi)
     {
         const polyPatch& pp = mesh.boundaryMesh()[patchi];
         if
@@ -111,7 +112,7 @@ int main(int argc, char *argv[])
          && !isA<emptyPolyPatch>(pp)
         )
         {
-            fvsPatchScalarField& phib = phip[patchi];
+            fvsPatchScalarField& phib = phi.boundaryFieldRef()[patchi];
             const fvsPatchVectorField& Cf = mesh.Cf().boundaryField()[patchi];
             const fvsPatchVectorField& Sf = mesh.Sf().boundaryField()[patchi];
 

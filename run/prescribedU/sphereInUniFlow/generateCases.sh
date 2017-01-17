@@ -2,10 +2,10 @@
 
 #Input
 
-#appList=(interFlow mulesFoam passiveAdvectionFoam passiveAdvectionFoam)
+#appList=(interFlow interFlow interFlow interFlow)
 appList=(interFlow)
-#schemeList=(isoAdvector MULES HRIC CICSAM)
-schemeList=(isoAdvector)
+#schemeList=(interFlow MULES HRIC CICSAM)
+schemeList=(interFlow)
 meshList=(tri)
 dtList=(0.01 0.005 0.0025)
 CoList=(0.5)
@@ -90,11 +90,18 @@ do
 
                 if [ "$scheme" = "CICSAM" ];
                 then
-                    foamParmSet 'div(phi,alpha1)'  "Gauss $scheme 0.5" $caseDir/system/fvSchemes
+                    foamParmSet 'interfaceMethod'  "fvSchemes" $caseDir/system/fvSolution
+                    foamParmSet 'div(phi,alpha.water)'  "Gauss $scheme 0.5" $caseDir/system/fvSchemes
                 fi
                 if [ "$scheme" = "HRIC" ];
                 then
-                    foamParmSet 'div(phi,alpha1)'  "Gauss $scheme" $caseDir/system/fvSchemes
+                    foamParmSet 'interfaceMethod'  "fvSchemes" $caseDir/system/fvSolution
+                    foamParmSet 'div(phi,alpha.water)'  "Gauss $scheme" $caseDir/system/fvSchemes
+                fi
+
+                if [ "$scheme" = "MULES" ];
+                then
+                    foamParmSet 'interfaceMethod'  "MULES" $caseDir/system/fvSolution
                 fi
 
                 if [ "$meshType" = "hex" ];

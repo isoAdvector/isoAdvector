@@ -1,6 +1,8 @@
 #!/bin/bash
 cd ${0%/*} || exit 1   # run from this directory
 
+echo "Installing isoAdvector..."
+
 #Find out which OF version is loaded
 if [ -z "$WM_PROJECT_VERSION" ];
 then
@@ -14,15 +16,32 @@ then
     sourceDir=foam-extend-$WM_PROJECT_VERSION
 elif [ "$WM_PROJECT" == "OpenFOAM" ];
 then
-    if [[ "$WM_PROJECT_VERSION" == "4."* ]] || \
-       [ "$WM_PROJECT_VERSION" == "v1612" ] || \
-       [ "$WM_PROJECT_VERSION" == "plus" ];
+    sourceDir=OpenFOAM-${WM_PROJECT_VERSION}
+
+    echo "Copying non-existing files from src/OpenFOAM to src/$sourceDir and"
+    echo "from applications/OpenFOAM to applications/${sourceDir}..."
+
+    mkdir -p src/$sourceDir
+    cp -nr src/OpenFOAM/* src/$sourceDir/
+
+    mkdir -p applications/$sourceDir
+    cp -nr applications/OpenFOAM/* applications/$sourceDir/
+
+    #Only convert src if not one of the newest OF versions
+    if [[ "$WM_PROJECT_VERSION" != "4."* ]] && \
+       [ "$WM_PROJECT_VERSION" != "v1612+" ] && \
+       [ "$WM_PROJECT_VERSION" != "plus" ];
     then
-        sourceDir=OpenFOAM
-    else
-        sourceDir=OpenFOAM-${WM_PROJECT_VERSION}
+       #Transform code to old API
+       cd bin
+       ./generateCodeForOldVersion $WM_PROJECT_VERSION
+       cd -
     fi
-    echo $sourceDir
+    
+    #Generate interFlow solver from interFoam solver of the loaded OF version
+    cd bin
+    ./generateInterFlow
+    cd -
 fi
 
 #Compile the correct isoAdvector version
@@ -31,9 +50,10 @@ then
     ISOADVECTION=$PWD/src/$sourceDir
     if [ -d "$ISOADVECTION" ]; then
         export ISOADVECTION
+        echo "Compiling src/${sourceDir}..."
         src/${sourceDir}/Allwmake
-#        applications/$sourceDir/Allwmake
-        applications/OpenFOAM/Allwmake
+        echo "Compiling applications/${sourceDir}..."
+        applications/${sourceDir}/Allwmake
     else
        echo
        echo "The directory $ISOADVECTION does not exist"

@@ -41,20 +41,6 @@ int main(int argc, char *argv[])
     #include "createTime.H"
     #include "createMesh.H"
 
-    Info<< "Reading field alpha1\n" << endl;
-    volScalarField alpha1
-    (
-        IOobject
-        (
-            "alpha1",
-            runTime.timeName(),
-            mesh,
-            IOobject::MUST_READ,
-            IOobject::AUTO_WRITE
-        ),
-        mesh
-    );
-
 	Info<< "Reading isoSurfDict\n" << endl;
 
 	IOdictionary isoSurfDict
@@ -73,6 +59,21 @@ int main(int argc, char *argv[])
 	const vector centre = isoSurfDict.lookup("centre");
 	const vector direction = isoSurfDict.lookupOrDefault<vector>("direction",vector::zero);
 	const scalar radius = isoSurfDict.lookupOrDefault<scalar>("radius",0.0);
+	const word fieldName = isoSurfDict.lookupOrDefault<word>("field","alpha1");
+
+    Info<< "Reading field " << fieldName << "\n" << endl;
+    volScalarField alpha1
+    (
+        IOobject
+        (
+            fieldName,
+            runTime.timeName(),
+            mesh,
+            IOobject::MUST_READ,
+            IOobject::AUTO_WRITE
+        ),
+        mesh
+    );
 
 	const scalarField x(mesh.points().component(0));
     const scalarField y(mesh.points().component(1));

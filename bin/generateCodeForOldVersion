@@ -1,42 +1,32 @@
 #!/bin/bash
 cd ${0%/*} || exit 1   # run from this directory
 
-
 ofversion=${1:-2.2.0}
 
 targetDir=../src/OpenFOAM-${ofversion}
 
-if [ -d "$targetDir" ]; then
+if [ ! -d "$targetDir" ]; then
+    echo "$targetDir does not exits."
+    echo "Copying src/OpenFOAM to $targetDir."
     echo
-    echo "Directory $targetDir already exists. Please remove it and try again."
-    echo
-else
-    echo
-    echo "Placing new source in $targetDir."
-    echo
-    
-    cp -r ../src/OpenFOAM $targetDir
 
-    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".ref()" $targetDir | xargs sed -i 's/\.ref()/\.internalField()/g'
+    mkdir -p $targetDir
+    cp -nr ../src/OpenFOAM/* $targetDir
+fi
 
-    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".primitiveField()" $targetDir | xargs sed -i 's/.primitiveField()/.internalField()/g'
+echo
+echo "Changing code in $targetDir to old API."
+echo
 
-    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".primitiveFieldRef()" $targetDir | xargs sed -i 's/.primitiveFieldRef()/.internalField()/g'
-
-    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".boundaryFieldRef()" $targetDir | xargs sed -i 's/\.boundaryFieldRef()/\.boundaryField()/g'
-
-    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Boundary" $targetDir | xargs sed -i 's/::Boundary/::GeometricBoundaryField/g'
-
-    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Internal" $targetDir | xargs sed -i 's/::Internal/::DimensionedInternalField/g'
-
-    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tLimiter.internalField()" $targetDir | xargs sed -i 's/tLimiter\.internalField()/tLimiter()/g'
-
-    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tWeightingFactors.internalField()" $targetDir | xargs sed -i 's/tWeightingFactors\.internalField()/tWeightingFactors()/g'
-
-    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "FatalErrorInFunction" $targetDir | xargs sed -i 's/FatalErrorInFunction/FatalErrorIn(__FUNCTION__)/g'
-
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".ref()" $targetDir | xargs sed -i 's/\.ref()/\.internalField()/g'
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".primitiveField()" $targetDir | xargs sed -i 's/.primitiveField()/.internalField()/g'
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".primitiveFieldRef()" $targetDir | xargs sed -i 's/.primitiveFieldRef()/.internalField()/g'
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".boundaryFieldRef()" $targetDir | xargs sed -i 's/\.boundaryFieldRef()/\.boundaryField()/g'
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Boundary" $targetDir | xargs sed -i 's/::Boundary/::GeometricBoundaryField/g'
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Internal" $targetDir | xargs sed -i 's/::Internal/::DimensionedInternalField/g'
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tLimiter.internalField()" $targetDir | xargs sed -i 's/tLimiter\.internalField()/tLimiter()/g'
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tWeightingFactors.internalField()" $targetDir | xargs sed -i 's/tWeightingFactors\.internalField()/tWeightingFactors()/g'
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "FatalErrorInFunction" $targetDir | xargs sed -i 's/FatalErrorInFunction/FatalErrorIn(__FUNCTION__)/g'
 #Removed all DebugInFunction since they were not essential and I found  no obivous replacement in previous OF versions
 #    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "DebugInFunction" $targetDir | xargs sed -i 's/DebugInFunction/DebugIn(__FUNCTION__)/g'
-
-    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "WarningInFunction" $targetDir | xargs sed -i 's/WarningInFunction/WarningIn(__FUNCTION__)/g'
-fi
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "WarningInFunction" $targetDir | xargs sed -i 's/WarningInFunction/WarningIn(__FUNCTION__)/g'
