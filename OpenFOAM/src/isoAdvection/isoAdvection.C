@@ -77,7 +77,7 @@ Foam::isoAdvection::isoAdvection
     ap_(mesh_.nPoints()),
 
     // Tolerances and solution controls
-    nAlphaBounds_(dict_.lookupOrDefault<label>("nAlphaBounds", 1)),
+    nAlphaBounds_(dict_.lookupOrDefault<label>("nAlphaBounds", 3)),
     vof2IsoTol_(dict_.lookupOrDefault<scalar>("vof2IsoTol", 1e-8)),
     surfCellTol_(dict_.lookupOrDefault<scalar>("surfCellTol", 1e-8)),
 

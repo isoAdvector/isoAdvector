@@ -41,13 +41,13 @@ if (printBoundCells)
 
 //Clip and snap alpha1 to ensure strict boundedness to machine precision
 alpha1Unbounded = alpha1;
-if ( clipAlphaTol > 0.0 )
+if ( snapAlphaTol > 0.0 )
 {
     alpha1 = alpha1*
-        pos(alpha1-clipAlphaTol)*neg(alpha1-(1.0-clipAlphaTol)) 
-        + pos(alpha1-(1.0-clipAlphaTol));
+        pos(alpha1-snapAlphaTol)*neg(alpha1-(1.0-snapAlphaTol)) 
+        + pos(alpha1-(1.0-snapAlphaTol));
 }
-if ( snapAlpha )
+if ( clipAlpha )
 {
     alpha1 = min(1.0,max(0.0,alpha1));
 }

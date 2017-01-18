@@ -27,23 +27,20 @@ https://www.youtube.com/channel/UCt6Idpv4C8TTgz1iUX0prAA
 
 ## Requirements:
 
-The isoAdvector src library should compile with any OpenFOAM version between 
-2.2.0 and 4.0. To generate the src for the old API stile (internalField() 
-instead of ref() etc.) you must first run the bin/convertToOldAPI script with 
-the version number as an arguement, e.g.:
+The isoAdvector code is developed and maintained in the newest OpenFOAM releases
+but the script isoAdvector/bin/generateCodeForOldVersion copies the code in
+isoAdvector/OpenFOAM to isoAdvector/OpenFOAM-[oldLoadedOFversion] and attempts 
+to modify this code to become compatible with the older loaded OpenFOAM 
+versions. 
 
-    cd bin
-    ./convertToOldAPI 2.2.0
-
-Currently the applications/solvers exit in versions compatible with 
-OpenFOAM-2.2.0, OpenFOAM 4.0 and foam-extend-3.2. It should be relatively 
-straightforward to port the solvers to other versions.
+A foam-extend version of the code is also available in isoAdvector/foam-extend. 
+This version is not necessarily kept up to date.
 
 ## Installation:
 
-0.  Source a supported OpenFOAM environment: 
+0.  Source your OpenFOAM environment, e.g.: 
 
-        source OpenFOAM-x.x.x/etc/bashrc
+        source /home/$USER/OpenFOAM/OpenFOAM-4.1/etc/bashrc
 
 1.  In a linux terminal download the package with git by typing:
 
@@ -51,7 +48,7 @@ straightforward to port the solvers to other versions.
 
 2.  Execute the Allwmake script by typing (will finish in a ~1 min):
 
-        cd isoadvector
+        cd isoAdvector
         ./Allwmake
 
     Applications will be compiled to your FOAM_USER_APPBIN and libraries will be
@@ -59,7 +56,7 @@ straightforward to port the solvers to other versions.
     
 3.  Test installation with a simple test case by typing (finishes in secs):
 
-        cp -r run/isoAdvector/discInUniFlow/baseCase ~
+        cp -r OpenFOAM-4.1/run/prescribedU/discInUniFlow/baseCase ~
         cd ~/baseCase
         ./Allrun
 	
@@ -76,7 +73,7 @@ straightforward to port the solvers to other versions.
 
         http://dx.doi.org/10.5061/dryad.66840
 
-    The downloaded meshes.tar.gz file should be extracted to the isoadvector 
+    The downloaded meshes.tar.gz file should be extracted to the isoAdvector 
     root directory.
     
 ## Code structure:
@@ -90,27 +87,84 @@ straightforward to port the solvers to other versions.
   These are compiled into a library named `libIsoAdvection`. 
 * For comparison we also include the CICSAM, HRIC and mHRIC algebraic VOF 
   schemes in `finiteVolume` directory. These are compiled into a library called
-  libVOFInterpolationSchemes.
+  `libVOFInterpolationSchemes`.
 
 `applications/` 
 
-- `solvers/isoAdvector` 
-    - Solves the volume fraction advection equation in either steady flow or 
-      periodic predefined flow with the option of changing the flow direction at
-      a specified time.
-- `solvers/mulesFoam`
-    - This is like isoAdvector, but using MULES instead of isoAdvector. Based on
-      interFoam.
-- `solvers/passiveAdvectionFoam` 
-    - This is essentially scalarTransportFoam but using alpha1 instead of T and 
-      without diffusion term. Used to run test cases with predefined velocity 
-      field using the CICSAM and HRIC schemes.
 - `solvers/interFlow` 
-    - This is essentially the original interFoam solver with MULES replaced by 
-      isoAdvector for interface advection. No changes to PIMPLE loop.
+    - A copy of the interFoam solver with the option to use isoAdvector instead
+      of MULES in the interface advection step. To use isoAdvector add a 
+      dictionary called isoAdvector to fvSolution with the contents:
+
+      isoAdvector
+      {
+          //interfaceMethod can be set to "MULES" (default), "isoAdvector" or 
+          //"fvSchemes". Use the latter option to use the HRIC, CICSAM or 
+          //vofCompression schemes.
+
+          interfaceMethod "isoAdvector";
+          
+          //isoFaceTol is the precision with wich the isosurface cutting a cell 
+          //into subcells should reproduce the cell's volume fraction. Typically 
+          //between 1e-6 and 1e-8 (default).
+
+          isoFaceTol  1e-8;
+          
+          //surfCellTol defines which cells are treated as surface cells. If 
+          //
+          //  surfCellTol < alpha1 < 1 - surfCellTol
+          //
+          //a cell will be treated with isoAdvector. Typically between between 
+          //1e-6 and 1e-8 (default).
+
+          surfCellTol 1e-8;
+          
+          //nAlphaBounds is the number of times the volume preserving bounding 
+          //procedure should be applied after the advection step to repair 
+          //fluxes of unbounded cells. Default is 3.
+          
+          nAlphaBounds 3;
+
+          //If snapAlphaTol > 0 then after advection and volume preserving 
+          //bounding all remaining alpha's closer to 0 than snapAlphaTol will be 
+          //set to 0 and all alpha's closer to 1 than snapAlphaTol will be set 
+          //to 1. Default value is 1e-12.
+          
+          snapAlphaTol 1e-12; 
+
+          //If clip is set to true/yes/1 then after advection and volume 
+          //preserving bounding any alpha < 0 will be set to 0 and any alpha > 1 
+          //will be set to 1.
+
+          clip   true;
+
+          //If prescribedU and PIMPLE.nCorrectors is set to -1, then the velocty
+          //and pressure equations will not be solved. Useful for pure advection 
+          //test cases.
+
+          prescribedU true;
+
+          //In cases with prescribed U there is an option to make the prescribed 
+          //velocity field periodic by multiplying it by a factor 
+          //cos(2*pi*runTime.time()/period) if period > 0:
+
+          period      0;
+
+          //In cases with prescribed U there is an option to reverse the 
+          //velocity field when a when the time reverseTime is reached:
+
+          reverseTime 0;
+      }
+
+      Please see cases in isoAdvector/run for examples of usage. Note that the 
+      first versions of the isoAdvector code had the following other solvers:
+      isoAdvector, mulesFoam, passiveAdvectionFoam. With the introduction of the 
+      prescribedU switch described above, the functionallity of these solvers
+      is now included in the interFlow solver and they have therefore been 
+      removed.
 - `utilities/preProcessing/isoSurf` 
-    - Sets the initial volume fraction field for either a sphere, a cylinder or 
-      a plane. See isoSurfDict for usage.
+    - Sets the initial volume fraction field for a sphere, a cylinder, a plane 
+      or a sinus wave. See isoSurfDict for usage.
 - `utilities/postProcessing/uniFlowErrors`
     - For cases with spheres and discs in steady uniform flow calculates errors 
       relative to exact VOF solution.
@@ -119,9 +173,8 @@ straightforward to port the solvers to other versions.
 
 `run/`
 
-- `isoAdvector/` 
-    - Contains test cases using isoAdvector to move a volume of fluid in a 
-      predescribed velocity field.
+- `prescribedU/` 
+    - Contains pure advection test cases (prescribedU = true) from literature.
 - `interFlow/` 
     - Contains test cases using interFlow coupling IsoAdvector with the PIMPLE 
       algorithm for the pressure-velocity coupling.

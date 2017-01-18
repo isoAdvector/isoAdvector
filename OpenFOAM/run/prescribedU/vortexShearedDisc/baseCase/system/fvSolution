@@ -69,9 +69,9 @@ isoAdvector
     interfaceMethod "isoAdvector";
     isoFaceTol	1e-8;
     surfCellTol	1e-8;
-    clipAlphaTol 0;
+    snapAlphaTol 0;
     nAlphaBounds 3;
-    snapAlpha	false;
+    clip	false;
     period	16;
     prescribedU true;
 }

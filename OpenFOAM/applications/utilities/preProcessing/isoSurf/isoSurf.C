@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 
     const scalarField& alpha = alpha1.internalField();
 	Info << "sum(" << fieldName << "*V) = " << gSum(mesh.V()*alpha)
-	 << ", 1-max(" fieldName << ") = " << 1 - gMax(alpha)
+	 << ", 1-max(" << fieldName << ") = " << 1 - gMax(alpha)
 	 << "\t min(" << fieldName << ") = " << gMin(alpha) << endl;
 
     Info<< "End\n" << endl;

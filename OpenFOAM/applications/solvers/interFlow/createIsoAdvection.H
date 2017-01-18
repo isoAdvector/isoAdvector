@@ -3,8 +3,8 @@ isoAdvection advector(alpha1,phi,U);
 
 //Read isoAdvector settings
 const dictionary& isoAdvectorDict(mesh.solutionDict().subDict("isoAdvector"));
-scalar clipAlphaTol(isoAdvectorDict.lookupOrDefault<scalar>("clipAlphaTol", 0));
-bool snapAlpha(isoAdvectorDict.lookupOrDefault<bool>("snapAlpha", true));
+scalar snapAlphaTol(isoAdvectorDict.lookupOrDefault<scalar>("snapTol", 1e-12));
+bool clipAlpha(isoAdvectorDict.lookupOrDefault<bool>("clip", true));
 word interfaceMethod(isoAdvectorDict.lookupOrDefault<word>("interfaceMethod", "MULES"));
 
 //Optional writing out of surface cell set
