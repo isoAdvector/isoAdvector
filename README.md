@@ -96,65 +96,65 @@ This version is not necessarily kept up to date.
       of MULES in the interface advection step. To use isoAdvector add a 
       dictionary called isoAdvector to fvSolution with the contents:
 
-      isoAdvector
-      {
-          //interfaceMethod can be set to "MULES" (default), "isoAdvector" or 
-          //"fvSchemes". Use the latter option to use the HRIC, CICSAM or 
-          //vofCompression schemes.
+          isoAdvector
+          {
+              //interfaceMethod can be set to "MULES" (default), "isoAdvector" or 
+              //"fvSchemes". Use the latter option to use the HRIC, CICSAM or 
+              //vofCompression schemes.
 
-          interfaceMethod "isoAdvector";
-          
-          //isoFaceTol is the precision with wich the isosurface cutting a cell 
-          //into subcells should reproduce the cell's volume fraction. Typically 
-          //between 1e-6 and 1e-8 (default).
+              interfaceMethod "isoAdvector";
+              
+              //isoFaceTol is the precision with wich the isosurface cutting a cell 
+              //into subcells should reproduce the cell's volume fraction. Typically 
+              //between 1e-6 and 1e-8 (default).
 
-          isoFaceTol  1e-8;
-          
-          //surfCellTol defines which cells are treated as surface cells. If 
-          //
-          //  surfCellTol < alpha1 < 1 - surfCellTol
-          //
-          //a cell will be treated with isoAdvector. Typically between between 
-          //1e-6 and 1e-8 (default).
+              isoFaceTol  1e-8;
+              
+              //surfCellTol defines which cells are treated as surface cells. If 
+              //
+              //  surfCellTol < alpha1 < 1 - surfCellTol
+              //
+              //a cell will be treated with isoAdvector. Typically between between 
+              //1e-6 and 1e-8 (default).
 
-          surfCellTol 1e-8;
-          
-          //nAlphaBounds is the number of times the volume preserving bounding 
-          //procedure should be applied after the advection step to repair 
-          //fluxes of unbounded cells. Default is 3.
-          
-          nAlphaBounds 3;
+              surfCellTol 1e-8;
+              
+              //nAlphaBounds is the number of times the volume preserving bounding 
+              //procedure should be applied after the advection step to repair 
+              //fluxes of unbounded cells. Default is 3.
+              
+              nAlphaBounds 3;
 
-          //If snapAlphaTol > 0 then after advection and volume preserving 
-          //bounding all remaining alpha's closer to 0 than snapAlphaTol will be 
-          //set to 0 and all alpha's closer to 1 than snapAlphaTol will be set 
-          //to 1. Default value is 1e-12.
-          
-          snapAlphaTol 1e-12; 
+              //If snapAlphaTol > 0 then after advection and volume preserving 
+              //bounding all remaining alpha's closer to 0 than snapAlphaTol will be 
+              //set to 0 and all alpha's closer to 1 than snapAlphaTol will be set 
+              //to 1. Default value is 1e-12.
+              
+              snapAlphaTol 1e-12; 
 
-          //If clip is set to true/yes/1 then after advection and volume 
-          //preserving bounding any alpha < 0 will be set to 0 and any alpha > 1 
-          //will be set to 1.
+              //If clip is set to true/yes/1 then after advection and volume 
+              //preserving bounding any alpha < 0 will be set to 0 and any alpha > 1 
+              //will be set to 1.
 
-          clip   true;
+              clip   true;
 
-          //If prescribedU and PIMPLE.nCorrectors is set to -1, then the velocty
-          //and pressure equations will not be solved. Useful for pure advection 
-          //test cases.
+              //If prescribedU and PIMPLE.nCorrectors is set to -1, then the velocty
+              //and pressure equations will not be solved. Useful for pure advection 
+              //test cases.
 
-          prescribedU true;
+              prescribedU true;
 
-          //In cases with prescribed U there is an option to make the prescribed 
-          //velocity field periodic by multiplying it by a factor 
-          //cos(2*pi*runTime.time()/period) if period > 0:
+              //In cases with prescribed U there is an option to make the prescribed 
+              //velocity field periodic by multiplying it by a factor 
+              //cos(2*pi*runTime.time()/period) if period > 0:
 
-          period      0;
+              period      0;
 
-          //In cases with prescribed U there is an option to reverse the 
-          //velocity field when a when the time reverseTime is reached:
+              //In cases with prescribed U there is an option to reverse the 
+              //velocity field when a when the time reverseTime is reached:
 
-          reverseTime 0;
-      }
+              reverseTime 0;
+          }
 
       Please see cases in isoAdvector/run for examples of usage. Note that the 
       first versions of the isoAdvector code had the following other solvers:
