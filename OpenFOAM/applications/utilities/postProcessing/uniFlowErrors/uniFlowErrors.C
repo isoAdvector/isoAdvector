@@ -1,4 +1,6 @@
 /*---------------------------------------------------------------------------*\
+|             isoAdvector | Copyright (C) 2016 Johan Roenby, DHI              |
+-------------------------------------------------------------------------------
 
 License
     This file is part of IsoAdvector, which is an unofficial extension to
@@ -15,8 +17,8 @@ License
     for more details.
 
     You should have received a copy of the GNU General Public License
-    along with IsoAdvector.  If not, see <http://www.gnu.org/licenses/>.
-
+    along with IsoAdvector. If not, see <http://www.gnu.org/licenses/>.
+    
 Application
     uniFlowErrors
 
@@ -111,10 +113,10 @@ int main(int argc, char *argv[])
 		)
 	);
 
-	const word surfType = isoSurfDict.lookup("type");
-	const Foam::vector centre0 = isoSurfDict.lookup("centre");
-	const Foam::vector direction = isoSurfDict.lookupOrDefault<Foam::vector>("direction",Foam::vector::zero);
-	const scalar radius = isoSurfDict.lookupOrDefault<scalar>("radius",0.0);
+	const word surfType(isoSurfDict.lookup("type"));
+	const Foam::vector centre0(isoSurfDict.lookup("centre"));
+	const Foam::vector direction(isoSurfDict.lookupOrDefault<Foam::vector>("direction",Foam::vector::zero));
+	const scalar radius(isoSurfDict.lookupOrDefault<scalar>("radius",0.0));
 
 	const scalarField x(mesh.points().component(0));
     const scalarField y(mesh.points().component(1));

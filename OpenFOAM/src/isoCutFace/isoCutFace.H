@@ -35,7 +35,7 @@ Description
         doi={10.1098/rsos.160405},
         publisher = {The Royal Society},
         journal = {Royal Society Open Science}
-    }    
+    }
 
 Author
     Johan Roenby, DHI, all rights reserved.

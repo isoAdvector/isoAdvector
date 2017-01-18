@@ -26,7 +26,7 @@ Description
     Class for cutting a cell, celli, of an fvMesh, mesh_, at its intersection
     with an isosurface defined by the mesh point values f_ and the isovalue,
     isoValue_.
-    
+
     @article{Roenby160405,
         author={Roenby, Johan and Bredmose, Henrik and Jasak, Hrvoje},
         title={A computational method for sharp interface advection},
@@ -35,7 +35,7 @@ Description
         doi={10.1098/rsos.160405},
         publisher = {The Royal Society},
         journal = {Royal Society Open Science}
-    }    
+    }
 
 Author
     Johan Roenby, DHI, all rights reserved.

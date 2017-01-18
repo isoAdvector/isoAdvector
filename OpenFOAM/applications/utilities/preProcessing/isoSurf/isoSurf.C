@@ -1,4 +1,6 @@
 /*---------------------------------------------------------------------------*\
+|             isoAdvector | Copyright (C) 2016 Johan Roenby, DHI              |
+-------------------------------------------------------------------------------
 
 License
     This file is part of IsoAdvector, which is an unofficial extension to
@@ -15,7 +17,7 @@ License
     for more details.
 
     You should have received a copy of the GNU General Public License
-    along with IsoAdvector.  If not, see <http://www.gnu.org/licenses/>.
+    along with IsoAdvector. If not, see <http://www.gnu.org/licenses/>.
 
 Application
     isoSurf
@@ -41,25 +43,25 @@ int main(int argc, char *argv[])
     #include "createTime.H"
     #include "createMesh.H"
 
-	Info<< "Reading isoSurfDict\n" << endl;
+    Info<< "Reading isoSurfDict\n" << endl;
 
-	IOdictionary isoSurfDict
-	(
-		IOobject
-		(
-			"isoSurfDict",
-			runTime.system(),
-			mesh,
-			IOobject::MUST_READ,
-			IOobject::NO_WRITE
-		)
-	);
+    IOdictionary isoSurfDict
+    (
+        IOobject
+        (
+            "isoSurfDict",
+            runTime.system(),
+            mesh,
+            IOobject::MUST_READ,
+            IOobject::NO_WRITE
+        )
+    );
 
-	const word surfType = isoSurfDict.lookup("type");
-	const vector centre = isoSurfDict.lookup("centre");
-	const vector direction = isoSurfDict.lookupOrDefault<vector>("direction",vector::zero);
-	const scalar radius = isoSurfDict.lookupOrDefault<scalar>("radius",0.0);
-	const word fieldName = isoSurfDict.lookupOrDefault<word>("field","alpha.water");
+    const word surfType(isoSurfDict.lookup("type"));
+    const vector centre(isoSurfDict.lookup("centre"));
+    const vector direction(isoSurfDict.lookupOrDefault<vector>("direction",vector::zero));
+    const scalar radius(isoSurfDict.lookupOrDefault<scalar>("radius",0.0));
+    const word fieldName(isoSurfDict.lookupOrDefault<word>("field","alpha.water"));
 
     Info<< "Reading field " << fieldName << "\n" << endl;
     volScalarField alpha1
@@ -75,60 +77,60 @@ int main(int argc, char *argv[])
         mesh
     );
 
-	const scalarField x(mesh.points().component(0));
+    const scalarField x(mesh.points().component(0));
     const scalarField y(mesh.points().component(1));
     const scalarField z(mesh.points().component(2));
     scalar f0 = 0.0;
-	scalarField f(x.size());
+    scalarField f(x.size());
 
-	if ( surfType == "plane" )
-	{
-		f = -(mesh.points() - centre) & (direction/mag(direction));
-		f0 = 0.0;
-	}
-	else if ( surfType == "sphere" )
-	{
-		f = -sqrt(pow((x-centre[0]),2) + pow((y-centre[1]),2) + pow((z-centre[2]),2));
-		f0 = -radius;
-	}
-	else if ( surfType == "cylinder" )
-	{
-		f = -sqrt(pow(mag(mesh.points()-centre),2) - pow(mag((mesh.points()-centre) & direction),2));
-		f0 = -radius;
-	}
-	else if ( surfType == "sin" )
-	{
+    if ( surfType == "plane" )
+    {
+        f = -(mesh.points() - centre) & (direction/mag(direction));
+        f0 = 0.0;
+    }
+    else if ( surfType == "sphere" )
+    {
+        f = -sqrt(pow((x-centre[0]),2) + pow((y-centre[1]),2) + pow((z-centre[2]),2));
+        f0 = -radius;
+    }
+    else if ( surfType == "cylinder" )
+    {
+        f = -sqrt(pow(mag(mesh.points()-centre),2) - pow(mag((mesh.points()-centre) & direction),2));
+        f0 = -radius;
+    }
+    else if ( surfType == "sin" )
+    {
         const scalar lambda = isoSurfDict.lookupOrDefault<scalar>("lambda",1);
         const scalar amplitude = isoSurfDict.lookupOrDefault<scalar>("amplitude",.1);
         const vector up = isoSurfDict.lookupOrDefault<vector>("up",vector::zero);
         const scalarField xx((mesh.points()-centre) & direction/mag(direction));
         const scalarField zz((mesh.points()-centre) & up/mag(up));
-		f = amplitude*Foam::sin(2*M_PI*xx/lambda) - zz;
-		f0 = 0;
-	}
-	else
-	{
-		Info << "Invalid surface type specified" << endl;
-		Info << "Aborting..." << endl;
-	}
+        f = amplitude*Foam::sin(2*M_PI*xx/lambda) - zz;
+        f0 = 0;
+    }
+    else
+    {
+        Info << "Invalid surface type specified" << endl;
+        Info << "Aborting..." << endl;
+    }
 
 
     Info << "surfType = " << surfType << endl;
 
     //Define function on mesh points and isovalue
 
-	//Calculating alpha1 volScalarField from f = f0 isosurface
+    //Calculating alpha1 volScalarField from f = f0 isosurface
     isoCutCell icc(mesh,f);
     icc.VolumeOfFluid(alpha1, f0);
 
-	ISstream::defaultPrecision(18);
+    ISstream::defaultPrecision(18);
 
     alpha1.write(); //Writing volScalarField alpha1
 
     const scalarField& alpha = alpha1.internalField();
-	Info << "sum(" << fieldName << "*V) = " << gSum(mesh.V()*alpha)
-	 << ", 1-max(" << fieldName << ") = " << 1 - gMax(alpha)
-	 << "\t min(" << fieldName << ") = " << gMin(alpha) << endl;
+    Info << "sum(" << fieldName << "*V) = " << gSum(mesh.*alpha)
+     << ", 1-max(" << fieldName << ") = " << 1 - gMax(alpha)
+     << "\t min(" << fieldName << ") = " << gMin(alpha) << endl;
 
     Info<< "End\n" << endl;
 
