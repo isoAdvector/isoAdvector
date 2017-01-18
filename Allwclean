@@ -20,11 +20,11 @@ fi
 #Compile the correct isoAdvector version
 if [ -n "$sourceDir" ];
 then
-    ISOADVECTION=$PWD/src/$sourceDir
+    ISOADVECTION=$PWD/$sourceDir/src
     if [ -d "$ISOADVECTION" ]; then
         export ISOADVECTION
-        src/${sourceDir}/Allwclean
-        applications/$sourceDir/Allwclean
+        ${sourceDir}/src/Allwclean
+        $sourceDir/applications/Allwclean
     else
        echo
        echo "The directory $ISOADVECTION does not exist."

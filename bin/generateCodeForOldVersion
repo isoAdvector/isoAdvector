@@ -3,15 +3,15 @@ cd ${0%/*} || exit 1   # run from this directory
 
 ofversion=${1:-2.2.0}
 
-targetDir=../src/OpenFOAM-${ofversion}
+targetDir=../OpenFOAM-${ofversion}/src
 
 if [ ! -d "$targetDir" ]; then
     echo "$targetDir does not exits."
-    echo "Copying src/OpenFOAM to $targetDir."
+    echo "Copying OpenFOAM/src to $targetDir."
     echo
 
     mkdir -p $targetDir
-    cp -nr ../src/OpenFOAM/* $targetDir
+    cp -nr ../OpenFOAM/src/* $targetDir
 fi
 
 echo

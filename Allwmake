@@ -18,14 +18,10 @@ elif [ "$WM_PROJECT" == "OpenFOAM" ];
 then
     sourceDir=OpenFOAM-${WM_PROJECT_VERSION}
 
-    echo "Copying non-existing files from src/OpenFOAM to src/$sourceDir and"
-    echo "from applications/OpenFOAM to applications/${sourceDir}..."
+    echo "Copying non-existing files from OpenFOAM to $sourceDir..."
 
-    mkdir -p src/$sourceDir
-    cp -nr src/OpenFOAM/* src/$sourceDir/
-
-    mkdir -p applications/$sourceDir
-    cp -nr applications/OpenFOAM/* applications/$sourceDir/
+    mkdir -p $sourceDir
+    cp -nr OpenFOAM/* $sourceDir/
 
     #Only convert src if not one of the newest OF versions
     if [[ "$WM_PROJECT_VERSION" != "4."* ]] && \
@@ -47,13 +43,13 @@ fi
 #Compile the correct isoAdvector version
 if [ -n "$sourceDir" ];
 then
-    ISOADVECTION=$PWD/src/$sourceDir
+    ISOADVECTION=$PWD/$sourceDir/src
     if [ -d "$ISOADVECTION" ]; then
         export ISOADVECTION
         echo "Compiling src/${sourceDir}..."
-        src/${sourceDir}/Allwmake
+        ${sourceDir}/src/Allwmake
         echo "Compiling applications/${sourceDir}..."
-        applications/${sourceDir}/Allwmake
+        ${sourceDir}/applications/Allwmake
     else
        echo
        echo "The directory $ISOADVECTION does not exist"

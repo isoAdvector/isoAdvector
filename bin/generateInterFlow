@@ -2,7 +2,7 @@
 cd ${0%/*} || exit 1   # run from this directory
 
 newSolverName=interFlow
-targetDir=../applications/OpenFOAM/solvers/$newSolverName
+targetDir=../OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/$newSolverName
 
 echo
 echo "Generating $newSolverName solver in $targetDir."
@@ -12,7 +12,7 @@ echo
 sourceDir=$(dirname $(find "$FOAM_SOLVERS" -name "interFoam.C"))
 mkdir -p $targetDir
 cp -r $sourceDir/{*.C,*.H,Make} $targetDir
-#Make sure you have write permission on the new solver dir
+#Make sure you have write permission in the new solver dir
 chmod -R u+w $targetDir
 #Rename interFoam to newSolverName
 mv ${targetDir}/interFoam.C ${targetDir}/${newSolverName}.C
