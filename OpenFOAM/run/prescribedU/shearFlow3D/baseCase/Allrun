@@ -18,8 +18,6 @@ if [ ! -d "logs" ]; then
     fi
     generateU/generateU > logs/generateU.log 2>&1
     isoSurf > logs/isoSurf.log 2>&1
-    cp 0/alpha1 0/alpha.water
-    sed -i 's/alpha1/alpha.water/' 0/alpha.water
 else
     mv logs logs_$jobStart
     mkdir logs

@@ -30,3 +30,6 @@ sed -i '0,/EXE_LIB.*$/s//&\n    -L$\(FOAM_USER_LIBBIN\) \\/' ${targetDir}/Make/o
 echo '#include "createIsoAdvection.H"' >> ${targetDir}/createFields.H
 #Replace alphaEqnSubCycle.H with advectInterface.H in interFlow.C
 sed -i 's/"alphaEqnSubCycle.H"/"advectInterface.H"/' ${targetDir}/${newSolverName}.C
+#Replacing header
+source dhiFoamTools
+replaceHeader  ${targetDir}/${newSolverName}.C

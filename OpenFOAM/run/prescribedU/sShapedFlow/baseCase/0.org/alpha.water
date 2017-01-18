@@ -22,13 +22,10 @@ boundaryField
 {
     rim
     {
-        type    zeroGradient;
+        type    fixedValue;
+        value   uniform 0;
     }
-    front
-    {
-        type    empty;
-    }
-    back
+    frontAndBack
     {
         type    empty;
     }

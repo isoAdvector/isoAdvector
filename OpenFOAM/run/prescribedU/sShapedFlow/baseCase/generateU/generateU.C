@@ -70,6 +70,7 @@ int main(int argc, char *argv[])
 			U[ci] = u[ci]*vector(1.0,0.0,0.0) + 0.0*vector(0.0,1.0,0.0) + w[ci]*vector(0.0,0.0,1.0);
 		}
 
+/*        
 		//Setting U on all boundary patches
 		forAll(mesh.boundary(), patchI)
 		{
@@ -84,7 +85,7 @@ int main(int argc, char *argv[])
 				Ub[fi] = ub[fi]*vector(1.0,0.0,0.0) + 0.0*vector(0.0,1.0,0.0) + wb[fi]*vector(0.0,0.0,1.0);
 			}
 		}
-
+*/
     }
     
 	Info<< "Reading/calculating face flux field phi\n" << endl;

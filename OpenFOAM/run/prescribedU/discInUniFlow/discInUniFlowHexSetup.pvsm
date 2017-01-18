@@ -426,13 +426,13 @@
       <Property name="SelectionCellFieldDataArrayName" id="310.SelectionCellFieldDataArrayName" number_of_elements="1">
         <Element index="0" value="vtkOriginalCellIds"/>
         <Domain name="array_list" id="310.SelectionCellFieldDataArrayName.array_list">
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
         </Domain>
       </Property>
       <Property name="SelectionPointFieldDataArrayName" id="310.SelectionPointFieldDataArrayName" number_of_elements="1">
         <Element index="0" value="vtkOriginalPointIds"/>
         <Domain name="array_list" id="310.SelectionPointFieldDataArrayName.array_list">
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
         </Domain>
       </Property>
       <Property name="SelectionVisibility" id="310.SelectionVisibility" number_of_elements="1">
@@ -486,7 +486,7 @@
         </Domain>
       </Property>
       <Property name="ColorArrayName" id="310.ColorArrayName" number_of_elements="1">
-        <Element index="0" value="alpha1"/>
+        <Element index="0" value="alpha.water"/>
         <Domain name="array_list" id="310.ColorArrayName.array_list"/>
       </Property>
       <Property name="ColorAttributeType" id="310.ColorAttributeType" number_of_elements="1">
@@ -927,13 +927,13 @@
       <Property name="SelectionCellFieldDataArrayName" id="334.SelectionCellFieldDataArrayName" number_of_elements="1">
         <Element index="0" value="vtkOriginalCellIds"/>
         <Domain name="array_list" id="334.SelectionCellFieldDataArrayName.array_list">
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
         </Domain>
       </Property>
       <Property name="SelectionPointFieldDataArrayName" id="334.SelectionPointFieldDataArrayName" number_of_elements="1">
         <Element index="0" value="vtkOriginalPointIds"/>
         <Domain name="array_list" id="334.SelectionPointFieldDataArrayName.array_list">
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
         </Domain>
       </Property>
       <Property name="SelectionVisibility" id="334.SelectionVisibility" number_of_elements="1">
@@ -2423,13 +2423,13 @@
       <Property name="SelectionCellFieldDataArrayName" id="318.SelectionCellFieldDataArrayName" number_of_elements="1">
         <Element index="0" value="vtkOriginalCellIds"/>
         <Domain name="array_list" id="318.SelectionCellFieldDataArrayName.array_list">
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
         </Domain>
       </Property>
       <Property name="SelectionPointFieldDataArrayName" id="318.SelectionPointFieldDataArrayName" number_of_elements="1">
         <Element index="0" value="vtkOriginalPointIds"/>
         <Domain name="array_list" id="318.SelectionPointFieldDataArrayName.array_list">
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
         </Domain>
       </Property>
       <Property name="SelectionVisibility" id="318.SelectionVisibility" number_of_elements="1">
@@ -3442,9 +3442,9 @@
         <Element index="1" value=""/>
         <Element index="2" value=""/>
         <Element index="3" value="0"/>
-        <Element index="4" value="alpha1"/>
+        <Element index="4" value="alpha.water"/>
         <Domain name="array_list" id="295.SelectInputScalars.array_list">
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
         </Domain>
         <Domain name="field_list" id="295.SelectInputScalars.field_list"/>
       </Property>
@@ -3489,9 +3489,9 @@
         <Element index="1" value=""/>
         <Element index="2" value=""/>
         <Element index="3" value="0"/>
-        <Element index="4" value="alpha1"/>
+        <Element index="4" value="alpha.water"/>
         <Domain name="array_list" id="300.SelectInputScalars.array_list">
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
         </Domain>
         <Domain name="field_list" id="300.SelectInputScalars.field_list"/>
       </Property>
@@ -3551,7 +3551,7 @@
       <Property name="CellArrayInfo" id="291.CellArrayInfo" number_of_elements="6">
         <Element index="0" value="U"/>
         <Element index="1" value="0"/>
-        <Element index="2" value="alpha1"/>
+        <Element index="2" value="alpha.water"/>
         <Element index="3" value="1"/>
         <Element index="4" value="p_rgh"/>
         <Element index="5" value="0"/>
@@ -3559,13 +3559,13 @@
       <Property name="CellArrays" id="291.CellArrays" number_of_elements="6">
         <Element index="0" value="U"/>
         <Element index="1" value="0"/>
-        <Element index="2" value="alpha1"/>
+        <Element index="2" value="alpha.water"/>
         <Element index="3" value="1"/>
         <Element index="4" value="p_rgh"/>
         <Element index="5" value="0"/>
         <Domain name="array_list" id="291.CellArrays.array_list">
           <String text="U"/>
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
           <String text="p_rgh"/>
         </Domain>
       </Property>
@@ -4030,10 +4030,10 @@
       <Item id="365" name="TimeAnimationCue1"/>
     </ProxyCollection>
     <ProxyCollection name="lookup_tables">
-      <Item id="308" name="1.alpha1.PVLookupTable"/>
+      <Item id="308" name="1.alpha.water.PVLookupTable"/>
     </ProxyCollection>
     <ProxyCollection name="piecewise_functions">
-      <Item id="366" name="1.alpha1.PiecewiseFunction"/>
+      <Item id="366" name="1.alpha.water.PiecewiseFunction"/>
     </ProxyCollection>
     <ProxyCollection name="pq_helper_proxies.278">
       <Item id="367" name="RepresentationAnimationHelper"/>

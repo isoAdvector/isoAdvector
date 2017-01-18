@@ -563,7 +563,7 @@
       <Property name="SelectionCellFieldDataArrayName" id="318.SelectionCellFieldDataArrayName" number_of_elements="1">
         <Element index="0" value="vtkOriginalCellIds"/>
         <Domain name="array_list" id="318.SelectionCellFieldDataArrayName.array_list">
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
           <String text="alpha4"/>
           <String text="alpha8"/>
           <String text="U"/>
@@ -572,7 +572,7 @@
       <Property name="SelectionPointFieldDataArrayName" id="318.SelectionPointFieldDataArrayName" number_of_elements="1">
         <Element index="0" value="vtkOriginalPointIds"/>
         <Domain name="array_list" id="318.SelectionPointFieldDataArrayName.array_list">
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
           <String text="alpha4"/>
           <String text="alpha8"/>
           <String text="U"/>
@@ -629,7 +629,7 @@
         </Domain>
       </Property>
       <Property name="ColorArrayName" id="318.ColorArrayName" number_of_elements="1">
-        <Element index="0" value="alpha1"/>
+        <Element index="0" value="alpha.water"/>
         <Domain name="array_list" id="318.ColorArrayName.array_list"/>
       </Property>
       <Property name="ColorAttributeType" id="318.ColorAttributeType" number_of_elements="1">
@@ -1092,7 +1092,7 @@
       <Property name="SelectionCellFieldDataArrayName" id="359.SelectionCellFieldDataArrayName" number_of_elements="1">
         <Element index="0" value="vtkOriginalCellIds"/>
         <Domain name="array_list" id="359.SelectionCellFieldDataArrayName.array_list">
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
           <String text="alpha4"/>
           <String text="alpha8"/>
           <String text="p_rgh"/>
@@ -1102,7 +1102,7 @@
       <Property name="SelectionPointFieldDataArrayName" id="359.SelectionPointFieldDataArrayName" number_of_elements="1">
         <Element index="0" value="vtkOriginalPointIds"/>
         <Domain name="array_list" id="359.SelectionPointFieldDataArrayName.array_list">
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
           <String text="alpha4"/>
           <String text="alpha8"/>
           <String text="p_rgh"/>
@@ -1623,7 +1623,7 @@
       <Property name="SelectionPointFieldDataArrayName" id="327.SelectionPointFieldDataArrayName" number_of_elements="1">
         <Element index="0" value="vtkOriginalPointIds"/>
         <Domain name="array_list" id="327.SelectionPointFieldDataArrayName.array_list">
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
           <String text="alpha4"/>
           <String text="alpha8"/>
           <String text="GlyphVector"/>
@@ -2115,9 +2115,9 @@
         <Element index="1" value=""/>
         <Element index="2" value=""/>
         <Element index="3" value="0"/>
-        <Element index="4" value="alpha1"/>
+        <Element index="4" value="alpha.water"/>
         <Domain name="array_list" id="302.SelectInputScalars.array_list">
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
           <String text="alpha4"/>
           <String text="alpha8"/>
         </Domain>
@@ -2189,7 +2189,7 @@
       <Property name="CellArrayInfo" id="293.CellArrayInfo" number_of_elements="10">
         <Element index="0" value="U"/>
         <Element index="1" value="1"/>
-        <Element index="2" value="alpha1"/>
+        <Element index="2" value="alpha.water"/>
         <Element index="3" value="1"/>
         <Element index="4" value="p_rgh"/>
         <Element index="5" value="0"/>
@@ -2201,7 +2201,7 @@
       <Property name="CellArrays" id="293.CellArrays" number_of_elements="10">
         <Element index="0" value="U"/>
         <Element index="1" value="1"/>
-        <Element index="2" value="alpha1"/>
+        <Element index="2" value="alpha.water"/>
         <Element index="3" value="1"/>
         <Element index="4" value="p_rgh"/>
         <Element index="5" value="0"/>
@@ -2211,7 +2211,7 @@
         <Element index="9" value="1"/>
         <Domain name="array_list" id="293.CellArrays.array_list">
           <String text="U"/>
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
           <String text="p_rgh"/>
           <String text="alpha4"/>
           <String text="alpha8"/>
@@ -2378,7 +2378,7 @@
       <Property name="CellArrayInfo" id="357.CellArrayInfo" number_of_elements="10">
         <Element index="0" value="U"/>
         <Element index="1" value="1"/>
-        <Element index="2" value="alpha1"/>
+        <Element index="2" value="alpha.water"/>
         <Element index="3" value="1"/>
         <Element index="4" value="alpha4"/>
         <Element index="5" value="1"/>
@@ -2390,7 +2390,7 @@
       <Property name="CellArrays" id="357.CellArrays" number_of_elements="10">
         <Element index="0" value="U"/>
         <Element index="1" value="1"/>
-        <Element index="2" value="alpha1"/>
+        <Element index="2" value="alpha.water"/>
         <Element index="3" value="1"/>
         <Element index="4" value="alpha4"/>
         <Element index="5" value="1"/>
@@ -2400,7 +2400,7 @@
         <Element index="9" value="1"/>
         <Domain name="array_list" id="357.CellArrays.array_list">
           <String text="U"/>
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
           <String text="alpha4"/>
           <String text="alpha8"/>
           <String text="p_rgh"/>
@@ -3007,11 +3007,11 @@
       <Item id="348" name="TimeAnimationCue1"/>
     </ProxyCollection>
     <ProxyCollection name="lookup_tables">
-      <Item id="315" name="1.alpha1.PVLookupTable"/>
+      <Item id="315" name="1.alpha.water.PVLookupTable"/>
       <Item id="325" name="3.GlyphVector.PVLookupTable"/>
     </ProxyCollection>
     <ProxyCollection name="piecewise_functions">
-      <Item id="316" name="1.alpha1.PiecewiseFunction"/>
+      <Item id="316" name="1.alpha.water.PiecewiseFunction"/>
       <Item id="349" name="3.GlyphVector.PiecewiseFunction"/>
     </ProxyCollection>
     <ProxyCollection name="pq_helper_proxies.278">

@@ -2085,7 +2085,7 @@
       <Property name="CellArrayInfo" id="316.CellArrayInfo" number_of_elements="14">
         <Element index="0" value="U"/>
         <Element index="1" value="0"/>
-        <Element index="2" value="alpha1"/>
+        <Element index="2" value="alpha.water"/>
         <Element index="3" value="0"/>
         <Element index="4" value="p_rgh"/>
         <Element index="5" value="0"/>
@@ -2101,7 +2101,7 @@
       <Property name="CellArrays" id="316.CellArrays" number_of_elements="14">
         <Element index="0" value="U"/>
         <Element index="1" value="0"/>
-        <Element index="2" value="alpha1"/>
+        <Element index="2" value="alpha.water"/>
         <Element index="3" value="0"/>
         <Element index="4" value="p_rgh"/>
         <Element index="5" value="0"/>
@@ -2115,7 +2115,7 @@
         <Element index="13" value="1"/>
         <Domain name="array_list" id="316.CellArrays.array_list">
           <String text="U"/>
-          <String text="alpha1"/>
+          <String text="alpha.water"/>
           <String text="p_rgh"/>
           <String text="alpha2"/>
           <String text="alpha3"/>
@@ -2725,13 +2725,13 @@
       <Item id="375" name="TimeAnimationCue1"/>
     </ProxyCollection>
     <ProxyCollection name="lookup_tables">
-      <Item id="312" name="1.alpha1.PVLookupTable"/>
+      <Item id="312" name="1.alpha.water.PVLookupTable"/>
       <Item id="376" name="1.alpha2.PVLookupTable"/>
       <Item id="344" name="1.alpha3.PVLookupTable"/>
       <Item id="334" name="1.alpha4.PVLookupTable"/>
     </ProxyCollection>
     <ProxyCollection name="piecewise_functions">
-      <Item id="313" name="1.alpha1.PiecewiseFunction"/>
+      <Item id="313" name="1.alpha.water.PiecewiseFunction"/>
       <Item id="377" name="1.alpha2.PiecewiseFunction"/>
       <Item id="378" name="1.alpha3.PiecewiseFunction"/>
       <Item id="335" name="1.alpha4.PiecewiseFunction"/>

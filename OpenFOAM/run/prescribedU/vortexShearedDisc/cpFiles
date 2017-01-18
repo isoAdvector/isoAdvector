@@ -26,8 +26,8 @@ do
         do
 	    time=${times[$nt]}
             echo $caseDir/0/alpha$time
-	    cp $caseDir/$time/alpha1 $caseDir/0/alpha$time
-	    sed -i "s/alpha1/alpha${time}/" $caseDir/0/alpha$time
+	    cp $caseDir/$time/alpha.water $caseDir/0/alpha$time
+	    sed -i "s/alpha.water/alpha${time}/" $caseDir/0/alpha$time
         done
     done
 done

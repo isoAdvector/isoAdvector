@@ -22,7 +22,7 @@ regions
         box (.47 -1 0) (.53 1 .85);
         fieldValues
         (
-            volScalarFieldValue alpha1 0
+            volScalarFieldValue alpha.water 0
         );
     }
 );

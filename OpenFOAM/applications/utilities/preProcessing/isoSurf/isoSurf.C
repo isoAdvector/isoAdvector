@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 	const vector centre = isoSurfDict.lookup("centre");
 	const vector direction = isoSurfDict.lookupOrDefault<vector>("direction",vector::zero);
 	const scalar radius = isoSurfDict.lookupOrDefault<scalar>("radius",0.0);
-	const word fieldName = isoSurfDict.lookupOrDefault<word>("field","alpha1");
+	const word fieldName = isoSurfDict.lookupOrDefault<word>("field","alpha.water");
 
     Info<< "Reading field " << fieldName << "\n" << endl;
     volScalarField alpha1
@@ -126,9 +126,9 @@ int main(int argc, char *argv[])
     alpha1.write(); //Writing volScalarField alpha1
 
     const scalarField& alpha = alpha1.internalField();
-	Info << "sum(alpha*V) = " << gSum(mesh.V()*alpha)
-	 << ", 1-max(alpha1) = " << 1 - gMax(alpha)
-	 << "\t min(alpha1) = " << gMin(alpha) << endl;
+	Info << "sum(" << fieldName << "*V) = " << gSum(mesh.V()*alpha)
+	 << ", 1-max(" fieldName << ") = " << 1 - gMax(alpha)
+	 << "\t min(" << fieldName << ") = " << gMin(alpha) << endl;
 
     Info<< "End\n" << endl;
 

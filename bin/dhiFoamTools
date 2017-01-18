@@ -71,4 +71,20 @@ replaceAllHeaders()
     done
 }
 
+renameField()
+{
+    #If field name is something like pd whic can also appear in words like 
+    #topdeck it will still be changed which is not good.
+    #Therefore modify to make sure that e.g. pd is only modified if it is not 
+    #surrounded by alphabetic letters. In that case we will have to change
+    #pdFinal as well which will be done automatically by the current form.
+    targetDir=${3:-.}
+    grep -rl "${1}" $targetDir | xargs sed -i "s/${1}/${2}/"
+    for n in $( find $targetDir -name "${1}" );
+    do
+        dir=$(dirname $n)
+        mv $n ${dir}/${2}
+    done
+}
+
 #------------------------------------------------------------------------------

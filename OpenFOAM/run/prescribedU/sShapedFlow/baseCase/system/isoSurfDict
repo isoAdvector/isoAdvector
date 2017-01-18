@@ -9,28 +9,16 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       volVectorField;
-    location    "0";
-    object      U;
+    class       dictionary;
+    location    "system";
+    object      fvSolution;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-dimensions      [0 1 -1 0 0 0 0];
-
-internalField   uniform (0 0 0);
-
-boundaryField
-{
-    rim
-    {
-        type	fixedValue;
-	value	uniform (0 0 0);
-    }
-    frontAndBack
-    {
-        type            empty;
-    }
-}
-
+field "alpha.water";
+type cylinder;
+radius 0.25;
+direction (0 1 0);
+centre (0.5 0 0.5);
 
 // ************************************************************************* //

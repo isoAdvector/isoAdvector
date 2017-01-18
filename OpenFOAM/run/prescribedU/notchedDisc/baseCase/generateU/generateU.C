@@ -99,7 +99,10 @@ int main(int argc, char *argv[])
         vector Uf =  u*vector(1,0,0) + w*vector(0,0,1);
         phi[fi] = Uf & Sf[fi];
     }
-    
+
+//Since surface does not touch boundary at any point we do not bother setting
+//boundary values of U and phi properly.
+/*    
 //    surfaceScalarField::GeometricBoundaryField& phip = phi.boundaryField();
 //    surfaceScalarField::Boundary& phip = phi.boundaryFieldRef();
 
@@ -128,7 +131,7 @@ int main(int argc, char *argv[])
         }
     }
     
-/*    
+    
     //Checking that phi's of a cell sum to zero
     //For the polygonal meshes there are some strange continuity errors but 
     //these only seem to appear at the boundary and are therefore irrelevant 

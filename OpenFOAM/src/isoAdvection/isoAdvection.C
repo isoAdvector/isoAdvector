@@ -1,11 +1,5 @@
 /*---------------------------------------------------------------------------*\
-  =========                 |
-  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2016 OpenCFD Ltd.
-     \\/     M anipulation  |
--------------------------------------------------------------------------------
-                isoAdvector | Copyright (C) 2016 Johan Roenby, DHI
+|             isoAdvector | Copyright (C) 2016 Johan Roenby, DHI              |
 -------------------------------------------------------------------------------
 
 License

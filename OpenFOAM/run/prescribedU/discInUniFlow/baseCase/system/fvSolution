@@ -62,14 +62,15 @@ solvers
         tolerance       1e-06;
         relTol          0;
     }
-	
-    alpha1
+/*	
+    alpha.water
     {
         solver          PBiCG;
         preconditioner  DILU;
         tolerance       1e-06;
         relTol          0;
     }
+*/
 }
 
 isoAdvector
