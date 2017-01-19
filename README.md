@@ -31,10 +31,12 @@ The isoAdvector code is developed and maintained in the newest OpenFOAM releases
 but the script isoAdvector/bin/generateCodeForOldVersion copies the code in
 isoAdvector/OpenFOAM to isoAdvector/OpenFOAM-[oldLoadedOFversion] and attempts 
 to modify this code to become compatible with the older loaded OpenFOAM 
-versions. 
+versions. The code was tested with OpenFOAM-4.1, 4.0, 3.0.x, 2.3.0, 2.2.0, 
+v1606+ and v1612+.
 
 A foam-extend version of the code is also available in isoAdvector/foam-extend. 
-This version is not necessarily kept up to date.
+This was developed for foam-extend-32. and might need slight modifications to 
+work with newer versions.
 
 ## Installation:
 
