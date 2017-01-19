@@ -132,13 +132,13 @@ work with newer versions.
               //set to 0 and all alpha's closer to 1 than snapAlphaTol will be set 
               //to 1. Default value is 1e-12.
               
-              snapAlphaTol 1e-12; 
+              snapAlphaTol 1e-12; //Previously called clipAlphaTol
 
               //If clip is set to true/yes/1 then after advection and volume 
               //preserving bounding any alpha < 0 will be set to 0 and any alpha > 1 
               //will be set to 1.
 
-              clip   true;
+              clip   true; //Previously called clipAlpha
 
               //If prescribedU and PIMPLE.nCorrectors is set to -1, then the velocty
               //and pressure equations will not be solved. Useful for pure advection 
