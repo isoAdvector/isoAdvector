@@ -36,18 +36,6 @@ if [ ! -d "logs" ]; then
         refineMesh -dict constant/polyMesh/refineMeshDict2 -overwrite > logs/refineMeshDict2.log 2>&1
 
         isoSurf > logs/isoSurf.log 2>&1
-
-        OFvers=$(echo ${WM_PROJECT_VERSION/\.x/} | cut -c1-3)
-        newVersion=$(echo "$OFvers>2.2" | bc)
-        if [ "x$newVersion" = "x1" ];
-        then
-            cp constant/transportProperties.new constant/transportProperties
-            mv 0/alpha1 0/alpha.water
-            sed -i~ 's/alpha1/alpha.water/g' 0/alpha.water
-            rm -f 0/alpha.water~
-        else
-            cp constant/transportProperties.old constant/transportProperties
-        fi
     fi
 
 else

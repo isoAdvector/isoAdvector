@@ -55,8 +55,7 @@ fluxRequired
     p_rgh;
     pd;
     pcorr;
-    alpha1;
-//    alpha.water;
+    alpha.water;
 }
 
 

@@ -67,12 +67,12 @@ solvers
 
 isoAdvector
 {
+    interfaceMethod "isoAdvector";
     isoFaceTol  1e-6;
     surfCellTol 1e-6;
     snapAlphaTol 1e-10;
     nAlphaBounds 2;
     clip   true;
-    period 6;
 }
 
 

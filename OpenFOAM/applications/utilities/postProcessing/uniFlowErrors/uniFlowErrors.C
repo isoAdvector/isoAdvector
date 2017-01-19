@@ -192,8 +192,8 @@ int main(int argc, char *argv[])
         }
 
 		scalar E1 = sum(mag(alpha1Exact-alpha1)*mesh.V());
-		Foam::vector cmExact = (sum(alpha1Exact*mesh.V()*mesh.C())/sum(mesh.V())).value();
-		Foam::vector cm = (sum(alpha1*mesh.V()*mesh.C())/sum(mesh.V())).value();
+//		Foam::vector cmExact = (sum(alpha1Exact*mesh.V()*mesh.C())/sum(mesh.V())).value();
+//		Foam::vector cm = (sum(alpha1*mesh.V()*mesh.C())/sum(mesh.V())).value();
 
         isoCutCell icc(mesh, f);
         icc.VolumeOfFluid(alpha1Exact, f0);
