@@ -173,11 +173,12 @@ public:
             const scalar Un0
         );
         
-        DynamicList<point> cutPoints
+        void cutPoints
         (
             const pointField& pts,
             const scalarField& f,
-            const scalar f0
+            const scalar f0,
+            DynamicList<point>& cutPoints
         );
 
         
