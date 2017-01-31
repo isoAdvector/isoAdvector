@@ -366,6 +366,9 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
     labelList order(pTimes.size());
     sortedOrder(pTimes, order);
     
+    // Times smaller than tSmall are regarded as 0
+    const scalar tSmall = 1e-10*min(max(pTimes)-min(pTimes), dt);
+
     // Making sorted list of vertex times and the labels of those that are 
     // within the integration interval
     DynamicList<label> cutVertexLabels(pTimes.size());
@@ -379,9 +382,6 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
             cutVertexLabels.append(order[ti]);
         }
     }
-    
-    // Times smaller than tSmall are regarded as 0
-    const scalar tSmall = 1e-10*min(sortedTimes.last()-sortedTimes.first(), dt);
     
     // Dealing with case where face is not cut by surface during time interval
     // [0,dt] because face was already passed by surface
@@ -404,8 +404,11 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
         return tIntArea;
     }
 
-    // If we reach this point in the code at least one vertex time will be in the
-    // interval [tSmall, dt-tSmall]
+    // If we reach this point in the code some part of the face will be swept
+    // during [tSmall, dt-tSmall]. However, it may be the case that there are no
+    // vertex times within the interval. This will happen sometimes for small 
+    // time steps where both the initial and the final face-interface 
+    // intersection line (FIIL) will be along the same two edges.
     
     // Face-interface intersection line (FIIL) to be swept across face
     DynamicList<point> FIIL(fPts.size());
@@ -419,14 +422,14 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
     // Special treatment of first sub time interval
     if (sortedTimes.first() > 0)
     {
-        // If sortedTimes.first() > 0 we face is uncut in the time interval 
+        // If sortedTimes.first() > 0 the face is uncut in the time interval 
         // [0, soretedTimes.first()] and hence fully submerged in fluid A or B. 
         // If Un0 > 0 cell is filling up - hence if face is cut at a later time
         // but not initially it must be initially empty
         tOld = sortedTimes.first();
         initialArea = magSf*(1.0 - pos(Un0));
         tIntArea = initialArea*tOld;
-        FIIL = cutPoints(fPts, pTimes, cutVertexLabels[0]);       
+        FIIL = cutPoints(fPts, pTimes, pTimes[cutVertexLabels[0]]);
         nextVertexLabel++;
     }
     else
@@ -444,10 +447,9 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
     while (nextVertexLabel < cutVertexLabels.size()-1)
     {
         const label newLabel = cutVertexLabels[nextVertexLabel];
-        DynamicList<point> newFIIL = 
-            cutPoints(fPts, pTimes, sortedTimes[newLabel]);       
+        const scalar tNew = pTimes[newLabel];
+        DynamicList<point> newFIIL = cutPoints(fPts, pTimes, tNew);       
 
-        const scalar tNew = sortedTimes[newLabel];
         if (tNew-tOld > tSmall)
         {
             scalar alpha, beta;
@@ -497,25 +499,6 @@ Foam::DynamicList<Foam::point> Foam::isoCutFace::cutPoints
     const scalar f0
 )
 {
-    // Intended behaviour: If the cut value is well within the interval between 
-    // the vertex values of an edge, the edge is cut by linear interpolation.
-    // However, if a vertex value is closer to the cut value than a small number
-    // eps, this vertex is appended to the list of cut points and we will make
-    // no attempt of cutting the edge in front of the point. If the first point
-    // is appended because mag(f[L1] - f0) < eps, then for the last edge we 
-    // should have mag(f[L2] - f0) < eps meaning either f[L2] - f0 < eps
-    // or f0 - f[L2] < eps <=> f[L2] > f0 - eps, so it should not be 
-    // possible to accidentally append it again if the logics is consistent.
-    //
-    // It is the intention that the loop should catch all vertex points with 
-    // vertex value closer to the cut value EXACTLY once.
-    //
-    // We note that f[L1] < f0 - eps && f[L2] > f0 + eps implies that
-    // f[L2] - f[L1] > 2*eps and the division by f[L2] - f[L1] when cutting the 
-    // edge is safe. Similarly for the other condition leading to edge cutting.
-
-//            if ( (f[L1] < f0 - eps && f[L2] > f0 + eps)
-//            || (f[L2] < f0 - eps && f[L1] > f0 + eps) )
 
     DynamicList<point> cutPoints(f.size());
     const label nPoints = pts.size();
