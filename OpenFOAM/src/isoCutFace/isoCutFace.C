@@ -349,30 +349,317 @@ void Foam::isoCutFace::clearStorage()
 }
 
 
-void Foam::isoCutFace::cutPoints
+Foam::scalar Foam::isoCutFace::timeIntegratedArea
+(
+    const pointField& fPts,
+    const scalarField& pTimes,
+    const scalar dt,
+    const scalar magSf,
+    const scalar Un0
+)
+{
+
+    // Initialise time integrated area returned by this function
+    scalar tIntArea = 0.0;
+
+    // Finding ordering of vertex points
+    labelList order(pTimes.size());
+    sortedOrder(pTimes, order);
+    
+    // Making sorted list of vertex times and the labels of those that are 
+    // within the integration interval
+    DynamicList<label> cutVertexLabels(pTimes.size());
+    scalarList sortedTimes(pTimes.size());
+    forAll(order, ti)
+    {
+        sortedTimes[ti] = pTimes[order[ti]];
+
+        if(pTimes[order[ti]] > 0 &&  pTimes[order[ti]] < dt)
+        {
+            cutVertexLabels.append(order[ti]);
+        }
+    }
+    
+    // Times smaller than tSmall are regarded as 0
+    const scalar tSmall = 1e-10*min(sortedTimes.last()-sortedTimes.first(), dt);
+    
+    // Dealing with case where face is not cut by surface during time interval
+    // [0,dt] because face was already passed by surface
+    if (sortedTimes.last() < tSmall)
+    {
+        // If all face cuttings were in the past and cell is filling up (Un0>0)
+        // then face must be full during whole time interval
+        tIntArea = magSf*dt*pos(Un0);
+        return tIntArea;
+    }
+
+    // Dealing with case where face is not cut by surface during time interval
+    // [0, dt] because dt is too small for surface to reach closest face point
+    if (sortedTimes.first() > dt - tSmall)
+    {
+        // If all cuttings are in the future but non of them within [0,dt] then
+        // if cell is filling up (Un0 > 0) face must be empty during whole time
+        // interval
+        tIntArea = magSf*dt*(1 - pos(Un0));
+        return tIntArea;
+    }
+
+    // If we reach this point in the code at least one vertex time will be in the
+    // interval [tSmall, dt-tSmall]
+    
+    // Face-interface intersection line (FIIL) to be swept across face
+    DynamicList<point> FIIL(fPts.size());
+    // Counter for traversing cut vertices
+    label nextVertexLabel = 0;
+    // First time in sub time intervals
+    scalar tOld = 0;
+    // Submerged area at beginning of each sub time interval time
+    scalar initialArea = 0.0;
+
+    // Special treatment of first sub time interval
+    if (sortedTimes.first() > 0)
+    {
+        // If sortedTimes.first() > 0 we face is uncut in the time interval 
+        // [0, soretedTimes.first()] and hence fully submerged in fluid A or B. 
+        // If Un0 > 0 cell is filling up - hence if face is cut at a later time
+        // but not initially it must be initially empty
+        tOld = sortedTimes.first();
+        initialArea = magSf*(1.0 - pos(Un0));
+        tIntArea = initialArea*tOld;
+        FIIL = cutPoints(fPts, pTimes, cutVertexLabels[0]);       
+        nextVertexLabel++;
+    }
+    else
+    {
+        // If sortedTimes.first() <= 0 then face is initially cut and we must
+        // calculate the initial submerged area and FIIL:
+        calcSubFace(fPts, -sign(Un0)*pTimes, 0.0);
+        initialArea = mag(subFaceArea());
+        FIIL = cutPoints(fPts, pTimes, 0.0);
+    }
+
+    // Calculating and adding contributions to the time integrated area from 
+    // quadrilaterals spanned by consecutive FIIL's up to the last vertex hit
+    // in the time interval [0, dt].
+    while (nextVertexLabel < cutVertexLabels.size()-1)
+    {
+        const label newLabel = cutVertexLabels[nextVertexLabel];
+        DynamicList<point> newFIIL = 
+            cutPoints(fPts, pTimes, sortedTimes[newLabel]);       
+
+        const scalar tNew = sortedTimes[newLabel];
+        if (tNew-tOld > tSmall)
+        {
+            scalar alpha, beta;
+            quadAreaCoeffs(FIIL, newFIIL, alpha, beta);
+            // Integration of area(t) = A*t^2+B*t from t = 0 to 1
+            tIntArea += (tNew - tOld)*
+                (initialArea + sign(Un0)*(alpha/3.0 + 0.5*beta));
+            // Adding quad area to submerged area
+            initialArea += sign(Un0)*(alpha + beta);
+        }
+        
+        FIIL = newFIIL;
+        tOld = tNew;
+        nextVertexLabel++;
+    }
+    
+    // Now, if dt > sortedTimes.last() the FIIL will leave the face or else it 
+    // stopped at the last vertex hit within the time interval [0, dt].
+    // In the former case we must add a contribution to tIntArea from the last
+    // sub time interval, [sortedTimes.last(), dt], where pure fluid A or B is 
+    // fluxed through the face. In the latter case we must add the final 
+    // contribution, where the FIIL sweeps the area from the last hit vertex to
+    // its position on the face at time dt.
+    
+    if (dt > sortedTimes.last())
+    {
+        tIntArea += magSf*(dt - sortedTimes.last())*pos(Un0);
+    }
+    else
+    {
+        DynamicList<point> newFIIL = cutPoints(fPts, pTimes, dt);        
+        scalar alpha, beta;
+        quadAreaCoeffs(FIIL, newFIIL, alpha, beta);
+        // Integration of area(t) = A*t^2+B*t from t = 0 to 1
+        const scalar integratedQuadArea = sign(Un0)*(alpha/3.0 + 0.5*beta);
+        tIntArea += (dt - tOld)*(initialArea + integratedQuadArea);
+    }
+    
+    return tIntArea;
+}
+
+
+Foam::DynamicList<Foam::point> Foam::isoCutFace::cutPoints
 (
     const pointField& pts,
     const scalarField& f,
-    const scalar f0,
-    DynamicList<point>& cutPoints
+    const scalar f0
 )
 {
+    // Intended behaviour: If the cut value is well within the interval between 
+    // the vertex values of an edge, the edge is cut by linear interpolation.
+    // However, if a vertex value is closer to the cut value than a small number
+    // eps, this vertex is appended to the list of cut points and we will make
+    // no attempt of cutting the edge in front of the point. If the first point
+    // is appended because mag(f[L1] - f0) < eps, then for the last edge we 
+    // should have mag(f[L2] - f0) < eps meaning either f[L2] - f0 < eps
+    // or f0 - f[L2] < eps <=> f[L2] > f0 - eps, so it should not be 
+    // possible to accidentally append it again if the logics is consistent.
+    //
+    // It is the intention that the loop should catch all vertex points with 
+    // vertex value closer to the cut value EXACTLY once.
+    //
+    // We note that f[L1] < f0 - eps && f[L2] > f0 + eps implies that
+    // f[L2] - f[L1] > 2*eps and the division by f[L2] - f[L1] when cutting the 
+    // edge is safe. Similarly for the other condition leading to edge cutting.
+
+//            if ( (f[L1] < f0 - eps && f[L2] > f0 + eps)
+//            || (f[L2] < f0 - eps && f[L1] > f0 + eps) )
+
+    DynamicList<point> cutPoints(f.size());
     const label nPoints = pts.size();
-    scalar f1(f[0]);
-    forAll(pts, pi)
+    
+    const scalar eps = 10*SMALL;
+    forAll(f, L1)
     {
-        label pi2 = (pi + 1) % nPoints;
-        scalar f2 = f[pi2];
-        if ((f1 < f0 && f2 > f0) || (f1 > f0 && f2 < f0))
+        const label L2 = (L1 + 1) % nPoints;
+        if (f[L1] < f0 && f[L2] > f0)
         {
-            const scalar s = (f0 - f1)/(f2 - f1);
-            cutPoints.append(pts[pi] + s*(pts[pi2] - pts[pi]));
+            if (f[L2] - f[L1] > eps)
+            {
+                const scalar s = (f0 - f[L1])/(f[L2] - f[L1]);
+                cutPoints.append(pts[L1] + s*(pts[L2] - pts[L1]));
+            }
+            else
+            {
+                cutPoints.append(pts[L1]);
+            }
         }
-        else if (f1 == f0)
+        else if (f[L1] > f0 && f[L2] < f0)
         {
-            cutPoints.append(pts[pi]);
+            if (f[L1] - f[L2] > eps)
+            {
+                const scalar s = (f0 - f[L1])/(f[L2] - f[L1]);
+                cutPoints.append(pts[L1] + s*(pts[L2] - pts[L1]));
+            }
+            else
+            {
+                cutPoints.append(pts[L1]);
+            }
         }
-        f1 = f2;
+        else if (f[L1] == f0)
+        {
+            cutPoints.append(pts[L1]);
+        }
+    }
+    
+    return cutPoints;
+}
+
+
+void Foam::isoCutFace::quadAreaCoeffs
+(
+    const DynamicList<point>& pf0,
+    const DynamicList<point>& pf1,
+    scalar& alpha,
+    scalar& beta
+) const
+{
+
+    const label np0 = pf0.size();
+    const label np1 = pf1.size();
+
+    alpha = 0.0;
+    beta = 0.0;
+//    quadArea = 0.0;
+//    intQuadArea = 0.0;
+
+    if (np0 > 0 && np1 > 0)
+    {
+        // Defining quadrilateral vertices
+        vector A(pf0[0]);
+        vector C(pf1[0]);
+        vector B(vector::zero);
+        vector D(vector::zero);
+
+        // Triangle cases
+        if (np0 == 2 && mag(pf0[0] - pf0[1]) > SMALL)
+        {
+            B = pf0[1];
+        }
+        else
+        {
+            // Note: tolerances
+            B = A + 1e-4*(pf1[1] - pf1[0]);
+            if (np0 != 1)
+            {
+                WarningInFunction
+                    << "Vertex face was cut at pf0 = " << pf0 << endl;
+            }
+        }
+
+        if (np1 == 2 && mag(pf1[0] - pf1[1]) > SMALL)
+        {
+            D = pf1[1];
+        }
+        else
+        {
+            // Note: tolerances
+            D = C + 1e-4*(A - B);
+            if (np1 != 1)
+            {
+                WarningInFunction
+                    << "Vertex face was cut at pf1 = " << pf1 << endl;
+            }
+        }
+
+        // Defining local coordinates for area integral calculation
+        vector xhat = B - A;
+        xhat /= mag(xhat);
+        vector yhat = D - A;
+        yhat -= ((yhat & xhat)*xhat);
+        yhat /= mag(yhat);
+
+//            Info<< "xhat = " << xhat << ", yhat = " << yhat << ", zhat = "
+//                << zhat << ". x.x = " << (xhat & xhat) << ", y.y = "
+//                << (yhat & yhat) <<", z.z = " << (zhat & zhat) << ", x.y = "
+//                << (xhat & yhat) << ", x.z = " << (xhat & zhat) << ", y.z = "
+//                << (yhat & zhat) << endl;
+
+        // Swapping pf1 points if pf0 and pf1 point in same general direction
+        // (because we want a quadrilateral ABCD where pf0 = AB and pf1 = CD)
+        if (((B - A) & (D - C)) > 0)
+        {
+            vector tmp = D;
+            D = C;
+            C = tmp;
+        }
+
+        const scalar Bx = mag(B - A);
+        const scalar Cx = (C - A) & xhat;
+        const scalar Cy = mag((C - A) & yhat);
+        const scalar Dx = (D - A) & xhat;
+        const scalar Dy = mag((D - A) & yhat);
+
+//      area = ((Cx-Bx)*Dy-Dx*Cy)/6.0 + 0.25*Bx*(Dy+Cy);
+        alpha = 0.5*((Cx-Bx)*Dy-Dx*Cy);
+        beta = 0.5*Bx*(Dy+Cy);
+//        quadArea = alpha + beta;
+
+//        intQuadArea = alpha/3.0 + 0.5*beta;
+
+//         Info<< "Bx = " << Bx << ", Cx = " << Cx << ", Cy = " << Cy
+//             << ", Dx = " << Dx << ", Dy = " << Dy << ", alpha = " << alpha
+//             << ", beta = " << beta << endl;
+
+        // area(t) = A*t^2 + B*t
+        // integratedArea = A/3 + B/2
+    }
+    else
+    {
+        Info<< "Vertex face was cut at " << pf0
+            << " and at " << pf1 << " by " << endl;
     }
 }
 

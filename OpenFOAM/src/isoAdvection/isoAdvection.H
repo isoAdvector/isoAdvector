@@ -201,33 +201,12 @@ class isoAdvection
                 const scalar magSf
             );
 
-            //- Calculate time integrated area for a face
-            scalar timeIntegratedArea
-            (
-                const pointField& fPts,
-                const scalarField& pTimes,
-                const scalar dt,
-                const scalar magSf,
-                const scalar Un0
-            );
-
             //- For a given cell return labels of faces fluxing out of this cell
             //  (based on sign of phi)
             void getDownwindFaces
             (
                 const label ci,
                 DynamicLabelList& downwindFaces
-            ) const;
-
-            //- For face with vertices p calculate its area and integrated area
-            //  between isocutting lines with isovalues f0 and f1 given vertex
-            //  values f
-            void quadAreaCoeffs
-            (
-                const DynamicPointList& pf0,
-                const DynamicPointList& pf1,
-                scalar& quadArea,
-                scalar& intQuadArea
             ) const;
 
             //- Find min and max of subset of scalarField f defined by

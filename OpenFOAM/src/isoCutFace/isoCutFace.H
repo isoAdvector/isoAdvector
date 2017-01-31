@@ -162,14 +162,33 @@ public:
         DynamicList<point> surfacePoints();
 
         void clearStorage();
-
-        void cutPoints
+        
+        //- Calculate time integrated area for a face
+        scalar timeIntegratedArea
+        (
+            const pointField& fPts,
+            const scalarField& pTimes,
+            const scalar dt,
+            const scalar magSf,
+            const scalar Un0
+        );
+        
+        DynamicList<point> cutPoints
         (
             const pointField& pts,
             const scalarField& f,
-            const scalar f0,
-            DynamicList<point>& cutPoints
+            const scalar f0
         );
+
+        
+        void quadAreaCoeffs
+        (
+            const DynamicList<point>& pf0,
+            const DynamicList<point>& pf1,
+            scalar& alpha,
+            scalar& beta
+        ) const;
+        
 };
 
 
