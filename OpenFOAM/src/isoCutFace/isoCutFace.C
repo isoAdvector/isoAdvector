@@ -426,9 +426,9 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
     if (firstTime > 0)
     {
         // If firstTime > 0 the face is uncut in the time interval 
-        // [0, soretedTimes.first()] and hence fully submerged in fluid A or B. 
-        // If Un0 > 0 cell is filling up - hence if face is cut at a later time
-        // but not initially it must be initially empty
+        // [0, firstTime] and hence fully submerged in fluid A or B. 
+        // If Un0 > 0 cell is filling up and it must initially be empty.
+        // If Un0 < 0 cell must initially be full(y immersed in fluid A).
         tOld = firstTime;
         initialArea = magSf*(1.0 - pos(Un0));
         tIntArea = initialArea*tOld;
@@ -444,21 +444,20 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
         cutPoints(fPts, pTimes, 0.0, FIIL);
     }
 
-    // Calculating and adding contributions to the time integrated area from 
+    // Now we calculate and add contributions to the time integrated area from 
     // quadrilaterals spanned by consecutive FIIL's up to the last vertex hit
     // in the time interval [0, dt].
-
 
     while (nextVertexLabel < cutVertexLabels.size()-1)
     {
         const label newLabel = cutVertexLabels[nextVertexLabel];
         const scalar tNew = pTimes[newLabel];
-        // New face-interface intersection line
-        DynamicList<point> newFIIL(3);
-        cutPoints(fPts, pTimes, tNew, newFIIL);
-        
         if (tNew - tOld > tSmall)
         {
+            // New face-interface intersection line
+            DynamicList<point> newFIIL(3);
+            cutPoints(fPts, pTimes, tNew, newFIIL);
+        
             // quadrilateral area coefficients
             scalar alpha = 0, beta = 0;
             quadAreaCoeffs(FIIL, newFIIL, alpha, beta);
@@ -467,9 +466,9 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
                 (initialArea + sign(Un0)*(alpha/3.0 + 0.5*beta));
             // Adding quad area to submerged area
             initialArea += sign(Un0)*(alpha + beta);
+            FIIL = newFIIL;
         }
         
-        FIIL = newFIIL;
         tOld = tNew;
         nextVertexLabel++;
     }
@@ -502,7 +501,7 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
     return tIntArea;
 }
 
-
+/*
 void Foam::isoCutFace::cutPoints
 (
     const pointField& pts,
@@ -529,17 +528,16 @@ void Foam::isoCutFace::cutPoints
         f1 = f2;
     }
 }
+*/
 
-/*
-Foam::DynamicList<Foam::point> Foam::isoCutFace::cutPoints
+void Foam::isoCutFace::cutPoints
 (
     const pointField& pts,
     const scalarField& f,
-    const scalar f0
+    const scalar f0,
+    DynamicList<point>& cutPoints
 )
 {
-
-    DynamicList<point> cutPoints(f.size());
     const label nPoints = pts.size();
     
     const scalar eps = 10*SMALL;
@@ -575,10 +573,8 @@ Foam::DynamicList<Foam::point> Foam::isoCutFace::cutPoints
             cutPoints.append(pts[L1]);
         }
     }
-    
-    return cutPoints;
 }
-*/
+
 
 void Foam::isoCutFace::quadAreaCoeffs
 (
@@ -594,8 +590,6 @@ void Foam::isoCutFace::quadAreaCoeffs
 
     alpha = 0.0;
     beta = 0.0;
-//    quadArea = 0.0;
-//    intQuadArea = 0.0;
 
     if (np0 > 0 && np1 > 0)
     {
