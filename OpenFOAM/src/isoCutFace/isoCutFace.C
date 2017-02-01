@@ -367,28 +367,10 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
     sortedOrder(pTimes, order);
     const scalar firstTime = pTimes[order.first()];
     const scalar lastTime = pTimes[order.last()];
-    
-    // Times smaller than tSmall are regarded as 0
-    const scalar tSmall = 1e-8*max(lastTime - firstTime, dt);
-
-    // Making sorted list of the labels of those vertex times that are within 
-    // the integration interval [0, dt]
-    DynamicList<label> cutVertexLabels(pTimes.size());
-//    scalar prevTime = 0;
-    forAll(order, ti)
-    {
-        const scalar newTime = pTimes[order[ti]];
-//        if (newTime >  prevTime + tSmall &&  newTime < dt - tSmall)
-        if (newTime >  0 &&  newTime < dt)
-        {
-            cutVertexLabels.append(order[ti]);
-        }
-//        prevTime = newTime;
-    }
-    
+        
     // Dealing with case where face is not cut by surface during time interval
     // [0,dt] because face was already passed by surface
-    if (lastTime < tSmall)
+    if (lastTime <= 0)
     {
         // If all face cuttings were in the past and cell is filling up (Un0>0)
         // then face must be full during whole time interval
@@ -398,7 +380,7 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
 
     // Dealing with case where face is not cut by surface during time interval
     // [0, dt] because dt is too small for surface to reach closest face point
-    if (firstTime > dt - tSmall)
+    if (firstTime >= dt)
     {
         // If all cuttings are in the future but non of them within [0,dt] then
         // if cell is filling up (Un0 > 0) face must be empty during whole time
@@ -412,15 +394,13 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
     // vertex times within the interval. This will happen sometimes for small 
     // time steps where both the initial and the final face-interface 
     // intersection line (FIIL) will be along the same two edges.
-    
+
     // Face-interface intersection line (FIIL) to be swept across face
     DynamicList<point> FIIL(3);
-    // Counter for traversing cut vertices
-    label nextVertexLabel = 0;
-    // First time in sub time intervals
-    scalar tOld = 0;
     // Submerged area at beginning of each sub time interval time
     scalar initialArea = 0.0;
+    //Running time keeper variable for the integration process
+    scalar time = 0.0;
     
     // Special treatment of first sub time interval
     if (firstTime > 0)
@@ -429,79 +409,85 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
         // [0, firstTime] and hence fully submerged in fluid A or B. 
         // If Un0 > 0 cell is filling up and it must initially be empty.
         // If Un0 < 0 cell must initially be full(y immersed in fluid A).
-        tOld = firstTime;
+        time = firstTime;
         initialArea = magSf*(1.0 - pos(Un0));
-        tIntArea = initialArea*tOld;
-        cutPoints(fPts, pTimes, pTimes[cutVertexLabels[0]], FIIL);
-        nextVertexLabel++;
+        tIntArea = initialArea*time;
+        cutPoints(fPts, pTimes, time, FIIL);
     }
     else
     {
         // If firstTime <= 0 then face is initially cut and we must
         // calculate the initial submerged area and FIIL:
-        calcSubFace(fPts, -sign(Un0)*pTimes, 0.0);
+        time = 0.0;
+        calcSubFace(fPts, -sign(Un0)*pTimes, time); //calcSubFace assumes well-defined 2-point FIIL!!!!
         initialArea = mag(subFaceArea());
-        cutPoints(fPts, pTimes, 0.0, FIIL);
+        cutPoints(fPts, pTimes, time, FIIL);
     }
 
-    // Now we calculate and add contributions to the time integrated area from 
-    // quadrilaterals spanned by consecutive FIIL's up to the last vertex hit
-    // in the time interval [0, dt].
-
-    while (nextVertexLabel < cutVertexLabels.size()-1)
+    // Making sorted array of all vertex times that are between max(0,firstTime)
+    // and dt and further than tSmall from the previous time.
+    DynamicList<scalar> sortedTimes(pTimes.size());
     {
-        const label newLabel = cutVertexLabels[nextVertexLabel];
-        const scalar tNew = pTimes[newLabel];
-        if (tNew - tOld > tSmall)
+        scalar prevTime = time;
+        const scalar tSmall = max(1e-6*dt, 10*SMALL);
+        forAll(order, ti)
         {
-            // New face-interface intersection line
-            DynamicList<point> newFIIL(3);
-            cutPoints(fPts, pTimes, tNew, newFIIL);
-        
-            // quadrilateral area coefficients
-            scalar alpha = 0, beta = 0;
-            quadAreaCoeffs(FIIL, newFIIL, alpha, beta);
-            // Integration of area(t) = A*t^2+B*t from t = 0 to 1
-            tIntArea += (tNew - tOld)*
-                (initialArea + sign(Un0)*(alpha/3.0 + 0.5*beta));
-            // Adding quad area to submerged area
-            initialArea += sign(Un0)*(alpha + beta);
-            FIIL = newFIIL;
+            const scalar timeI = pTimes[order[ti]];
+            if ( timeI > prevTime + tSmall && timeI <= dt)
+            {
+                sortedTimes.append(timeI);
+                prevTime = timeI;
+            }
         }
-        
-        tOld = tNew;
-        nextVertexLabel++;
     }
-    
-    // Now, if dt > lastTime the FIIL will leave the face or else it 
-    // stopped at the last vertex hit within the time interval [0, dt].
-    // In the former case we must add a contribution to tIntArea from the last
-    // sub time interval, [lastTime, dt], where pure fluid A or B is 
-    // fluxed through the face. In the latter case we must add the final 
-    // contribution, where the FIIL sweeps the area from the last hit vertex to
-    // its position on the face at time dt.
-    
-    if (dt > lastTime)
+
+    //Sweeping all quadrilaterals corresponding to the intervals defined above 
+    forAll(sortedTimes, ti)
     {
-        tIntArea += magSf*(dt - lastTime)*pos(Un0);
-    }
-    else
-    {
+        const scalar newTime = sortedTimes[ti];
         // New face-interface intersection line
         DynamicList<point> newFIIL(3);
-        cutPoints(fPts, pTimes, dt, newFIIL);        
+        cutPoints(fPts, pTimes, newTime, newFIIL);
+
         // quadrilateral area coefficients
         scalar alpha = 0, beta = 0;
         quadAreaCoeffs(FIIL, newFIIL, alpha, beta);
         // Integration of area(t) = A*t^2+B*t from t = 0 to 1
-        const scalar integratedQuadArea = sign(Un0)*(alpha/3.0 + 0.5*beta);
-        tIntArea += (dt - tOld)*(initialArea + integratedQuadArea);
+        tIntArea += (newTime - time)*
+            (initialArea + sign(Un0)*(alpha/3.0 + 0.5*beta));
+        // Adding quad area to submerged area
+        initialArea += sign(Un0)*(alpha + beta);
+        
+        FIIL = newFIIL;
+        time = newTime;
+    }
+
+    //Special treatment of last time interval
+    if (lastTime > dt)
+    {
+        // FIIL will end up cutting the face at dt
+        // New face-interface intersection line
+        DynamicList<point> newFIIL(3);
+        cutPoints(fPts, pTimes, dt, newFIIL);
+
+        // quadrilateral area coefficients
+        scalar alpha = 0, beta = 0;
+        quadAreaCoeffs(FIIL, newFIIL, alpha, beta);
+        // Integration of area(t) = A*t^2+B*t from t = 0 to 1
+        tIntArea += (dt - time)*
+            (initialArea + sign(Un0)*(alpha/3.0 + 0.5*beta));
+    }
+    else
+    {
+        // FIIL will leave the face at lastTime and face will be fully in fluid 
+        // A or fluid B in the time interval from lastTime to dt.
+        tIntArea += magSf*(dt - lastTime)*pos(Un0);
     }
     
     return tIntArea;
 }
 
-/*
+
 void Foam::isoCutFace::cutPoints
 (
     const pointField& pts,
@@ -528,8 +514,9 @@ void Foam::isoCutFace::cutPoints
         f1 = f2;
     }
 }
-*/
 
+
+/*
 void Foam::isoCutFace::cutPoints
 (
     const pointField& pts,
@@ -574,7 +561,7 @@ void Foam::isoCutFace::cutPoints
         }
     }
 }
-
+*/
 
 void Foam::isoCutFace::quadAreaCoeffs
 (
