@@ -69,7 +69,7 @@ work with newer versions.
     directory. These meshes will take up ~2GB and will be placed in a folder 
     called meshes. The meshes will be loaded by the scripts in discInUniFlows, 
     vortexSmearedDisc, sphereInUniFlow and smearedSphere cases in 
-    run/isoAdvector.
+    run/prescribedU.
 
     Alternatively, the meshes can be downloaded directly from here:
 

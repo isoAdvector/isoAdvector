@@ -709,7 +709,9 @@ void Foam::isoAdvection::boundFromAbove
 
     correctedFaces.clear();
     scalar aTol = 10*SMALL; // Note: tolerances
-
+    scalar maxOvershoot = -GREAT;
+    label maxOvershootCell = -1;
+    
     // Get necessary mesh data
     const scalarField& meshV = mesh_.V();
     const cellList& meshCells = mesh_.cells();
@@ -724,6 +726,12 @@ void Foam::isoAdvection::boundFromAbove
             scalar alphaOvershoot = alpha1New - 1.0;
             scalar fluidToPassOn = alphaOvershoot*Vi;
             label nFacesToPassFluidThrough = 1;
+            
+            if (alphaOvershoot > maxOvershoot)
+            {
+                maxOvershoot = alphaOvershoot;
+                maxOvershootCell = celli;
+            }
 
             bool firstLoop = true;
             // First try to pass surplus fluid on to neighbour cells that are
@@ -822,6 +830,7 @@ void Foam::isoAdvection::boundFromAbove
         }
     }
 
+    Info << "maxOvershoot = " << maxOvershoot << endl;
     DebugInfo << "correctedFaces = " << correctedFaces << endl;
 }
 
