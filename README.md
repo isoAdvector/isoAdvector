@@ -48,7 +48,7 @@ work with newer versions.
 
         git clone https://github.com/isoAdvector/isoAdvector.git
 
-2.  Execute the Allwmake script by typing (will finish in a ~1 min):
+2.  Execute the Allwmake script by typing (will finish in ~1 minute):
 
         cd isoAdvector
         ./Allwmake
@@ -158,7 +158,7 @@ work with newer versions.
               reverseTime 0;
           }
 
-      Please see cases in isoAdvector/run for examples of usage. Note that the 
+      Please see cases in OpenFOAM/run for examples of usage. Note that the 
       first versions of the isoAdvector code had the following other solvers:
       isoAdvector, mulesFoam, passiveAdvectionFoam. With the introduction of the 
       prescribedU switch described above, the functionallity of these solvers

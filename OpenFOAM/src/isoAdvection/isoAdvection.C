@@ -53,6 +53,10 @@ Foam::isoAdvection::isoAdvection
 :
     // General data
     mesh_(alpha1.mesh()),
+    owner_(mesh_.faceOwner()),
+    neighbour_(mesh_.faceNeighbour()),
+    cells_(mesh_.cells()),
+    cellVolumes_(mesh_.cellVolumes()),
     dict_(mesh_.solutionDict().subDict("isoAdvector")),
     alpha1_(alpha1),
     alpha1In_(alpha1.oldTime().ref()), // Need to reorganise
@@ -154,9 +158,6 @@ void Foam::isoAdvection::timeIntegratedFlux()
     // Get necessary mesh data
     const labelListList& CP = mesh_.cellPoints();
     const labelListList& CC = mesh_.cellCells();
-    const cellList& meshCells = mesh_.cells();
-    const labelList& own = mesh_.faceOwner();
-    const labelList& nei = mesh_.faceNeighbour();
 
     // Loop through cells
     forAll(alpha1In_, celli)
@@ -197,6 +198,7 @@ void Foam::isoAdvection::timeIntegratedFlux()
                 const point x0 = isoCutCell_.isoFaceCentre();
                 vector n0 = isoCutCell_.isoFaceArea();
 
+/*                
                 // If cell almost full or empty isoFace may be undefined.
                 // Calculating normal by going a little into the cell.
                 // Note: put 1e-6 into the tolerance
@@ -254,6 +256,8 @@ void Foam::isoAdvection::timeIntegratedFlux()
                     Info<< "After normalisation: mag(n0) = "
                         << mag(n0) << endl;
                 }
+*/
+                n0 /= (mag(n0));
 
                 // Get the speed of the isoface by interpolating velocity and
                 // dotting it with isoface normal
@@ -266,7 +270,7 @@ void Foam::isoAdvection::timeIntegratedFlux()
 
                 // Estimating time integrated water flux through each downwind
                 // face
-                const cell& cellFaces = meshCells[celli];
+                const cell& cellFaces = cells_[celli];
                 forAll(cellFaces, fi)
                 {
                     // Get current face index
@@ -279,7 +283,7 @@ void Foam::isoAdvection::timeIntegratedFlux()
                         label otherCell = -1;
 
                         // Check if the cell is owner
-                        if (celli == own[facei])
+                        if (celli == owner_[facei])
                         {
 
                             if (phiIn[facei] > 10*SMALL)
@@ -288,7 +292,7 @@ void Foam::isoAdvection::timeIntegratedFlux()
                             }
 
                             // Other cell is neighbour
-                            otherCell = nei[facei];
+                            otherCell = neighbour_[facei];
                         }
                         else //celli is the neighbour
                         {
@@ -298,7 +302,7 @@ void Foam::isoAdvection::timeIntegratedFlux()
                             }
 
                             // Other cell is the owner
-                            otherCell = own[facei];
+                            otherCell = owner_[facei];
                         }
 
                         // Calculate time integrated flux if this is a downwind
@@ -430,15 +434,15 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
 
         if (phi > 0 || !mesh_.isInternalFace(facei))
         {
-            const label upwindCell = mesh_.faceOwner()[facei];
+            const label upwindCell = owner_[facei];
             alphaf = alpha1In_[upwindCell];
-            waterInUpwindCell = alphaf*mesh_.V()[upwindCell];
+            waterInUpwindCell = alphaf*cellVolumes_[upwindCell];
         }
         else
         {
-            const label upwindCell = mesh_.faceNeighbour()[facei];
+            const label upwindCell = neighbour_[facei];
             alphaf = alpha1In_[upwindCell];
-            waterInUpwindCell = alphaf*mesh_.V()[upwindCell];
+            waterInUpwindCell = alphaf*cellVolumes_[upwindCell];
         }
 
         if (debug)
@@ -529,7 +533,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
             WarningInFunction
                 << "Warning: nShifts = " << nShifts << " on face " << facei
                 << " with pTimes = " << pTimes << " owned by cell "
-                << mesh_.faceOwner()[facei] << endl;
+                << owner_[facei] << endl;
         }
 
         return dVf;
@@ -560,20 +564,17 @@ void Foam::isoAdvection::getDownwindFaces
     DynamicLabelList& downwindFaces
 ) const
 {
-
-    // Get necessary mesh data and cell information
-    const labelList& own = mesh_.faceOwner();
-    const cellList& cells = mesh_.cells();
-    const cell& c = cells[celli];
-
     // Check all faces of the cell
+
+    const cell& c = cells_[celli];
+
     forAll(c, fi)
     {
         // Get face and corresponding flux
         const label facei = c[fi];
         const scalar& phi = faceValue(phi_, facei);
 
-        if (own[facei] == celli)
+        if (owner_[facei] == celli)
         {
             if (phi > 10*SMALL)
             {
@@ -712,16 +713,12 @@ void Foam::isoAdvection::boundFromAbove
     scalar maxOvershoot = -GREAT;
     label maxOvershootCell = -1;
     
-    // Get necessary mesh data
-    const scalarField& meshV = mesh_.V();
-    const cellList& meshCells = mesh_.cells();
-
     // Loop through alpha cell centred field
     forAll(alpha1, celli)
     {
         if (checkBounding_[celli])
         {
-            const scalar& Vi = meshV[celli];
+            const scalar& Vi = cellVolumes_[celli];
             scalar alpha1New = alpha1[celli] - netFlux(dVf, celli)/Vi;
             scalar alphaOvershoot = alpha1New - 1.0;
             scalar fluidToPassOn = alphaOvershoot*Vi;
@@ -746,7 +743,7 @@ void Foam::isoAdvection::boundFromAbove
                 cellIsBounded_[celli] = true;
 
                 // Find potential neighbour cells to pass surplus phase to
-                DynamicList<label> downwindFaces(meshCells[celli].size());
+                DynamicList<label> downwindFaces(cells_[celli].size());
                 getDownwindFaces(celli, downwindFaces);
 
                 DynamicList<label> facesToPassFluidThrough(downwindFaces.size());
@@ -844,17 +841,14 @@ Foam::scalar Foam::isoAdvection::netFlux
     scalar dV = 0.0;
 
     // Get face label
-    const cell& c = mesh_.cells()[celli];
-
-    // Get mesh data
-    const labelList& own = mesh_.faceOwner();
+    const cell& c = cells_[celli];
 
     forAll(c, fi)
     {
         const label facei = c[fi];
         const scalar dVff = faceValue(dVf, facei);
 
-        if (own[facei] == celli)
+        if (owner_[facei] == celli)
         {
             dV += dVff;
         }

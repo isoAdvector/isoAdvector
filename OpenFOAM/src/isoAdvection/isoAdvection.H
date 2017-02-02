@@ -83,6 +83,18 @@ class isoAdvection
         //- Reference to mesh
         const fvMesh& mesh_;
 
+        //- Reference to face owners
+        const labelList& owner_;
+
+        //- Reference to face neighbours
+        const labelList& neighbour_;
+
+        //- Reference to cells
+        const cellList& cells_;
+
+        //- Reference to cell volumes
+        const scalarField& cellVolumes_;
+        
         //- Dictionary for isoAdvection controls
         const dictionary dict_;
 
