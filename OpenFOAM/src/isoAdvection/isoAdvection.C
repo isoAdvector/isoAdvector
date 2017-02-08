@@ -355,20 +355,19 @@ void Foam::isoAdvection::timeIntegratedFlux()
         }
     }
 
-    // Get references to boundary fields
+    // Get references to boundary fields and mesh
     const surfaceScalarField::Boundary& phib = phi_.boundaryField();
     const surfaceScalarField::Boundary& magSfb = mesh_.magSf().boundaryField();
     surfaceScalarField::Boundary& dVfb = dVf_.boundaryFieldRef();
+    //Is it really necessary to have both boundaryMesh and pBoundaryMesh?
+    const fvBoundaryMesh& boundaryMesh = mesh_.boundary();
+    const polyBoundaryMesh& pBoundaryMesh = mesh_.boundaryMesh();
 
     // Loop through boundary surface faces
     forAll(bsFaces_, fi)
     {
         // Get boundary face index (in the global list)
         const label facei = bsFaces_[fi];
-
-        // Get necesary mesh data
-        const fvBoundaryMesh& boundaryMesh = mesh_.boundary();
-        const polyBoundaryMesh& pBoundaryMesh = mesh_.boundaryMesh();
 
         // Get necessary labels
         // Note: consider optimisation since whichPatch is expensive
@@ -382,7 +381,7 @@ void Foam::isoAdvection::timeIntegratedFlux()
             const label patchFacei = facei - start;
             const scalar phiP = phib[patchi][patchFacei];
 
-            if (phiP > 0) // Note: changed from phiP > 10*SMALL
+            if (phiP > 10*SMALL)
             {
                 const scalar magSf = magSfb[patchi][patchFacei];
 
@@ -590,7 +589,7 @@ void Foam::isoAdvection::getDownwindFaces
     downwindFaces.shrink();
 }
 
-
+/*
 void Foam::isoAdvection::subSetExtrema
 (
     const scalarField& f,
@@ -609,7 +608,7 @@ void Foam::isoAdvection::subSetExtrema
         fMax = max(fMax, fp);
     }
 }
-
+*/
 
 void Foam::isoAdvection::limitFluxes()
 {

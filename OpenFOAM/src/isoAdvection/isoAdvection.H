@@ -221,6 +221,7 @@ class isoAdvection
                 DynamicLabelList& downwindFaces
             ) const;
 
+/*
             //- Find min and max of subset of scalarField f defined by
             //  labelList label
             void subSetExtrema
@@ -230,6 +231,7 @@ class isoAdvection
                 scalar& fMin,
                 scalar& fMax
             ) const;
+*/
 
             // Limit fluxes
             void limitFluxes();

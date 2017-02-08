@@ -19,6 +19,7 @@
             mixture.surfaceTensionForce()
           - ghf*fvc::snGrad(rho)
         )*rAUf*mesh.magSf()
+//          - ghf*(fvc::grad(rho) & mesh.Sf())*rAUf
     );
 
     phiHbyA += phig;
