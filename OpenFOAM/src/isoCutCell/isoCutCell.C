@@ -515,13 +515,13 @@ Foam::label Foam::isoCutCell::vofCutCell
 
     if (mag(f1 - f2) < 10*SMALL)
     {
-        Info << "Warning: mag(f1 - f2) < 10*SMALL." << endl;
+//        Info << "Warning: mag(f1 - f2) < 10*SMALL." << endl;
         return calcSubCell(celli, f1);
     }
 
     if (mag(a1 - a2) < tol)
     {
-        Info << "Warning: mag(a1 - a2) < tol for cell " << celli << endl;
+//        Info << "Warning: mag(a1 - a2) < tol for cell " << celli << endl;
         return calcSubCell(celli, 0.5*(f1 + f2));
     }
     // Now we know that a(f) = alpha1 is to be found on the f interval
