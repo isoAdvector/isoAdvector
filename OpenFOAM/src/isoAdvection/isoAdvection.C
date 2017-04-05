@@ -84,6 +84,7 @@ Foam::isoAdvection::isoAdvection
     nAlphaBounds_(dict_.lookupOrDefault<label>("nAlphaBounds", 3)),
     vof2IsoTol_(dict_.lookupOrDefault<scalar>("vof2IsoTol", 1e-8)),
     surfCellTol_(dict_.lookupOrDefault<scalar>("surfCellTol", 1e-8)),
+    writeIsoFacesToFile_(dict_.lookupOrDefault<bool>("isoFaces2File", false)),
 
     // Cell cutting data
     surfCells_(label(0.2*mesh_.nCells())),
@@ -156,8 +157,11 @@ void Foam::isoAdvection::timeIntegratedFlux()
     scalarField& dVfIn = dVf_.primitiveFieldRef();
 
     // Get necessary mesh data
-    const labelListList& CP = mesh_.cellPoints();
+//    const labelListList& CP = mesh_.cellPoints();
     const labelListList& CC = mesh_.cellCells();
+
+    // Storage for isoFace points. Only used if writeIsoFacesToPlyFile_
+    DynamicList< List<point> > isoFacePts;
 
     // Loop through cells
     forAll(alpha1In_, celli)
@@ -198,6 +202,10 @@ void Foam::isoAdvection::timeIntegratedFlux()
                 const point x0 = isoCutCell_.isoFaceCentre();
                 vector n0 = isoCutCell_.isoFaceArea();
 
+                if (writeIsoFacesToFile_)
+                {
+                    isoFacePts.append(isoCutCell_.isoFacePoints());
+                }
 /*                
                 // If cell almost full or empty isoFace may be undefined.
                 // Calculating normal by going a little into the cell.
@@ -355,6 +363,13 @@ void Foam::isoAdvection::timeIntegratedFlux()
         }
     }
 
+    if (writeIsoFacesToFile_)
+    {
+        std::ostringstream os ;
+        os << "isoFaces_" << int(mesh_.time().timeIndex());
+        isoFacesToFile(isoFacePts, os.str() , "isoFaces");
+    }
+    
     // Get references to boundary fields and mesh
     const surfaceScalarField::Boundary& phib = phi_.boundaryField();
     const surfaceScalarField::Boundary& magSfb = mesh_.magSf().boundaryField();
@@ -1003,9 +1018,23 @@ void Foam::isoAdvection::checkIfOnProcPatch(const label facei)
 
 void Foam::isoAdvection::advect()
 {
-
     // Interpolating alpha1 cell centre values to mesh points (vertices)
     ap_ = vpi_.interpolate(alpha1_.oldTime());
+
+//    Alternative volume weighted interpolation
+    // forAll (ap_,pointI)
+    // {
+        // const labelList& pointCells = mesh_.pointCells(pointI);
+        // ap_[pointI] = 0;
+        // scalar volSum = 0;
+        // forAll (pointCells, cellI)
+        // {
+            // scalar cellVol = mesh_.V()[pointCells[cellI]];
+            // ap_[pointI] += alpha1In_[pointCells[cellI]]*cellVol;
+            // volSum += cellVol;
+        // }
+        // ap_[pointI] /= volSum;
+    // }
 
     // Initialising dVf with upwind values
     // i.e. phi[facei]*alpha1[upwindCell]*dt
@@ -1049,6 +1078,58 @@ void Foam::isoAdvection::getBoundedCells(cellSet& boundCells) const
         }
     }
 }
+
+
+void Foam::isoAdvection::isoFacesToFile
+(
+    const DynamicList< List<point> >& faces,
+    const word filNam,
+    const word filDir
+) const
+{
+    //Writing isofaces to ply file for inspection in paraview
+    
+    mkDir(filDir);
+    autoPtr<OFstream> vtkFilePtr;
+    Info << "Writing file: " << (filDir + "/" + filNam + ".vtk") << endl;
+    vtkFilePtr.reset(new OFstream(filDir + "/" + filNam + ".vtk"));
+    vtkFilePtr() << "# vtk DataFile Version 2.0" << endl;
+    vtkFilePtr() << filNam << endl;
+    vtkFilePtr() << "ASCII" << endl;
+    vtkFilePtr() << "DATASET POLYDATA" << endl;
+    label nPoints(0);
+    forAll(faces,fi)
+    {
+        nPoints += faces[fi].size();
+    }
+
+    vtkFilePtr() << "POINTS " << nPoints << " float" << endl;
+    forAll(faces,fi)
+    {
+        List<point> pf = faces[fi];
+        forAll(pf,pi)
+        {
+            point p = pf[pi];
+            vtkFilePtr() << p[0] << " " << p[1] << " " << p[2] << endl;
+        }
+    }
+    vtkFilePtr() << "POLYGONS " << faces.size() << " " << nPoints + faces.size() << endl;
+
+    label np = 0;
+    forAll(faces,fi)
+    {
+        nPoints = faces[fi].size();
+        vtkFilePtr() << nPoints;
+        for (label pi = np; pi < np + nPoints; pi++ )
+        {
+            vtkFilePtr() << " " << pi;
+        }
+        vtkFilePtr() << "" << endl;
+        np += nPoints;
+    }    
+}
+
+
 
 
 // ************************************************************************* //

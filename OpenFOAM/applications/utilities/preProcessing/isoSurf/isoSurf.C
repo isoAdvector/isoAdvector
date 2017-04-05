@@ -95,8 +95,10 @@ int main(int argc, char *argv[])
     }
     else if ( surfType == "cylinder" )
     {
-        f = -sqrt(pow(mag(mesh.points()-centre),2) - pow(mag((mesh.points()-centre) & direction),2));
-        f0 = -radius;
+//        f = -sqrt(pow(mag(mesh.points()-centre),2) - pow(mag((mesh.points()-centre) & direction),2));
+//        f0 = -radius;
+        f = -(pow(mag(mesh.points()-centre),2) - pow(mag((mesh.points()-centre) & direction),2));
+        f0 = -radius*radius;
     }
     else if ( surfType == "sin" )
     {

@@ -743,16 +743,23 @@ void Foam::isoCutCell::VolumeOfFluid
     const scalar f0
 )
 {
+
+    DynamicList< List<point> > isoFacePts;
+
     // Setting internal field
-    scalarField& alphaIn = alpha1;
+    scalarField& alphaIn = alpha1.primitiveFieldRef();
     forAll(alphaIn, ci)
     {
-        const label cellStatus = calcSubCell(ci,f0);
+        const label cellStatus = calcSubCell(ci, f0);
         if (cellStatus != 1) // I.e. if cell not entirely above isosurface
         {
             alphaIn[ci] = VolumeOfFluid();
+            isoFacePts.append(isoFacePoints());
         }
     }
+    
+    //Writing isofaces to vtk polygon file
+    isoFacesToFile(isoFacePts, "isoFaces" , ".");
 
     // Setting boundary alpha1 values
     forAll(mesh_.boundary(), patchi)
@@ -779,4 +786,52 @@ void Foam::isoCutCell::VolumeOfFluid
 }
 
 
+void Foam::isoCutCell::isoFacesToFile
+(
+    const DynamicList< List<point> >& faces,
+    const word filNam,
+    const word filDir
+) const
+{
+    //Writing isofaces to ply file for inspection in paraview
+    
+    mkDir(filDir);
+    autoPtr<OFstream> vtkFilePtr;
+    Info << "Writing file: " << (filDir + "/" + filNam + ".vtk") << endl;
+    vtkFilePtr.reset(new OFstream(filDir + "/" + filNam + ".vtk"));
+    vtkFilePtr() << "# vtk DataFile Version 2.0" << endl;
+    vtkFilePtr() << filNam << endl;
+    vtkFilePtr() << "ASCII" << endl;
+    vtkFilePtr() << "DATASET POLYDATA" << endl;
+    label nPoints(0);
+    forAll(faces,fi)
+    {
+        nPoints += faces[fi].size();
+    }
+
+    vtkFilePtr() << "POINTS " << nPoints << " float" << endl;
+    forAll(faces,fi)
+    {
+        List<point> pf = faces[fi];
+        forAll(pf,pi)
+        {
+            point p = pf[pi];
+            vtkFilePtr() << p[0] << " " << p[1] << " " << p[2] << endl;
+        }
+    }
+    vtkFilePtr() << "POLYGONS " << faces.size() << " " << nPoints + faces.size() << endl;
+
+    label np = 0;
+    forAll(faces,fi)
+    {
+        nPoints = faces[fi].size();
+        vtkFilePtr() << nPoints;
+        for (label pi = np; pi < np + nPoints; pi++ )
+        {
+            vtkFilePtr() << " " << pi;
+        }
+        vtkFilePtr() << "" << endl;
+        np += nPoints;
+    }    
+}
 // ************************************************************************* //

@@ -183,6 +183,14 @@ public:
         );
 
         void VolumeOfFluid(volScalarField& alpha1, const scalar f0);
+        
+        //- Write face points to .vtk files e.g. for visualisation in Paraview
+        void isoFacesToFile
+        (
+            const DynamicList< List<point> >& isoFacePts,
+            const word fileName,
+            const word fileDir
+        ) const;
 };
 
 

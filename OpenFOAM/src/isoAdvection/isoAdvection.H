@@ -134,7 +134,10 @@ class isoAdvection
             //- Tolerance for marking of surface cells:
             //  Those with surfCellTol_ < alpha1 < 1 - surfCellTol_
             scalar surfCellTol_;
-
+            
+            //- Print isofaces in a <case>/isoFaces/isoFaces_#N.ply files.
+            //  Intended for debugging
+            bool writeIsoFacesToFile_;
 
         // Cell and face cutting
 
@@ -370,6 +373,15 @@ public:
                     )
                 );
             }
+        
+        //- Write face points to .vtk files e.g. for visualisation in Paraview
+        void isoFacesToFile
+        (
+            const DynamicList< List<point> >& isoFacePts,
+            const word fileName,
+            const word fileDir
+        ) const;
+
 };
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
