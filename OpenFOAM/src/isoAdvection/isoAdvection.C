@@ -59,7 +59,7 @@ Foam::isoAdvection::isoAdvection
     cellVolumes_(mesh_.cellVolumes()),
     dict_(mesh_.solutionDict().subDict("isoAdvector")),
     alpha1_(alpha1),
-    alpha1In_(alpha1.oldTime().ref()), // Need to reorganise
+    alpha1In_(alpha1.ref()),
     phi_(phi),
     U_(U),
     dVf_
@@ -84,6 +84,7 @@ Foam::isoAdvection::isoAdvection
     nAlphaBounds_(dict_.lookupOrDefault<label>("nAlphaBounds", 3)),
     vof2IsoTol_(dict_.lookupOrDefault<scalar>("vof2IsoTol", 1e-8)),
     surfCellTol_(dict_.lookupOrDefault<scalar>("surfCellTol", 1e-8)),
+    gradAlphaBasedNormal_(dict_.lookupOrDefault<bool>("gradAlphaNormal", false)),
     writeIsoFacesToFile_(dict_.lookupOrDefault<bool>("isoFaces2File", false)),
 
     // Cell cutting data
@@ -139,8 +140,7 @@ void Foam::isoAdvection::timeIntegratedFlux()
     // Get time step
     const scalar dt = mesh_.time().deltaT().value();
 
-    // Create interpolation object for interpolating velocity to iso face
-    // centres
+    // Create object for interpolating velocity to isoface centres
     interpolationCellPoint<vector> UInterp(U_);
 
     // For each downwind face of each surface cell we "isoadvect" to find dVf
@@ -157,19 +157,35 @@ void Foam::isoAdvection::timeIntegratedFlux()
     scalarField& dVfIn = dVf_.primitiveFieldRef();
 
     // Get necessary mesh data
-//    const labelListList& CP = mesh_.cellPoints();
     const labelListList& CC = mesh_.cellCells();
+    const labelListList& CP = mesh_.cellPoints();
+    const volVectorField& C = mesh_.C();
+    const pointField& points = mesh_.points();
 
-    // Storage for isoFace points. Only used if writeIsoFacesToPlyFile_
+    // Storage for isoFace points. Only used if writeIsoFacesToFile_
     DynamicList< List<point> > isoFacePts;
 
+    // Interpolating alpha1 cell centre values to mesh points (vertices)
+    ap_ = vpi_.interpolate(alpha1_);
+
+    vectorField gradAlpha(mesh_.nPoints(),vector::zero);
+    if (gradAlphaBasedNormal_)
+    {
+        //Calculate gradient of alpha1 and interpolate to vertices
+        volVectorField gradA
+        (
+            "gradA",
+            fvc::grad(alpha1_)
+        );
+        gradAlpha = vpi_.interpolate(gradA);
+    }
+    
     // Loop through cells
     forAll(alpha1In_, celli)
     {
         if (isASurfaceCell(celli))
         {
-            // This is a surface cell, increment the counter, append and mark
-            // the cell
+            // This is a surface cell, increment counter, append and mark cell
             nSurfaceCells++;
             surfCells_.append(celli);
             checkBounding_[celli] = true;
@@ -183,6 +199,34 @@ void Foam::isoAdvection::timeIntegratedFlux()
             // Calculate isoFace centre x0, normal n0 at time t
             label maxIter = 100; // NOTE: make it a debug switch
 
+            const labelList& cp = CP[celli];
+            scalarField ap_org(cp.size(), 0);
+            if (gradAlphaBasedNormal_)
+            {
+                // Calculating smoothed alpha gradient in the surface cell in order 
+                // to use it as the isoface orientation.
+                vector smoothedGradA = vector::zero;
+                const point c = C[celli];
+                scalar wSum = 0;
+                forAll(cp, pointI)
+                {
+                    point v = points[cp[pointI]];
+                    scalar w = 1.0/mag(v - c);
+                    wSum += w;
+                    smoothedGradA += w*gradAlpha[cp[pointI]];
+                }
+                smoothedGradA /= wSum;
+
+                // Temporarily overwriting the interpolated vertex alpha values in 
+                // ap_ with the vertex-cell centre distance along smoothedGradA.
+                forAll(ap_org, vi)
+                {
+                    ap_org[vi] = ap_[cp[vi]];
+                    const point v = points[cp[vi]];
+                    ap_[cp[vi]] = ((v - c) & (smoothedGradA/mag(smoothedGradA)));
+                }
+            }
+            
             // Calculate cell status (-1: cell is fully below the isosurface, 0:
             // cell is cut, 1: cell is fully above the isosurface)
             label cellStatus = isoCutCell_.vofCutCell
@@ -193,8 +237,15 @@ void Foam::isoAdvection::timeIntegratedFlux()
                 maxIter
             );
 
-//            Info << "1 - f0 = " << 1 - f0 << " for cell " << celli << endl;
-
+            if (gradAlphaBasedNormal_)
+            {
+                // Restoring ap_ by putting the original values  back into it.
+                forAll(ap_org, vi)
+                {
+                    ap_[cp[vi]] = ap_org[vi];
+                }
+            }
+            
             // Cell is cut
             if (cellStatus == 0)
             {
@@ -202,69 +253,11 @@ void Foam::isoAdvection::timeIntegratedFlux()
                 const point x0 = isoCutCell_.isoFaceCentre();
                 vector n0 = isoCutCell_.isoFaceArea();
 
-                if (writeIsoFacesToFile_)
+                if (writeIsoFacesToFile_ && mesh_.time().writeTime())
                 {
                     isoFacePts.append(isoCutCell_.isoFacePoints());
                 }
-/*                
-                // If cell almost full or empty isoFace may be undefined.
-                // Calculating normal by going a little into the cell.
-                // Note: put 1e-6 into the tolerance
-                if (mag(n0) < 1e-6*minMagSf_)
-                {
-                    WarningInFunction
-                        << "mag(n0) = " << mag(n0)
-                        << " < 1e-6*minMagSf_ for cell " << celli << endl;
-
-                    // Initialise minimum and maximum values
-                    scalar fMin = GREAT;
-                    scalar fMax = -GREAT;
-
-                    // Get cell points
-                    const labelList& cellPts = CP[celli];
-
-                    // Calculate min and max values of the subset
-                    subSetExtrema(ap_, cellPts, fMin, fMax);
-
-                    scalar fInside  = 0;
-                    if (alpha1In_[celli] > 0.5) // Note: changed from >= to >
-                    {
-                        // Note: make a tolerance
-                        fInside =  fMin + 1e-3*(fMax-fMin);
-                    }
-                    else
-                    {
-                        fInside =  fMax - 1e-3*(fMax-fMin);
-                    }
-
-//                    scalar fInside = f0 + sign(alpha1In_[celli]-0.5)*1e-3;
-
-                    // Calculate sub cell and initialise the normal with face
-                    // area vector
-                    isoCutCell_.calcSubCell(celli,fInside);
-                    n0 = isoCutCell_.isoFaceArea();
-                }
-
-                if (mag(n0) > 1e-6*minMagSf_)
-                {
-                    DebugInfo << "Normalising n0: " << n0 << endl;
-                    n0 /= mag(n0);
-                }
-                else
-                {
-                    WarningInFunction
-                        << "mag(n0) = " << mag(n0)
-                        << " < 1e-6*minMagSf_ for cell " << celli
-                        << " with alpha1 = " << alpha1In_[celli]
-                        << ", 1-alpha1 = " << 1.0-alpha1In_[celli]
-                        << " and f0 = " << f0 << endl;
-
-                    // Normalise the vector with stabilisation
-                    n0 /= (mag(n0) + SMALL);
-                    Info<< "After normalisation: mag(n0) = "
-                        << mag(n0) << endl;
-                }
-*/
+                
                 n0 /= (mag(n0));
 
                 // Get the speed of the isoface by interpolating velocity and
@@ -313,12 +306,9 @@ void Foam::isoAdvection::timeIntegratedFlux()
                             otherCell = owner_[facei];
                         }
 
-                        // Calculate time integrated flux if this is a downwind
-                        // face
+                        // Calculate time integrated flux if face is downwind
                         if (isDownwindFace)
                         {
-//                            Info<< "Setting value for internal face " << facei
-//                                << endl;
                             dVfIn[facei] = timeIntegratedFlux
                             (
                                 facei,
@@ -363,7 +353,7 @@ void Foam::isoAdvection::timeIntegratedFlux()
         }
     }
 
-    if (writeIsoFacesToFile_)
+    if (writeIsoFacesToFile_ && mesh_.time().writeTime())
     {
         std::ostringstream os ;
         os << "isoFaces_" << int(mesh_.time().timeIndex());
@@ -446,7 +436,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
         scalar alphaf = 0.0;
         scalar waterInUpwindCell = 0.0;
 
-        if (phi > 0 || !mesh_.isInternalFace(facei))
+        if (phi > 10*SMALL || !mesh_.isInternalFace(facei)) //0 -> 10*SMALL
         {
             const label upwindCell = owner_[facei];
             alphaf = alpha1In_[upwindCell];
@@ -480,7 +470,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedFlux
     const label nPoints = fPts.size();
 
     scalarField pTimes(fPts.size());
-    if (mag(Un0) > 1e-12) // Note: tolerances
+    if (mag(Un0) > 10*SMALL) // Changed from 1e-12
     {
         // Here we estimate time of arrival to the face points from their normal
         // distance to the initial surface and the surface normal velocity
@@ -604,26 +594,6 @@ void Foam::isoAdvection::getDownwindFaces
     downwindFaces.shrink();
 }
 
-/*
-void Foam::isoAdvection::subSetExtrema
-(
-    const scalarField& f,
-    const labelList& labels,
-    scalar& fMin,
-    scalar& fMax
-) const
-{
-    fMin = VGREAT;
-    fMax = -VGREAT;
-
-    forAll(labels, pi)
-    {
-        const scalar fp = f[labels[pi]];
-        fMin = min(fMin, fp);
-        fMax = max(fMax, fp);
-    }
-}
-*/
 
 void Foam::isoAdvection::limitFluxes()
 {
@@ -1018,29 +988,8 @@ void Foam::isoAdvection::checkIfOnProcPatch(const label facei)
 
 void Foam::isoAdvection::advect()
 {
-    // Interpolating alpha1 cell centre values to mesh points (vertices)
-    ap_ = vpi_.interpolate(alpha1_.oldTime());
-
-//    Alternative volume weighted interpolation
-    // forAll (ap_,pointI)
-    // {
-        // const labelList& pointCells = mesh_.pointCells(pointI);
-        // ap_[pointI] = 0;
-        // scalar volSum = 0;
-        // forAll (pointCells, cellI)
-        // {
-            // scalar cellVol = mesh_.V()[pointCells[cellI]];
-            // ap_[pointI] += alpha1In_[pointCells[cellI]]*cellVol;
-            // volSum += cellVol;
-        // }
-        // ap_[pointI] /= volSum;
-    // }
-
     // Initialising dVf with upwind values
-    // i.e. phi[facei]*alpha1[upwindCell]*dt
-    dVf_ =
-        upwind<scalar>(mesh_, phi_).flux(alpha1_.oldTime())
-       *mesh_.time().deltaT();
+    dVf_ = upwind<scalar>(mesh_, phi_).flux(alpha1_)*mesh_.time().deltaT();
 
     // Do the isoAdvection on surface cells
     timeIntegratedFlux();
@@ -1052,7 +1001,7 @@ void Foam::isoAdvection::advect()
     limitFluxes();
 
     // Advect the free surface
-    alpha1_ = alpha1_.oldTime() - fvc::surfaceIntegrate(dVf_);
+    alpha1_ -= fvc::surfaceIntegrate(dVf_);
     alpha1_.correctBoundaryConditions();
 }
 
@@ -1087,7 +1036,7 @@ void Foam::isoAdvection::isoFacesToFile
     const word filDir
 ) const
 {
-    //Writing isofaces to ply file for inspection in paraview
+    //Writing isofaces to vtk file for inspection in paraview
     
     mkDir(filDir);
     autoPtr<OFstream> vtkFilePtr;

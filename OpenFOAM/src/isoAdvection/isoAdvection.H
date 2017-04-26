@@ -61,7 +61,7 @@ SourceFiles
 #include "interpolationCellPoint.H"
 #include "cellSet.H"
 #include "className.H"
-
+#include "fvcGrad.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -135,7 +135,13 @@ class isoAdvection
             //  Those with surfCellTol_ < alpha1 < 1 - surfCellTol_
             scalar surfCellTol_;
             
-            //- Print isofaces in a <case>/isoFaces/isoFaces_#N.ply files.
+            //- Switch controlling whether to use isoface normals for interface
+            //  orientation (default corresponding to false) to base it on 
+            //  a smoothed gradient of alpha calculation (giving better results 
+            //  on tri on tet meshes).
+            bool gradAlphaBasedNormal_;
+            
+            //- Print isofaces in a <case>/isoFaces/isoFaces_#N.vtk files.
             //  Intended for debugging
             bool writeIsoFacesToFile_;
 
@@ -223,18 +229,6 @@ class isoAdvection
                 const label ci,
                 DynamicLabelList& downwindFaces
             ) const;
-
-/*
-            //- Find min and max of subset of scalarField f defined by
-            //  labelList label
-            void subSetExtrema
-            (
-                const scalarField& f,
-                const labelList& labels,
-                scalar& fMin,
-                scalar& fMax
-            ) const;
-*/
 
             // Limit fluxes
             void limitFluxes();
