@@ -156,6 +156,18 @@ work with newer versions.
               //velocity field when a when the time reverseTime is reached:
 
               reverseTime 0;
+
+              //To write out case/isoFaces/isoFace#timeIndex.vtk change this to true:
+
+              isoFaces2File false;
+
+              //For tri and tet meshes the standard isoAdvector method may result in 
+              //large variations in the interface normal orientation in neighbouring
+              //cells. A much smoother interface normal orientation is obtained by 
+              //enforcing use of a smoothed gradient for the isoface orientations.
+              //This method is activated by changing this to true:
+
+              gradAlphaNormal false;
           }
 
       Please see cases in OpenFOAM/run for examples of usage. Note that the 

@@ -62,15 +62,39 @@ int main(int argc, char *argv[])
         )
     );
 
-//	scalar delta0 = Foam::pow(sum(mesh.V()).value(),1.0/3.0);
-//	Info << "Average edge lengt = " << delta0 << endl;
 
-//	Info<< "Reading field alpha1\n" << endl;
+//	Info<< "Reading isoSurfDict\n" << endl;
+	IOdictionary isoSurfDict
+	(
+		IOobject
+		(
+			"isoSurfDict",
+			runTime.system(),
+			mesh,
+			IOobject::MUST_READ,
+			IOobject::NO_WRITE
+		)
+	);
+
+	const word surfType(isoSurfDict.lookup("type"));
+	const Foam::vector centre0(isoSurfDict.lookup("centre"));
+	const Foam::vector direction(isoSurfDict.lookupOrDefault<Foam::vector>("direction",Foam::vector::zero));
+	const scalar radius(isoSurfDict.lookupOrDefault<scalar>("radius",0.0));
+    const word fieldName(isoSurfDict.lookupOrDefault<word>("field","alpha.water"));
+
+	const scalarField x(mesh.points().component(0));
+    const scalarField y(mesh.points().component(1));
+    const scalarField z(mesh.points().component(2));
+    scalar f0 = 0.0;
+	scalarField f(x.size());
+
+    
+//    Info<< "Reading field " << fieldName << "\n" << endl;
 	volScalarField alpha1
 	(
 		IOobject
 		(
-			"alpha1",
+			fieldName,
 			runTime.timeName(),
 			mesh,
 			IOobject::MUST_READ,
@@ -99,30 +123,6 @@ int main(int argc, char *argv[])
 	Info << "Velocity U0 = " << U0 << endl;
 
     volScalarField alpha1Exact = alpha1; //Values are overwritten
-
-//	Info<< "Reading isoSurfDict\n" << endl;
-	IOdictionary isoSurfDict
-	(
-		IOobject
-		(
-			"isoSurfDict",
-			runTime.system(),
-			mesh,
-			IOobject::MUST_READ,
-			IOobject::NO_WRITE
-		)
-	);
-
-	const word surfType(isoSurfDict.lookup("type"));
-	const Foam::vector centre0(isoSurfDict.lookup("centre"));
-	const Foam::vector direction(isoSurfDict.lookupOrDefault<Foam::vector>("direction",Foam::vector::zero));
-	const scalar radius(isoSurfDict.lookupOrDefault<scalar>("radius",0.0));
-
-	const scalarField x(mesh.points().component(0));
-    const scalarField y(mesh.points().component(1));
-    const scalarField z(mesh.points().component(2));
-    scalar f0 = 0.0;
-	scalarField f(x.size());
 
 	//Time loop
     instantList timeDirs = timeSelector::select0(runTime, args);
