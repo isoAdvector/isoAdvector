@@ -95,93 +95,103 @@ work with newer versions.
 
 - `solvers/interFlow` 
     - A copy of the interFoam solver with the option to use isoAdvector instead
-      of MULES in the interface advection step. To use isoAdvector add a 
-      dictionary called isoAdvector to fvSolution with the contents:
+      of MULES in the interface advection step. To use add set application in 
+      controlDict to interFlow and add the following to the dicitonary
+      fvSolution.solvers."alpha.water.*":
 
-          isoAdvector
-          {
-              //interfaceMethod can be set to "MULES" (default), "isoAdvector" or 
-              //"fvSchemes". Use the latter option to use the HRIC, CICSAM or 
-              //vofCompression schemes.
+      "alpha.water.*"
+      {
+          //interfaceMethod can be set to "MULES" (default), "isoAdvector" or 
+          //"fvSchemes". Use the latter option to use the HRIC, CICSAM or 
+          //vofCompression schemes.
 
-              interfaceMethod "isoAdvector";
-              
-              //isoFaceTol is the precision with wich the isosurface cutting a cell 
-              //into subcells should reproduce the cell's volume fraction. Typically 
-              //between 1e-6 and 1e-8 (default).
+          interfaceMethod "isoAdvector";
+          
+          //isoFaceTol is the precision with wich the isosurface cutting a cell 
+          //into subcells should reproduce the cell's volume fraction. Typically 
+          //between 1e-6 and 1e-8 (default).
 
-              isoFaceTol  1e-8;
-              
-              //surfCellTol defines which cells are treated as surface cells. If 
-              //
-              //  surfCellTol < alpha1 < 1 - surfCellTol
-              //
-              //a cell will be treated with isoAdvector. Typically between between 
-              //1e-6 and 1e-8 (default).
+          isoFaceTol  1e-8;
+          
+          //surfCellTol defines which cells are treated as surface cells. If 
+          //
+          //  surfCellTol < alpha1 < 1 - surfCellTol
+          //
+          //a cell will be treated with isoAdvector. Typically between between 
+          //1e-6 and 1e-8 (default).
 
-              surfCellTol 1e-8;
-              
-              //nAlphaBounds is the number of times the volume preserving bounding 
-              //procedure should be applied after the advection step to repair 
-              //fluxes of unbounded cells. Default is 3.
-              
-              nAlphaBounds 3;
+          surfCellTol 1e-8;
+          
+          //nAlphaBounds is the number of times the volume preserving bounding 
+          //procedure should be applied after the advection step to repair 
+          //fluxes of unbounded cells. Default is 3.
+          
+          nAlphaBounds 3;
 
-              //If snapAlphaTol > 0 then after advection and volume preserving 
-              //bounding all remaining alpha's closer to 0 than snapAlphaTol will be 
-              //set to 0 and all alpha's closer to 1 than snapAlphaTol will be set 
-              //to 1. Default value is 1e-12.
-              
-              snapAlphaTol 1e-12; //Previously called clipAlphaTol
+          //If snapAlphaTol > 0 then after advection and volume preserving 
+          //bounding all remaining alpha's closer to 0 than snapAlphaTol will be 
+          //set to 0 and all alpha's closer to 1 than snapAlphaTol will be set 
+          //to 1. Default value is 1e-12.
+          
+          snapAlphaTol 1e-12; //Previously called clipAlphaTol
 
-              //If clip is set to true/yes/1 then after advection and volume 
-              //preserving bounding any alpha < 0 will be set to 0 and any alpha > 1 
-              //will be set to 1.
+          //If clip is set to true/yes/1 then after advection and volume 
+          //preserving bounding any alpha < 0 will be set to 0 and any alpha > 1 
+          //will be set to 1.
 
-              clip   true; //Previously called clipAlpha
+          clip   true; //Previously called clipAlpha
 
-              //If prescribedU and PIMPLE.nCorrectors is set to -1, then the velocty
-              //and pressure equations will not be solved. Useful for pure advection 
-              //test cases.
+          //To write out case/isoFaces/isoFaces#tIndex.obj change this to true:
 
-              prescribedU true;
+          writeIsoFaces false;
 
-              //In cases with prescribed U there is an option to make the prescribed 
-              //velocity field periodic by multiplying it by a factor 
-              //cos(2*pi*runTime.time()/period) if period > 0:
+          //For tri and tet meshes the standard isoAdvector method may result in 
+          //large variations in the interface normal orientation in neighbouring
+          //cells. A much smoother interface normal orientation is obtained by 
+          //enforcing use of a smoothed gradient for the isoface orientations.
+          //This method is activated by changing this to true:
 
-              period      0;
+          gradAlphaNormal false;
+      }
 
-              //In cases with prescribed U there is an option to reverse the 
-              //velocity field when a when the time reverseTime is reached:
+      To use the functionality of a prescribed flow you can set 
+      momentumCorrector to no and nCorrectors to -1 in the fvSolution.PIMPLE 
+      directory and add the following to the dicitonary fvSolution.solvers.U:
 
-              reverseTime 0;
+      U
+      {
+          //If prescribedU and PIMPLE.nCorrectors is set to -1, then the velocty
+          //and pressure equations will not be solved. Useful for pure advection 
+          //test cases.
 
-              //To write out case/isoFaces/isoFace#timeIndex.vtk change this to true:
+          prescribedU true;
 
-              isoFaces2File false;
+          //In cases with prescribed U there is an option to make the prescribed 
+          //velocity field periodic by multiplying it by a factor 
+          //cos(2*pi*runTime.time()/period) if period > 0:
 
-              //For tri and tet meshes the standard isoAdvector method may result in 
-              //large variations in the interface normal orientation in neighbouring
-              //cells. A much smoother interface normal orientation is obtained by 
-              //enforcing use of a smoothed gradient for the isoface orientations.
-              //This method is activated by changing this to true:
+          period      0;
 
-              gradAlphaNormal false;
-          }
+          //In cases with prescribed U there is an option to reverse the 
+          //velocity field when a when the time reverseTime is reached:
 
+          reverseTime 0;
+      }
+
+          
       Please see cases in OpenFOAM/run for examples of usage. Note that the 
       first versions of the isoAdvector code had the following other solvers:
       isoAdvector, mulesFoam, passiveAdvectionFoam. With the introduction of the 
       prescribedU switch described above, the functionallity of these solvers
       is now included in the interFlow solver and they have therefore been 
       removed.
-- `utilities/preProcessing/isoSurf` 
+- `utilities/preProcessing/setAlphaField` 
     - Sets the initial volume fraction field for a sphere, a cylinder, a plane 
-      or a sinus wave. See isoSurfDict for usage.
-- `utilities/postProcessing/uniFlowErrors`
+      or a sinus wave. See setAlphaFieldDict for usage. Previsouly called 
+      isoSurf.
+- `utilities/postProcessing/calcAdvectErrors`
     - For cases with spheres and discs in steady uniform flow calculates errors 
-      relative to exact VOF solution.
+      relative to exact VOF solution. Previously called uniFlowErrors.
 - `test/isoCutTester`
     - Application for testing isoCutFace and isoCutCell classes.
 
