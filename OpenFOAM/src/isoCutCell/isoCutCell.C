@@ -1,27 +1,48 @@
 /*---------------------------------------------------------------------------*\
-|             isoAdvector | Copyright (C) 2016 Johan Roenby, DHI              |
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | Copyright (C) 2016-2017 OpenCFD Ltd.
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+                isoAdvector | Copyright (C) 2016-2017 DHI
 -------------------------------------------------------------------------------
 
 License
-    This file is part of IsoAdvector, which is an unofficial extension to
-    OpenFOAM.
+    This file is part of isoAdvector which is an extension to OpenFOAM.
 
-    IsoAdvector is free software: you can redistribute it and/or modify it
+    OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    IsoAdvector is distributed in the hope that it will be useful, but WITHOUT
+    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
     for more details.
 
     You should have received a copy of the GNU General Public License
-    along with IsoAdvector. If not, see <http://www.gnu.org/licenses/>.
+    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 \*---------------------------------------------------------------------------*/
 
 #include "isoCutCell.H"
+#include "scalarMatrices.H"
+#include "volFields.H"
+#include "surfaceFields.H"
+
+// * * * * * * * * * * * * * * Debugging * * * * * * * * * * * * * //
+
+#ifndef DebugPout
+//Taken from OpenFOAM-plus/src/OpenFOAM/db/error/messageStream.H to make code
+//compile with older OF versions.
+#define DebugPout                                                              \
+    if (debug) Pout
+#endif
+
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
+
+int Foam::isoCutCell::debug = 0;
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -58,27 +79,18 @@ void Foam::isoCutCell::calcSubCellCentreAndVolume()
 {
     if (cellStatus_ == 0)
     {
-        // Clear the fields for accumulation
         subCellCentre_ = vector::zero;
         subCellVolume_ = 0.0;
 
-        // first estimate the approximate cell centre as the average of
-        // face centres
-
-        vector cEst = isoFaceCentre_;
-
-        forAll(isoCutFaceCentres_, facei)
-        {
-            cEst += isoCutFaceCentres_[facei];
-        }
-
+        // Estimate the approximate cell centre as the average of face centres
+        label nCellFaces(1 + isoCutFaceCentres_.size() + fullySubFaces_.size());
+        vector cEst = isoFaceCentre_ + sum(isoCutFaceCentres_);
         forAll(fullySubFaces_, facei)
         {
             cEst += mesh_.faceCentres()[fullySubFaces_[facei]];
         }
+        cEst /= scalar(nCellFaces);
 
-        label nCellFaces(1 + isoCutFaceCentres_.size() + fullySubFaces_.size());
-        cEst /= nCellFaces;
 
         // Contribution to subcell centre and volume from isoface
         const scalar pyr3Vol0 =
@@ -139,41 +151,45 @@ void Foam::isoCutCell::calcSubCellCentreAndVolume()
         }
 
         subCellCentre_ /= subCellVolume_;
-        subCellVolume_ /= 3;
-        VOF_ = subCellVolume_/mesh_.V()[cellI_];
+        subCellVolume_ /= scalar(3);
+        VOF_ = subCellVolume_/mesh_.cellVolumes()[cellI_];
 
         subCellCentreAndVolumeCalculated_ = true;
-/*
-        // Testing
-        vector sumSf = isoFaceArea_;
-        scalar sumMagSf = mag(isoFaceArea_);
-        forAll(isoCutFaceCentres_, facei)
+
+        if (debug)
         {
-            sumSf += isoCutFaceAreas_[facei];
-            sumMagSf += mag(isoCutFaceAreas_[facei]);
+            vector sumSf = isoFaceArea_;
+            scalar sumMagSf = mag(isoFaceArea_);
+            forAll(isoCutFaceCentres_, facei)
+            {
+                sumSf += isoCutFaceAreas_[facei];
+                sumMagSf += mag(isoCutFaceAreas_[facei]);
+            }
+            forAll(fullySubFaces_, facei)
+            {
+                sumSf += mesh_.faceAreas()[fullySubFaces_[facei]];
+                sumMagSf += mag(isoCutFaceAreas_[facei]);
+            }
+            if (mag(sumSf) > 1e-10)
+            {
+                Pout<< "Warninig: mag(sumSf)/magSumSf = "
+                    << mag(sumSf)/sumMagSf << " for surface cell"
+                    << cellI_ << endl;
+            }
         }
-        forAll(fullySubFaces_, facei)
-        {
-            sumSf += mesh_.faceAreas()[fullySubFaces_[facei]];
-            sumMagSf += mag(isoCutFaceAreas_[facei]);
-        }
-        if (mag(sumSf) > 1e-10)
-        {
-            Info<< "Warninig: mag(sumSf)/magSumSf = " << mag(sumSf)/sumMagSf << " for surface cell"
-                << cellI_ << endl;
-        }
-*/
     }
-    else if (cellStatus_ == 1) // cell fully above isosurface
+    else if (cellStatus_ == 1)
     {
+        // Cell fully above isosurface
         subCellCentre_ = vector::zero;
         subCellVolume_ = 0;
         VOF_ = 0;
     }
-    else if (cellStatus_ == -1) // cell fully below isosurface
+    else if (cellStatus_ == -1)
     {
-        subCellCentre_ = mesh_.C()[cellI_];
-        subCellVolume_ = mesh_.V()[cellI_];
+        // Cell fully below isosurface
+        subCellCentre_ = mesh_.cellCentres()[cellI_];
+        subCellVolume_ = mesh_.cellVolumes()[cellI_];
         VOF_ = 1;
     }
 }
@@ -193,17 +209,18 @@ void Foam::isoCutCell::calcIsoFaceCentreAndArea()
             nEdgePoints++;
         }
     }
+
     if (nEdgePoints > 0)
     {
         fCentre /= nEdgePoints;
     }
     else
     {
-        Info << "Warning: nEdgePoints = 0 for cell " << cellI_ << endl;
+        DebugPout << "Warning: nEdgePoints = 0 for cell " << cellI_ << endl;
     }
 
     vector sumN = vector::zero;
-    scalar sumA = 0.0;
+    scalar sumA = 0;
     vector sumAc = vector::zero;
 
     forAll(isoFaceEdges_, ei)
@@ -218,7 +235,8 @@ void Foam::isoCutCell::calcIsoFaceCentreAndArea()
             vector n = (nextPoint - edgePoints[pi])^(fCentre - edgePoints[pi]);
             scalar a = mag(n);
 
-            sumN += Foam::sign(n & sumN)*n; // Edges may have different orientation
+            // Edges may have different orientation
+            sumN += Foam::sign(n & sumN)*n;
             sumA += a;
             sumAc += a*c;
         }
@@ -233,7 +251,7 @@ void Foam::isoCutCell::calcIsoFaceCentreAndArea()
     }
     else
     {
-        isoFaceCentre_ = (1.0/3.0)*sumAc/sumA;
+        isoFaceCentre_ = sumAc/sumA/scalar(3);
         isoFaceArea_ = 0.5*sumN;
     }
 
@@ -250,9 +268,11 @@ void Foam::isoCutCell::calcIsoFaceCentreAndArea()
 
 void Foam::isoCutCell::calcIsoFacePointsFromEdges()
 {
-//    Info << "Enter calcIsoFacePointsFromEdges() with isoFaceArea_ = "
-//        << isoFaceArea_ << " and isoFaceCentre_ = " << isoFaceCentre_
-//        << " and isoFaceEdges_ = " << isoFaceEdges_ << endl;
+    DebugPout
+        << "Enter calcIsoFacePointsFromEdges() with isoFaceArea_ = "
+        << isoFaceArea_ << " and isoFaceCentre_ = " << isoFaceCentre_
+        << " and isoFaceEdges_ = " << isoFaceEdges_ << endl;
+
     // Defining local coordinates with zhat along isoface normal and xhat from
     // isoface centre to first point in isoFaceEdges_
     const vector zhat = isoFaceArea_/mag(isoFaceArea_);
@@ -262,7 +282,7 @@ void Foam::isoCutCell::calcIsoFacePointsFromEdges()
     vector yhat = zhat^xhat;
     yhat /= mag(yhat);
 
-//    Info << "Calculated local coordinates" << endl;
+    DebugPout << "Calculated local coordinates" << endl;
 
     // Calculating isoface point angles in local coordinates
     DynamicList<point> unsortedIsoFacePoints(3*isoFaceEdges_.size());
@@ -285,7 +305,7 @@ void Foam::isoCutCell::calcIsoFacePointsFromEdges()
         }
     }
 
-//    Info << "Calculated isoFace point angles" << endl;
+    DebugPout<< "Calculated isoFace point angles" << endl;
 
     // Sorting isoface points by angle and inserting into isoFacePoints_
     labelList order(unsortedIsoFacePointAngles.size());
@@ -305,7 +325,8 @@ void Foam::isoCutCell::calcIsoFacePointsFromEdges()
             isoFacePoints_.append(unsortedIsoFacePoints[order[pi]]);
         }
     }
-//    Info << "Sorted isoface points by angle" << endl;
+
+    DebugPout<< "Sorted isoface points by angle" << endl;
 }
 
 
@@ -328,40 +349,44 @@ Foam::label Foam::isoCutCell::calcSubCell
         const label facei = c[fi];
 
         const label faceStatus = isoCutFace_.calcSubFace(facei, isoValue_);
-        if (faceStatus == 0) // face is cut
+
+        if (faceStatus == 0)
         {
+            // Face is cut
             isoCutFacePoints_.append(isoCutFace_.subFacePoints());
             isoCutFaceCentres_.append(isoCutFace_.subFaceCentre());
             isoCutFaceAreas_.append(isoCutFace_.subFaceArea());
             isoFaceEdges_.append(isoCutFace_.surfacePoints());
         }
-        else if (faceStatus == -1) // face fully below
+        else if (faceStatus == -1)
         {
+            // Face fully below
             fullySubFaces_.append(facei);
         }
     }
 
-    if (isoCutFacePoints_.size() > 0) // cell cut at least at one face
+    if (isoCutFacePoints_.size())
     {
+        // Cell cut at least at one face
         cellStatus_ = 0;
         calcIsoFaceCentreAndArea();
     }
-    else if (fullySubFaces_.size() == 0) // cell fully above isosurface
+    else if (fullySubFaces_.empty())
     {
+        // Cell fully above isosurface
         cellStatus_ = 1;
     }
-    else // cell fully below isosurface
+    else
     {
+        // Cell fully below isosurface
         cellStatus_ = -1;
     }
-    // else all faces are below isosurface and cellStatus_ = -1,
-    // which is its default value, so no action required here
 
     return cellStatus_;
 }
 
 
-Foam::point Foam::isoCutCell::subCellCentre()
+const Foam::point& Foam::isoCutCell::subCellCentre()
 {
     if (!subCellCentreAndVolumeCalculated_)
     {
@@ -383,7 +408,7 @@ Foam::scalar Foam::isoCutCell::subCellVolume()
 }
 
 
-Foam::DynamicList<Foam::point> Foam::isoCutCell::isoFacePoints()
+const Foam::DynamicList<Foam::point>& Foam::isoCutCell::isoFacePoints()
 {
     if (cellStatus_ == 0 && isoFacePoints_.size() == 0)
     {
@@ -394,7 +419,7 @@ Foam::DynamicList<Foam::point> Foam::isoCutCell::isoFacePoints()
 }
 
 
-Foam::point Foam::isoCutCell::isoFaceCentre()
+const Foam::point& Foam::isoCutCell::isoFaceCentre()
 {
     if (!isoFaceCentreAndAreaCalculated_)
     {
@@ -405,7 +430,7 @@ Foam::point Foam::isoCutCell::isoFaceCentre()
 }
 
 
-Foam::vector Foam::isoCutCell::isoFaceArea()
+const Foam::vector& Foam::isoCutCell::isoFaceArea()
 {
     if (!isoFaceCentreAndAreaCalculated_)
     {
@@ -416,7 +441,7 @@ Foam::vector Foam::isoCutCell::isoFaceArea()
 }
 
 
-Foam::scalar Foam::isoCutCell::VolumeOfFluid()
+Foam::scalar Foam::isoCutCell::volumeOfFluid()
 {
     if (!subCellCentreAndVolumeCalculated_)
     {
@@ -464,8 +489,10 @@ Foam::label Foam::isoCutCell::vofCutCell
     const label maxIter
 )
 {
-////    Info << "\n------ vofCutCell2 for cell " << celli << " with alpha1 = "
-////        << alpha1 << " ------" << endl;
+    DebugInFunction
+        << "vofCutCell for cell " << celli << " with alpha1 = "
+        << alpha1 << " ------" << endl;
+
     // Finding cell vertex extrema values
     const labelList& pLabels = mesh_.cellPoints(celli);
     scalarField fvert(pLabels.size());
@@ -478,9 +505,9 @@ Foam::label Foam::isoCutCell::vofCutCell
     scalar f1 = fvert[order.first()];
     scalar f2 = fvert[order.last()];
 
-////    Info << "fvert = " << fvert << ", and order = " << order << endl;
+    DebugPout << "fvert = " << fvert << ", and order = " << order << endl;
 
-    //Handling special case where method is handed an almost full or empty cell
+    // Handling special case where method is handed an almost full/empty cell
     if (alpha1 < tol)
     {
         return calcSubCell(celli, f2);
@@ -502,7 +529,7 @@ Foam::label Foam::isoCutCell::vofCutCell
         L3 = round(0.5*(L1 + L2));
         f3 = fvert[order[L3]];
         calcSubCell(celli, f3);
-        a3 = VolumeOfFluid();
+        a3 = volumeOfFluid();
         if (a3 > alpha1)
         {
             L1 = L3; f1 = f3; a1 = a3;
@@ -515,40 +542,39 @@ Foam::label Foam::isoCutCell::vofCutCell
 
     if (mag(f1 - f2) < 10*SMALL)
     {
-//        Info << "Warning: mag(f1 - f2) < 10*SMALL." << endl;
+        DebugPout<< "Warning: mag(f1 - f2) < 10*SMALL" << endl;
         return calcSubCell(celli, f1);
     }
 
     if (mag(a1 - a2) < tol)
     {
-//        Info << "Warning: mag(a1 - a2) < tol for cell " << celli << endl;
+        DebugPout<< "Warning: mag(a1 - a2) < tol for cell " << celli << endl;
         return calcSubCell(celli, 0.5*(f1 + f2));
     }
+
     // Now we know that a(f) = alpha1 is to be found on the f interval
     // [f1, f2], i.e. alpha1 will be in the interval [a2,a1]
-////    Info << "L1 = " << L1 << ", f1 = " << f1 << ", a1 = " << a1 << endl;
-////    Info << "L2 = " << L2 << ", f2 = " << f2  << ", a2 = " << a2 << endl;
+    DebugPout
+        << "L1 = " << L1 << ", f1 = " << f1 << ", a1 = " << a1 << nl
+        << "L2 = " << L2 << ", f2 = " << f2  << ", a2 = " << a2 << endl;
 
 
     // Finding coefficients in 3 deg polynomial alpha(f) from 4 solutions
 
     // Finding 2 additional points on 3 deg polynomial
-    f3 = f1 + (f2 - f1)/3;
+    f3 = f1 + (f2 - f1)/scalar(3);
     calcSubCell(celli, f3);
-    a3 = VolumeOfFluid();
+    a3 = volumeOfFluid();
 
     scalar f4 = f1 + 2*(f2 - f1)/3;
     calcSubCell(celli, f4);
-    scalar a4 = VolumeOfFluid();
+    scalar a4 = volumeOfFluid();
 
     // Building and solving Vandermonde matrix equation
-    scalarField a(4), f(4), C(4), fOld(4);
+    scalarField a(4), f(4), C(4);
     {
-//        f[0] = f1, f[1] = f3, f[2] = f4, f[3] = f2;
         a[0] = a1, a[1] = a3, a[2] = a4, a[3] = a2;
-        fOld[0] = f1, fOld[1] = f3, fOld[2] = f4, fOld[3] = f2;
         f[0] = 0, f[1] = (f3-f1)/(f2-f1), f[2] = (f4-f1)/(f2-f1), f[3] = 1;
-//        a[0] = 1, a[1] = (a3-a1)/(a1-a2), a[2] = (a4-a1)/(a1-a2), a[3] =1;
         scalarSquareMatrix M(4);
         forAll(f, i)
         {
@@ -557,86 +583,10 @@ Foam::label Foam::isoCutCell::vofCutCell
                 M[i][j] = pow(f[i], 3 - j);
             }
         }
+
         // C holds the 4 polynomial coefficients
         C = a;
         LUsolve(M, C);
-//        Info << "a = " << a << endl;
-//        Info << "f = " << f << endl;
-//        Info << "C = " << C << endl;
-//        Info << "M = " << M << endl;
-        if (a[0] < a[1] || a[1] < a[2] || a[2] < a[3])
-        {
-/*
-//            Info << "---------------Cell " << celli << " with alpha1 = " << alpha1 << endl;
-            Info << "Warninig: a is not monotonic: a = " << a << ", f = " << fOld << endl;
-
-            calcSubCell(celli,f1);
-            a1 = VolumeOfFluid();
-            Info << "%isoFacePoints for f1 = " << f1 << " and a1 = " << a1 << ": " << endl;
-            DynamicList<point> pf = isoFacePoints();
-            Info << "p{1} = [" << endl;
-            forAll(pf, pi)
-            {
-                Info << "[" << pf[pi][0] << " " << pf[pi][1] << " " << pf[pi][2] << "];" << endl;
-            }
-            Info << "];" << endl;
-//            Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
-
-            calcSubCell(celli,f3);
-            a3 = VolumeOfFluid();
-            Info << "%isoFacePoints for f3 = " << f3 << " and a3 = " << a3 << ": " << endl;
-            pf = isoFacePoints();
-            Info << "p{2} = [" << endl;
-            forAll(pf, pi)
-            {
-                Info << "[" << pf[pi][0] << " " << pf[pi][1] << " " << pf[pi][2] << "];" << endl;
-            }
-            Info << "];" << endl;
-  //          Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
-
-            calcSubCell(celli,f4);
-            a4 = VolumeOfFluid();
-            Info << "%isoFacePoints for f4 = " << f4 << " and a4 = " << a4 << ": " << endl;
-            pf = isoFacePoints();
-            Info << "p{3} = [" << endl;
-            forAll(pf, pi)
-            {
-                Info << "[" << pf[pi][0] << " " << pf[pi][1] << " " << pf[pi][2] << "];" << endl;
-            }
-            Info << "];" << endl;
-//            Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
-
-            calcSubCell(celli,f2);
-            a2 = VolumeOfFluid();
-            Info << "%isoFacePoints for f2 = " << f2 << " and a2 = " << a2 << ": " << endl;
-            pf = isoFacePoints();
-            Info << "p{4} = [" << endl;
-            forAll(pf, pi)
-            {
-                Info << "[" << pf[pi][0] << " " << pf[pi][1] << " " << pf[pi][2] << "];" << endl;
-            }
-            Info << "];" << endl;
-//            Info << "isoFaceEdges_ = " << isoFaceEdges_ << endl;
-
-//            Info << "Cell points: " << endl;
-            const labelList& pl = mesh_.cellPoints(celli);
-            const pointField& points = mesh_.points();
-            Info << "p{5} = [" << endl;
-            forAll(pl, pi)
-            {
-                Info << "[" << points[pl[pi]][0] << " " << points[pl[pi]][1] << " " << points[pl[pi]][2] << "];" << endl;
-            }
-            Info << "];" << endl;
-            Info << "f = [" << endl;
-            forAll(pl, pi)
-            {
-                Info << f_[pl[pi]] << endl;
-            }
-            Info << "];" << endl;
-
-            Info << "---------------END-------------" << endl;
-*/
-        }
     }
 
     // Finding root with Newton method
@@ -646,8 +596,9 @@ Foam::label Foam::isoCutCell::vofCutCell
     scalar res = mag(a3 - alpha1);
     while (res > tol && nIter < 10*maxIter)
     {
-        f3 -= (C[0]*pow3(f3) + C[1]*sqr(f3) + C[2]*f3 + C[3] - alpha1)
-            /(3*C[0]*sqr(f3) + 2*C[1]*f3 + C[2]);
+        f3 -=
+            (C[0]*pow3(f3) + C[1]*sqr(f3) + C[2]*f3 + C[3] - alpha1)
+           /(3*C[0]*sqr(f3) + 2*C[1]*f3 + C[2]);
         a3 = C[0]*pow3(f3) + C[1]*sqr(f3) + C[2]*f3 + C[3];
         res = mag(a3 - alpha1);
         nIter++;
@@ -655,34 +606,26 @@ Foam::label Foam::isoCutCell::vofCutCell
     // Scaling back to original range
     f3 = f3*(f2 - f1) + f1;
 
-/*
-    if (res > tol)
-    {
-        Info << "Warning: Leaving Newton method in iter " << nIter
-            << " with f3 = " << f3 << " and a3 = " << a3 << endl;
-    }
-*/
-    //Check result
+    // Check result
     calcSubCell(celli, f3);
-    const scalar VOF = VolumeOfFluid();
+    const scalar VOF = volumeOfFluid();
     res = mag(VOF - alpha1);
 
     if (res > tol)
     {
-/*
-        Info<< "Newton obtained f3 = " << f3 << " and a3 = " << a3
+        DebugPout
+            << "Newton obtained f3 = " << f3 << " and a3 = " << a3
             << " with mag(a3-alpha1) = " << mag(a3-alpha1)
-            << " but calcSubCell(celli,f3) gives VOF  = " << VOF << endl;
-        Info<< "M(f)*C = a with " << endl;
-        Info<< "f_scaled = " << f << endl;
-        Info<< "f = " << f*(f2 - f1) + f1 << endl;
-        Info<< "a = " << a << endl;
-        Info<< "C = " << C << endl;
-*/
+            << " but calcSubCell(celli,f3) gives VOF  = " << VOF << nl
+            << "M(f)*C = a with " << nl
+            << "f_scaled = " << f << nl
+            << "f = " << f*(f2 - f1) + f1 << nl
+            << "a = " << a << nl
+            << "C = " << C << endl;
     }
     else
     {
-//        Info << "Newton did the job" << endl;
+        DebugPout<< "Newton did the job" << endl;
         return cellStatus_;
     }
 
@@ -692,74 +635,59 @@ Foam::label Foam::isoCutCell::vofCutCell
     scalar x2 = f3;
     scalar g2 = VOF - alpha1;
     scalar x1 = max(1e-3*(f2 - f1), 100*SMALL);
-    x1 = max(x1, f1);
-    x1 = min(x1, f2);
+    x1 = min(max(x1, f1), f2);
     calcSubCell(celli, x1);
-    scalar g1 = VolumeOfFluid() - alpha1;
+    scalar g1 = volumeOfFluid() - alpha1;
 
-/*
-    scalar x1 = f1;
-    scalar g1 = a1 - alpha1;
-    scalar x2 = f2;
-    scalar g2 = a2 - alpha1;
-*/
     nIter = 0;
     scalar g0(0), x0(0);
     while (res > tol && nIter < maxIter && g1 != g2)
     {
         x0 = (x2*g1 - x1*g2)/(g1 - g2);
         calcSubCell(celli, x0);
-        g0 = VolumeOfFluid() - alpha1;
+        g0 = volumeOfFluid() - alpha1;
         res = mag(g0);
         x2 = x1; g2 = g1;
         x1 = x0; g1 = g0;
         nIter++;
     }
-/*
-    if (nIter > 0)
+
+    if (debug)
     {
-        f3 = x0;
-        a3 = g0 + alpha1;
+        if (res < tol)
+        {
+            Pout<< "Bisection finished the job in " << nIter << " iterations."
+                << endl;
+        }
+        else
+        {
+            Pout<< "Warning: Bisection not converged " << endl;
+            Pout<< "Leaving vofCutCell with f3 = " << f3 << " giving a3 = "
+                << a3 << " so alpha1 - a3 = " << alpha1 - a3 << endl;
+        }
     }
 
-    if (res < tol)
-    {
-        Info<< "Bisection finished the job in " << nIter << " iterations." << endl;
-    }
-    else
-    {
-        Info<< "Warning: Bisection not converged " << endl;
-        Info<< "Leaving vofCutCell with f3 = " << f3 << " giving a3 = "
-            << a3 << " so alpha1 - a3 = " << alpha1 - a3 << endl;
-    }
-*/
     return cellStatus_;
 }
 
 
-void Foam::isoCutCell::VolumeOfFluid
+void Foam::isoCutCell::volumeOfFluid
 (
     volScalarField& alpha1,
     const scalar f0
 )
 {
-
-    DynamicList< List<point> > isoFacePts;
-
     // Setting internal field
-    scalarField& alphaIn = alpha1.primitiveFieldRef();
-    forAll(alphaIn, ci)
+    scalarField& alphaIn = alpha1;
+    forAll(alphaIn, celli)
     {
-        const label cellStatus = calcSubCell(ci, f0);
-        if (cellStatus != 1) // I.e. if cell not entirely above isosurface
+        const label cellStatus = calcSubCell(celli, f0);
+        if (cellStatus != 1)
         {
-            alphaIn[ci] = VolumeOfFluid();
-            isoFacePts.append(isoFacePoints());
+            // If cell not entirely above isosurface
+            alphaIn[celli] = volumeOfFluid();
         }
     }
-    
-    //Writing isofaces to vtk polygon file
-    isoFacesToFile(isoFacePts, "isoFaces" , ".");
 
     // Setting boundary alpha1 values
     forAll(mesh_.boundary(), patchi)
@@ -767,18 +695,19 @@ void Foam::isoCutCell::VolumeOfFluid
         if (mesh_.boundary()[patchi].size() > 0)
         {
             const label start = mesh_.boundary()[patchi].patch().start();
-            fvPatchScalarField& alphaBP = alpha1.boundaryFieldRef()[patchi];
-            const fvsPatchScalarField& magSfBP =
-                mesh_.magSf().boundaryField()[patchi];
+            scalarField& alphap = alpha1.boundaryFieldRef()[patchi];
+            const scalarField& magSfp = mesh_.magSf().boundaryField()[patchi];
 
-            forAll(alphaBP, faceI)
+            forAll(alphap, patchFacei)
             {
-                const label fLabel = faceI + start;
-                const label faceStatus = isoCutFace_.calcSubFace(fLabel, f0);
-                if (faceStatus != 1) // I.e. if face not entirely above isosurface
+                const label facei = patchFacei + start;
+                const label faceStatus = isoCutFace_.calcSubFace(facei, f0);
+
+                if (faceStatus != 1)
                 {
-                    alphaBP[faceI] =
-                        mag(isoCutFace_.subFaceArea())/magSfBP[faceI];
+                    // Face not entirely above isosurface
+                    alphap[patchFacei] =
+                        mag(isoCutFace_.subFaceArea())/magSfp[patchFacei];
                 }
             }
         }
@@ -786,52 +715,4 @@ void Foam::isoCutCell::VolumeOfFluid
 }
 
 
-void Foam::isoCutCell::isoFacesToFile
-(
-    const DynamicList< List<point> >& faces,
-    const word filNam,
-    const word filDir
-) const
-{
-    //Writing isofaces to ply file for inspection in paraview
-    
-    mkDir(filDir);
-    autoPtr<OFstream> vtkFilePtr;
-    Info << "Writing file: " << (filDir + "/" + filNam + ".vtk") << endl;
-    vtkFilePtr.reset(new OFstream(filDir + "/" + filNam + ".vtk"));
-    vtkFilePtr() << "# vtk DataFile Version 2.0" << endl;
-    vtkFilePtr() << filNam << endl;
-    vtkFilePtr() << "ASCII" << endl;
-    vtkFilePtr() << "DATASET POLYDATA" << endl;
-    label nPoints(0);
-    forAll(faces,fi)
-    {
-        nPoints += faces[fi].size();
-    }
-
-    vtkFilePtr() << "POINTS " << nPoints << " float" << endl;
-    forAll(faces,fi)
-    {
-        List<point> pf = faces[fi];
-        forAll(pf,pi)
-        {
-            point p = pf[pi];
-            vtkFilePtr() << p[0] << " " << p[1] << " " << p[2] << endl;
-        }
-    }
-    vtkFilePtr() << "POLYGONS " << faces.size() << " " << nPoints + faces.size() << endl;
-
-    label np = 0;
-    forAll(faces,fi)
-    {
-        nPoints = faces[fi].size();
-        vtkFilePtr() << nPoints;
-        for (label pi = np; pi < np + nPoints; pi++ )
-        {
-            vtkFilePtr() << " " << pi;
-        }
-        vtkFilePtr() << "" << endl;
-        np += nPoints;
-    }    
-}
 // ************************************************************************* //

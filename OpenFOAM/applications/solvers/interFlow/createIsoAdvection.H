@@ -7,6 +7,7 @@ scalar snapAlphaTol(isoAdvectorDict.lookupOrDefault<scalar>("snapTol", 1e-12));
 bool clipAlpha(isoAdvectorDict.lookupOrDefault<bool>("clip", true));
 word interfaceMethod(isoAdvectorDict.lookupOrDefault<word>("interfaceMethod", "MULES"));
 
+/*
 //Optional writing out of surface cell set
 IOobject::writeOption writeOpt = IOobject::NO_WRITE;
 const bool printSurfCells(isoAdvectorDict.lookupOrDefault<bool>("printSurfCells", false));
@@ -46,7 +47,7 @@ cellSet boundCells
         writeOpt
     )
 );
-
+*/
 ////Optional writing out of continuity errors
 // writeOpt = IOobject::NO_WRITE;
 // const bool writeContErrors(isoAdvectorDict.lookupOrDefault<bool>("writeContErrors", false));
