@@ -19,6 +19,13 @@ solvers
 {
     "alpha.water.*"
     {
+        interfaceMethod "isoAdvector";
+        isoFaceTol      1e-8;
+        surfCellTol     1e-8;
+        snapAlphaTol    1e-12;
+        nAlphaBounds    4;
+        clip            true;
+
         nAlphaCorr      2;
         nAlphaSubCycles 1;
         cAlpha          1;
@@ -57,23 +64,13 @@ solvers
 
     U
     {
+        prescribedU     true;
+        period          6;
         solver          PBiCG;
         preconditioner  DILU;
         tolerance       1e-06;
         relTol          0;
     }
-}
-
-isoAdvector
-{
-    interfaceMethod "isoAdvector";
-    isoFaceTol	1e-8;
-    surfCellTol	1e-8;
-    snapAlphaTol 1e-12;
-    nAlphaBounds 4;
-    clip	true;
-    period 6;
-    prescribedU true;
 }
 
 PIMPLE

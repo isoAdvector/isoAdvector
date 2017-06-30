@@ -33,7 +33,7 @@ then
        ./generateCodeForOldVersion $WM_PROJECT_VERSION
        cd -
     fi
-    
+
     #Generate interFlow solver from interFoam solver of the loaded OF version
     cd bin
     ./generateInterFlow

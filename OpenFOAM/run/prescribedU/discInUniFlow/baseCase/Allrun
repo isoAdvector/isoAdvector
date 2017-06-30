@@ -9,7 +9,7 @@ mkdir -p logs
 [ -f "constant/polyMesh/owner" ] \
     || blockMesh > logs/blockMesh.log 2>&1
 
-isoSurf > logs/isoSurf.log 2>&1
+setAlphaField > logs/setAlphaField.log 2>&1
 
 if [ -n "$application" ]
 then

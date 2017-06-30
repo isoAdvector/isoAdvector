@@ -1,28 +1,3 @@
-//U not solved but prescribed and optionally periodic
-if (prescribedU)
-{
-    //Setting velocity field and face fluxes for next time step
-    const scalar t(runTime.time().value());
-    const scalar dt(runTime.deltaT().value());
-    if (reverseTime > 0.0 && t >= reverseTime)
-    {
-        Info<< "Reversing flow" << endl;
-        phi *= -1.0;
-        U *= -1.0;
-        reverseTime = -1.0;
-    }
-    if (period > 0.0)
-    {
-        const scalar uFactor
-        (
-            .5*(Foam::cos(2.0*M_PI*t/period)
-                + Foam::cos(2.0*M_PI*(t + dt)/period))
-        );
-        phi = uFactor*phi0;
-        U = uFactor*U0;
-    }
-}
-
 // Looking up which alpha1 solver to use
 const dictionary& alpha1Dict(mesh.solverDict(alpha1.name()));
 
@@ -73,4 +48,30 @@ else if (interfaceMethod == "isoAdvector")
         << "  Min(" << alpha1.name() << ") = " << min(alpha1).value()
         << "  Max(" << alpha1.name() << ") - 1 = " << max(alpha1).value() - 1
         << endl;
+}
+
+//U not solved but prescribed and optionally periodic
+if (prescribedU)
+{
+
+    //Setting velocity field and face fluxes for next time step
+    const scalar t(runTime.time().value());
+    const scalar dt(runTime.deltaT().value());
+    if (reverseTime > 0.0 && t >= reverseTime)
+    {
+        Info<< "Reversing flow" << endl;
+        phi *= -1.0;
+        U *= -1.0;
+        reverseTime = -1.0;
+    }
+    if (period > 0.0)
+    {
+        const scalar uFactor
+        (
+            .5*(Foam::cos(2.0*M_PI*t/period)
+                + Foam::cos(2.0*M_PI*(t + dt)/period))
+        );
+        phi = uFactor*phi0;
+        U = uFactor*U0;
+    }
 }

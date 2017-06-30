@@ -20,7 +20,7 @@ then
         blockMesh > logs/blockMesh.log 2>&1
 fi
 
-isoSurf > logs/isoSurf.log 2>&1
+setAlphaField > logs/setAlphaField.log 2>&1
     
 if [ -n "$application" ]
 then

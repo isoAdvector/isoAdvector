@@ -17,7 +17,7 @@ if [ ! -d "logs" ]; then
         blockMesh > logs/blockMesh.log 2>&1
     fi
     generateU/generateU > logs/generateU.log 2>&1
-    isoSurf > logs/isoSurf.log 2>&1
+    setAlphaField > logs/setAlphaField.log 2>&1
 else
     mv logs logs_$jobStart
     mkdir logs

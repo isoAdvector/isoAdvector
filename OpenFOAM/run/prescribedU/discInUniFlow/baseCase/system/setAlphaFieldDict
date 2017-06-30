@@ -11,16 +11,14 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "system";
-    object      fvSolution;
+    object      setAlphaFieldDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-field "alpha.water";
-type sin;
-direction (1 0 0);
-up (0 0 1);
-centre (-.5 0 .5);
-lambda 2;
-amplitude .05;
+field     "alpha.water";
+type      cylinder;
+radius    0.25;
+direction (0 1 0);
+centre    (0.5 0 0.5);
 
 // ************************************************************************* //

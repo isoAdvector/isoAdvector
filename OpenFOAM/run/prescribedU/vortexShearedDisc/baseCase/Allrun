@@ -25,7 +25,7 @@ wmake
 cd ..
 
 generateU/generateU > logs/generateU.log 2>&1
-isoSurf > logs/isoSurf.log 2>&1
+setAlphaField > logs/setAlphaField.log 2>&1
     
 if [ -n "$application" ]
 then
