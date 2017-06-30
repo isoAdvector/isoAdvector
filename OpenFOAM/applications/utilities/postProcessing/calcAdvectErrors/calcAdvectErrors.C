@@ -33,8 +33,6 @@ Author
 #include "timeSelector.H"
 #include "fvCFD.H"
 #include "isoCutCell.H"
-//using namespace std;
-//#include <iomanip>
 
 using namespace Foam;
 
@@ -232,42 +230,15 @@ int main(int argc, char *argv[])
     const scalar aMaxMinus1(max(VOF_calc) - 1);
 
     // Printing error measures
-    Info << "Time: " << runTime.time().value() << endl;
+    Info << "Advection errors for time: " << runTime.time().value() << endl;
 
-    Info<< "E1        "
-        << "E1rel     "
-        << "dV        "
-        << "dVrel     "
-        << "aMin      "
-        << "aMax - 1  "
-        << endl;
+    Info<< "E1       = " << E1 << endl;
+    Info<< "E1rel    = " << E1rel << endl;
+    Info<< "dV       = " << dV << endl;
+    Info<< "dVrel    = " << dVrel << endl;
+    Info<< "aMin     = " << aMin << endl;
+    Info<< "aMax - 1 = " << aMaxMinus1 << endl;
 
-    Info<< E1 << " "
-        << E1rel << " "
-        << dV << " "
-        << dVrel << " "
-        << aMin << " "
-        << aMaxMinus1
-        << endl;
-
-/*    
-    int w = 9;
-    cout<< setw(w) << "E1        "
-        << setw(w) << "E1rel     "
-        << setw(w) << "dV        "
-        << setw(w) << "dVrel     "
-        << setw(w) << "aMin      "
-        << setw(w) << "aMax - 1  "
-        << endl;
-
-    cout<< setw(w) << setprecision(2) << E1 << " "
-        << setw(w) << setprecision(2) << E1rel << " "
-        << setw(w) << setprecision(2) << dV << " "
-        << setw(w) << setprecision(2) << dVrel << " "
-        << setw(w) << setprecision(2) << aMin << " "
-        << setw(w) << setprecision(2) << aMaxMinus1 << " "
-        << endl;
-*/
     return 0;
 }
 
