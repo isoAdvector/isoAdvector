@@ -40,6 +40,11 @@ License
     if (debug) Pout
 #endif
 
+#ifndef DebugInFunction
+#define DebugInFunction                                                        \
+    if (debug) InfoInFunction
+#endif
+
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
 int Foam::isoCutCell::debug = 0;
