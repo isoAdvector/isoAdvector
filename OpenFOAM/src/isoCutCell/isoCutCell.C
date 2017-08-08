@@ -40,6 +40,10 @@ License
     if (debug) Pout
 #endif
 
+#ifndef InfoInFunction
+#define InfoInFunction InfoIn(__func__)
+#endif
+
 #ifndef DebugInFunction
 #define DebugInFunction                                                        \
     if (debug) InfoInFunction

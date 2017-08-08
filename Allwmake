@@ -23,9 +23,15 @@ then
     mkdir -p $sourceDir
     cp -nr OpenFOAM/* $sourceDir/
 
+    #Generate interFlow solver from interFoam solver of the loaded OF version
+    cd bin
+    ./generateInterFlow
+    cd -
+
     #Only convert src if not one of the newest OF versions
     if [[ "$WM_PROJECT_VERSION" != "4."* ]] && \
        [ "$WM_PROJECT_VERSION" != "v1612+" ] && \
+       [ "$WM_PROJECT_VERSION" != "1706+" ] && \
        [ "$WM_PROJECT_VERSION" != "plus" ];
     then
        #Transform code to old API
@@ -33,11 +39,6 @@ then
        ./generateCodeForOldVersion $WM_PROJECT_VERSION
        cd -
     fi
-
-    #Generate interFlow solver from interFoam solver of the loaded OF version
-    cd bin
-    ./generateInterFlow
-    cd -
 fi
 
 #Compile the correct isoAdvector version
@@ -46,10 +47,14 @@ then
     ISOADVECTION=$PWD/$sourceDir/src
     if [ -d "$ISOADVECTION" ]; then
         export ISOADVECTION
-        echo "Compiling src/${sourceDir}..."
-        ${sourceDir}/src/Allwmake
-        echo "Compiling applications/${sourceDir}..."
-        ${sourceDir}/applications/Allwmake
+        echo "Compiling ${sourceDir}/src..."
+        cd ${sourceDir}/src
+        ./Allwmake
+        cd -
+        echo "Compiling ${sourceDir}/applications..."
+        cd ${sourceDir}/applications
+        ./Allwmake
+        cd -
     else
        echo
        echo "The directory $ISOADVECTION does not exist"

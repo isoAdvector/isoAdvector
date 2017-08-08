@@ -46,6 +46,10 @@ License
     if (debug) Info
 #endif
 
+#ifndef InfoInFunction
+#define InfoInFunction InfoIn(__func__)
+#endif
+
 #ifndef DebugInFunction
 #define DebugInFunction                                                        \
     if (debug) InfoInFunction

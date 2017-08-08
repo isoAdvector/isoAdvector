@@ -1,12 +1,11 @@
 #!/bin/bash
 cd ${0%/*} || exit 1   # run from this directory
 
-newSolverName=interFlow
-targetDir=../OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/$newSolverName
+targetDir=../OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/interFlow
 
 if [ ! -f "${targetDir}/dontRebuild" ]; then
     echo
-    echo "Generating $newSolverName solver in OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/$newSolverName."
+    echo "Generating interFlow solver in OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/interFlow."
     echo
 
     #Find interFoam in $FOAM_SOLVERS and copy to targetDir
@@ -23,16 +22,16 @@ if [ ! -f "${targetDir}/dontRebuild" ]; then
     #Append createIsoAdvection.H to createFields.H
     echo '#include "createIsoAdvection.H"' >> ${targetDir}/createFields.H
 
-    #Rename interFoam to newSolverName
-    mv ${targetDir}/interFoam.C ${targetDir}/${newSolverName}.C
-    grep -rl --exclude \*.dep --exclude-dir \*Include\* "interFoam" $targetDir | xargs sed -i "s/interFoam/${newSolverName}/g"
+    #Rename interFoam to interFlow
+    mv ${targetDir}/interFoam.C ${targetDir}/interFlow.C
+    grep -rl --exclude \*.dep --exclude-dir \*Include\* "interFoam" $targetDir | xargs sed -i "s/interFoam/interFlow/g"
 
     #Change FOAM_APPBIN and FOAM_LIBBIN to FOAM_USER_APPBIN and FOAM_USER_LIBBIN
     grep -rl --exclude \*.dep --exclude-dir \*Include\* "FOAM_APPBIN" $targetDir | xargs sed -i 's/FOAM_APPBIN/FOAM_USER_APPBIN/g'
     grep -rl --exclude \*.dep --exclude-dir \*Include\* "FOAM_LIBBIN" $targetDir | xargs sed -i 's/FOAM_LIBBIN/FOAM_USER_LIBBIN/g'
 
     #Insert isoAdvection.H as first header file in new solver
-    sed -i '0,/#include.*$/s//#include "isoAdvection.H"\n&/' ${targetDir}/${newSolverName}.C
+    sed -i '0,/#include.*$/s//#include "isoAdvection.H"\n&/' ${targetDir}/interFlow.C
 
     #Modify Make/options to include isoAdvector stuff
     sed -i '0,/EXE_INC.*$/s//&\n    -I$\(ISOADVECTION\)\/lnInclude \\/' ${targetDir}/Make/options
@@ -41,13 +40,13 @@ if [ ! -f "${targetDir}/dontRebuild" ]; then
 
     #Replacing header
     source dhiFoamTools
-    replaceHeader  ${targetDir}/${newSolverName}.C
+    replaceHeader  ${targetDir}/interFlow.C
     echo "Delete this file to make Allwmake regenerate ${newSolverName} from the interFoam.C solver. \nNOTE THAT THIS WILL DELETE ALL YOU CHANGES TO THE SOLVER!" >> ${targetDir}/dontRebuild
 else
 
     echo
-    echo "The solver $newSolverName was already build from interFoam.C."
-    echo "To rebuild it from scratch remove the file OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/${newSolverName}/dontRebuild and recompile."
-    echo "This will overwrite all your changes to OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/${newSolverName}"
+    echo "The solver interFlow was already build from interFoam.C."
+    echo "To rebuild it from scratch remove the file OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/interFlow/dontRebuild and recompile."
+    echo "This will overwrite all your changes to OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/interFlow"
     echo
 fi
