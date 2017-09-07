@@ -27,16 +27,16 @@ https://www.youtube.com/channel/UCt6Idpv4C8TTgz1iUX0prAA
 
 ## Requirements:
 
-The isoAdvector code is developed and maintained in the newest OpenFOAM releases
-but the script isoAdvector/bin/generateCodeForOldVersion copies the code in
-isoAdvector/OpenFOAM to isoAdvector/OpenFOAM-[oldLoadedOFversion] and attempts 
-to modify this code to become compatible with the older loaded OpenFOAM 
-versions. The code was tested with OpenFOAM-4.1, 4.0, 3.0.x, 2.3.0, 2.2.0, 
+The isoAdvector code is developed and maintained for the newest OpenFOAM 
+releases but the script isoAdvector/bin/generateCodeForOldVersion copies the 
+code in isoAdvector/OpenFOAM to isoAdvector/OpenFOAM-[oldLoadedOFversion] and 
+attempts to modify this code to become compatible with an older sourced OpenFOAM 
+version. The code was tested with OpenFOAM-4.1, 4.0, 3.0.x, 2.3.0, 2.2.0, 
 v1606+ and v1612+.
 
 A foam-extend version of the code is also available in isoAdvector/foam-extend. 
-This was developed for foam-extend-32. and might need slight modifications to 
-work with newer versions.
+This was developed for foam-extend-32 and will most likely need modifications to 
+work with newer versions. It does not contain the latest code developments.
 
 ## Installation:
 
@@ -58,7 +58,7 @@ work with newer versions.
     
 3.  Test installation with a simple test case by typing (finishes in secs):
 
-        cp -r OpenFOAM-4.1/run/prescribedU/discInUniFlow/baseCase ~
+        cp -r OpenFOAM-4.1/run/prescribedU/discInConstantFlow/baseCase ~
         cd ~/baseCase
         ./Allrun
 	
@@ -67,9 +67,9 @@ work with newer versions.
 4.  (Optional) If you want to test the code on unstructured meshes, a number of 
     such meshes can be donwloaded by using the downloadMeshes script in the bin 
     directory. These meshes will take up ~2GB and will be placed in a folder 
-    called meshes. The meshes will be loaded by the scripts in discInUniFlows, 
-    vortexSmearedDisc, sphereInUniFlow and smearedSphere cases in 
-    run/prescribedU.
+    called meshes. The meshes will be loaded by the scripts in 
+    discInConstantFlows, discInReversedVortexFlow, sphereInConstantFlow and 
+    sphereInReversedVortexFlow cases in run/prescribedU.
 
     Alternatively, the meshes can be downloaded directly from here:
 
@@ -228,12 +228,11 @@ work with newer versions.
 
 ## Contributors:
 
-* Johan Roenby <jro@dhigroup.com> (Inventor and main developer)
+* Johan Roenby <johan.roenby@gmail.com> (Inventor and main developer)
 * Hrvoje Jasak (General coding guidance, consistent treatment of boundary faces 
   including processor boundaries, parallelisation, code clean up, provided 
   algebraic schemes, CICSAM, HRIC etc.)
 * Henrik Bredmose (Participated in conceptual development)
 * Vuko Vukcevic (Code review, profiling, porting to foam-extend, bug fixing, 
   testing)
-* Tomislav Maric (Source file rearrangement)
 * Andrew Heather (Code clean up, porting to OpenFOAM+)
