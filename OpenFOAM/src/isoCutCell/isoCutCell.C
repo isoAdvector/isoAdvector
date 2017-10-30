@@ -379,8 +379,8 @@ Foam::label Foam::isoCutCell::calcSubCell
         // Cell cut at least at one face
         cellStatus_ = 0;
         calcIsoFaceCentreAndArea();
-        
-        // In the rare but occuring cases where a cell is only touched at a 
+
+        // In the rare but occuring cases where a cell is only touched at a
         // point or a line the isoFaceArea_ will have zero length and here the
         // cell should be treated as either completely empty or full.
         if (mag(isoFaceArea_) < 10*SMALL)
@@ -715,12 +715,15 @@ void Foam::isoCutCell::volumeOfFluid
         }
     }
 
+//    volScalarField::Boundary& bla = alpha1.boundaryFieldRef();
+
     // Setting boundary alpha1 values
     forAll(mesh_.boundary(), patchi)
     {
         if (mesh_.boundary()[patchi].size() > 0)
         {
             const label start = mesh_.boundary()[patchi].patch().start();
+//            scalarField& alphap = bla[patchi];
             scalarField& alphap = alpha1.boundaryFieldRef()[patchi];
             const scalarField& magSfp = mesh_.magSf().boundaryField()[patchi];
 

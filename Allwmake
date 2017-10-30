@@ -30,6 +30,7 @@ then
 
     #Only convert src if not one of the newest OF versions
     if [[ "$WM_PROJECT_VERSION" != "4."* ]] && \
+       [[ "$WM_PROJECT_VERSION" != "5."* ]] && \
        [ "$WM_PROJECT_VERSION" != "v1612+" ] && \
        [ "$WM_PROJECT_VERSION" != "v1706" ] && \
        [ "$WM_PROJECT_VERSION" != "plus" ];

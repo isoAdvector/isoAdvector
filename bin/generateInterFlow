@@ -14,6 +14,11 @@ if [ ! -f "${targetDir}/dontRebuild" ]; then
     cp -r $sourceDir/{*.C,*.H,Make} $targetDir
     #Make sure you have write permission in the new solver dir
     chmod -R u+w $targetDir
+    #From v1706/5.x VoF source is moved to separate directory which we copy to interFlow dir here
+    if [ -d "${FOAM_SOLVERS}/multiphase/VoF" ]; then
+        echo "Copying files from ${FOAM_SOLVERS}/multiphase/VoF to $targetDir"
+        cp ${FOAM_SOLVERS}/multiphase/VoF/* $targetDir
+    fi
 
     #Rename alphaEqn.H to alphaEqnMULES.H and add isoAdvection files
     mv $targetDir/alphaEqn.H $targetDir/alphaEqnMULES.H
