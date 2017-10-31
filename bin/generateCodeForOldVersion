@@ -25,6 +25,10 @@ grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".boundaryField
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Boundary" $targetDir | xargs sed -i 's/::Boundary/::GeometricBoundaryField/g'
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Internal" $targetDir | xargs sed -i 's/::Internal/::DimensionedInternalField/g'
 
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".primitiveFieldRef()" ${targetDir}/../run | xargs sed -i 's/.primitiveFieldRef()/.internalField()/g'
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".boundaryFieldRef()" ${targetDir}/../run | xargs sed -i 's/\.boundaryFieldRef()/\.boundaryField()/g'
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Boundary" ${targetDir}/../run | xargs sed -i 's/::Boundary/::GeometricBoundaryField/g'
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Internal" ${targetDir}/../run | xargs sed -i 's/::Internal/::DimensionedInternalField/g'
 
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "Pstream::commsTypes::nonBlocking" $targetDir | xargs sed -i 's/Pstream::commsTypes::nonBlocking/Pstream::nonBlocking/g'
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "writeTime" $targetDir | xargs sed -i 's/writeTime/outputTime/g'
@@ -51,16 +55,16 @@ minorVersion=$(echo $WM_PROJECT_VERSION | cut -c3)
 
 if [[ "$majorVersion" =~ ^[0-9]+$ ]] && [[ "$minorVersion" =~ ^[0-9]+$ ]];
 then
-    if [ "$majorVersion" -le "2" ] && [ "$majorVersion" -le "2" ];
+    if [ "$majorVersion" -le "2" ] && [ "$minorVersion" -le "2" ];
     then
-    
+
         sed -i 's/os.write(f, facePts, false)/os.write(f, pointField(facePts), false)/g' ../OpenFOAM-${WM_PROJECT_VERSION}/src/isoAdvection/isoAdvection.C
 
         sed -i 's/!pimple.firstIter()/false/g' ../OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/interFlow/alphaEqn.H
         sed -i '/alpha2/d' ../OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/interFlow/alphaEqn.H
 
         rm -rf ../OpenFOAM-${WM_PROJECT_VERSION}/applications/test/isoCutTester
-        
+
         targetDir=../OpenFOAM-${WM_PROJECT_VERSION}/run
 
         echo

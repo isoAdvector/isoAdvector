@@ -9,7 +9,7 @@ word interfaceMethod
 // Advancing alpah1 field
 if (interfaceMethod == "MULES")
 {
-    #include "alphaEqnMULES.H"    
+    #include "alphaEqnMULES.H"
 }
 else if (interfaceMethod == "isoAdvector")
 {
