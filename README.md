@@ -31,8 +31,8 @@ The isoAdvector code is developed and maintained for the newest OpenFOAM
 releases but the script isoAdvector/bin/generateCodeForOldVersion copies the 
 code in isoAdvector/OpenFOAM to isoAdvector/OpenFOAM-[oldLoadedOFversion] and 
 attempts to modify this code to become compatible with an older sourced OpenFOAM 
-version. The code was tested with OpenFOAM-5.x, 4.1, 4.0, 3.0.x, 2.3.0, 2.2.0, 
-v1606+ and v1612+. 
+version. The code should work with OpenFOAM-5.x, 4.1, 4.0, 3.0.1, 2.3.0, 2.2.0,
+v1606+ and v1612+. For some reason it does not work with 2.2.2.
 
 OpenFOAM-v1706 contains an integration of the isoAdvector code with the interFlow 
 solver named interIsoFoam. For more info on the v1706 integration see:
