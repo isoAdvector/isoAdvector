@@ -52,7 +52,13 @@ Foam::functionObjects::energy::energy
 )
 :
     fvMeshFunctionObject(name, runTime, dict),
-    z0_(dimensionedScalar("z0", dimensionSet(0, 2, -2, 0, 0), dict.lookupOrDefault<scalar>("z0", 0.0))),
+    z0_
+    (
+        dimensionedScalar
+        (
+            "z0", dimLength, dict.lookupOrDefault<scalar>("z0", 0.0)
+        )
+    ),
     Etot0_(0.0),
     Evisc_(0.0),
     Ekin_
@@ -65,7 +71,7 @@ Foam::functionObjects::energy::energy
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
-        0.5*mesh_.lookupObject<volScalarField>("rho")
+        0.0*mesh_.lookupObject<volScalarField>("rho")
             *magSqr(mesh_.lookupObject<volVectorField>("U"))
     ),
     Epot_
@@ -78,14 +84,12 @@ Foam::functionObjects::energy::energy
             IOobject::NO_READ,
             IOobject::AUTO_WRITE
         ),
-        -mesh_.lookupObject<volScalarField>("rho")
+        -0.0*mesh_.lookupObject<volScalarField>("rho")
             *(mesh_.C() & mesh_.lookupObject<uniformDimensionedVectorField>("g"))
     )
 {
     read(dict);
-    scalar Ekin = gSum(fvc::volumeIntegrate(Ekin_));
-    scalar Epot = gSum(fvc::volumeIntegrate(Epot_));
-    Etot0_ = Ekin + Epot;
+    write();
 }
 
 
@@ -132,7 +136,8 @@ bool Foam::functionObjects::energy::write()
     const uniformDimensionedVectorField& g =
          mesh_.lookupObject<uniformDimensionedVectorField>("g");
 
-    Epot_ = -rho*((g & mesh_.C()) - z0_);
+    vector zhat = -(g/mag(g)).value();
+    Epot_ = -rho*(g & (mesh_.C() - z0_*zhat));
 
     scalar Ekin = gSum(fvc::volumeIntegrate(Ekin_));
     scalar Epot = gSum(fvc::volumeIntegrate(Epot_));

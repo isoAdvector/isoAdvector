@@ -38,7 +38,7 @@ Description
         type           energy;
         libs ("libenergyFunctionObject.so");
         ...
-        z0             ;
+        z0             0.0;
     }
     \endverbatim
 
@@ -53,7 +53,7 @@ SourceFiles
     energy.C
 
 Author
-    Johan Roenby, Stromning, 2017 
+    Johan Roenby, Stromning, 2017
 
 \*---------------------------------------------------------------------------*/
 
