@@ -715,15 +715,12 @@ void Foam::isoCutCell::volumeOfFluid
         }
     }
 
-//    volScalarField::Boundary& bla = alpha1.boundaryFieldRef();
-
     // Setting boundary alpha1 values
     forAll(mesh_.boundary(), patchi)
     {
         if (mesh_.boundary()[patchi].size() > 0)
         {
             const label start = mesh_.boundary()[patchi].patch().start();
-//            scalarField& alphap = bla[patchi];
             scalarField& alphap = alpha1.boundaryFieldRef()[patchi];
             const scalarField& magSfp = mesh_.magSf().boundaryField()[patchi];
 

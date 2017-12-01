@@ -91,7 +91,7 @@ Foam::isoAdvection::isoAdvection
         dimensionedScalar("zero", dimVol, 0)
     ),
     advectionTime_(0),
-    
+
     // Interpolation data
     ap_(mesh_.nPoints()),
 
@@ -1019,6 +1019,9 @@ void Foam::isoAdvection::advect()
     writeBoundedCells();
 
     advectionTime_ += (mesh_.time().elapsedCpuTime() - advectionStartTime);
+    Info << "isoAdvection: time consumption = "
+        << label(100*advectionTime_/mesh_.time().elapsedCpuTime())  << "%."
+        << endl;
 }
 
 
