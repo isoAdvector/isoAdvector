@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
         while (pimple.loop())
         {
             #include "alphaControls.H"
-            #include "advectInterface.H"
+            #include "alphaEqnSubCycle.H"
 
             mixture.correct();
 

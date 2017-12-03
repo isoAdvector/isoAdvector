@@ -1,9 +1,9 @@
 #!/bin/bash
 cd ${0%/*} || exit 1   # run from this directory
 
-ofversion=${1:-2.2.0}
+#WM_PROJECT_VERSION=${1:-2.2.0}
 
-targetDir=../OpenFOAM-${ofversion}/src
+targetDir=../OpenFOAM-${WM_PROJECT_VERSION}/src
 
 if [ ! -d "$targetDir" ]; then
     echo "$targetDir does not exits."
@@ -25,13 +25,18 @@ grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".boundaryField
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Boundary" $targetDir | xargs sed -i 's/::Boundary/::GeometricBoundaryField/g'
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Internal" $targetDir | xargs sed -i 's/::Internal/::DimensionedInternalField/g'
 
+
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "Pstream::commsTypes::nonBlocking" $targetDir | xargs sed -i 's/Pstream::commsTypes::nonBlocking/Pstream::nonBlocking/g'
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "writeTime" $targetDir | xargs sed -i 's/writeTime/outputTime/g'
+grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".primitiveField()" ${targetDir}/../applications | xargs sed -i 's/.primitiveField()/.internalField()/g'
+
 if [ "$WM_PROJECT_VERSION" != "v1606+" ];
 then
     grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tLimiter.internalField()" $targetDir | xargs sed -i 's/tLimiter\.internalField()/tLimiter()/g'
     grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tWeightingFactors.internalField()" $targetDir | xargs sed -i 's/tWeightingFactors\.internalField()/tWeightingFactors()/g'
 else
     grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tLimiter.internalField()" $targetDir | xargs sed -i 's/tLimiter\.internalField()/tLimiter.ref()/g'
-    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tWeightingFactors.internalField()" $targetDir | xargs sed -i 's/tWeightingFactors\.internalField()/tWeightingFactors.ref()/g'    
+    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tWeightingFactors.internalField()" $targetDir | xargs sed -i 's/tWeightingFactors\.internalField()/tWeightingFactors.ref()/g'
 fi
 
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "FatalErrorInFunction" $targetDir | xargs sed -i 's/FatalErrorInFunction/FatalErrorIn(__FUNCTION__)/g'
@@ -39,24 +44,32 @@ grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "FatalErrorInFu
 #    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "DebugInFunction" $targetDir | xargs sed -i 's/DebugInFunction/DebugIn(__FUNCTION__)/g'
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "WarningInFunction" $targetDir | xargs sed -i 's/WarningInFunction/WarningIn(__FUNCTION__)/g'
 
-#Changing alpha.water to alpha1 and transportProperties syntax if ofversion 
+#Changing alpha.water to alpha1 and transportProperties syntax if WM_PROJECT_VERSION
 #older than 2.3.0 (incl. 2.2.x)
 majorVersion=$(echo $WM_PROJECT_VERSION | cut -c1)
 minorVersion=$(echo $WM_PROJECT_VERSION | cut -c3)
 
 if [[ "$majorVersion" =~ ^[0-9]+$ ]] && [[ "$minorVersion" =~ ^[0-9]+$ ]];
 then
-    if [ "$majorVersion" -le "2" ] && [ "$majorVersion" -le "2" ]; 
-    then 
+    if [ "$majorVersion" -le "2" ] && [ "$majorVersion" -le "2" ];
+    then
+    
+        sed -i 's/os.write(f, facePts, false)/os.write(f, pointField(facePts), false)/g' ../OpenFOAM-${WM_PROJECT_VERSION}/src/isoAdvection/isoAdvection.C
 
-        targetDir=../OpenFOAM-${ofversion}/run
+        sed -i 's/!pimple.firstIter()/false/g' ../OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/interFlow/alphaEqn.H
+        sed -i '/alpha2/d' ../OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/interFlow/alphaEqn.H
+
+        rm -rf ../OpenFOAM-${WM_PROJECT_VERSION}/applications/test/isoCutTester
+        
+        targetDir=../OpenFOAM-${WM_PROJECT_VERSION}/run
 
         echo
-        echo "Changing code in $targetDir to OpenFOAM-${ofversion} syntax."
+        echo "Changing code in $targetDir to OpenFOAM-${WM_PROJECT_VERSION} syntax."
         echo
 
         #Changing alpha.water to alpha1
         grep -rl "alpha.water" $targetDir | xargs sed -i 's/alpha.water/alpha1/g'
+        grep -rl "alpha.*" $targetDir | xargs sed -i 's/"alpha.*"/alpha1/g'
         for n in $( find $targetDir -name "alpha.water" );
         do
             alphaDir=$(dirname $n)

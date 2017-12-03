@@ -1,0 +1,22 @@
+#!/bin/sh
+
+application=$(sed -E -n "s%^application[[:space:]]+([^[:space:]]+);%\1%p" system/controlDict)
+
+mkdir -p logs
+
+[ -d "0" ] || cp -r 0.org 0
+
+[ -f "constant/polyMesh/owner" ] \
+    || blockMesh > logs/blockMesh.log 2>&1
+
+setAlphaField > logs/setAlphaField.log 2>&1
+
+if [ -n "$application" ]
+then
+    $application > logs/${application}.log 2>&1
+else
+    echo
+    echo "Can not find application. Exiting."
+    echo
+fi
+

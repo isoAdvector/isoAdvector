@@ -1,23 +1,28 @@
 /*---------------------------------------------------------------------------*\
-|             isoAdvector | Copyright (C) 2016 Johan Roenby, DHI              |
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     |
+    \\  /    A nd           | Copyright (C) 2016-2017 OpenCFD Ltd.
+     \\/     M anipulation  |
+-------------------------------------------------------------------------------
+                isoAdvector | Copyright (C) 2016-2017 DHI
 -------------------------------------------------------------------------------
 
 License
-    This file is part of IsoAdvector, which is an unofficial extension to
-    OpenFOAM.
+    This file is part of isoAdvector which is an extension to OpenFOAM.
 
-    IsoAdvector is free software: you can redistribute it and/or modify it
+    OpenFOAM is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    IsoAdvector is distributed in the hope that it will be useful, but WITHOUT
+    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
     for more details.
 
     You should have received a copy of the GNU General Public License
-    along with IsoAdvector. If not, see <http://www.gnu.org/licenses/>.
+    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Class
     Foam::isoCutCell
@@ -27,18 +32,15 @@ Description
     with an isosurface defined by the mesh point values f_ and the isovalue,
     isoValue_.
 
-    @article{Roenby160405,
-        author={Roenby, Johan and Bredmose, Henrik and Jasak, Hrvoje},
-        title={A computational method for sharp interface advection},
-        volume={3},
-        year={2016},
-        doi={10.1098/rsos.160405},
-        publisher = {The Royal Society},
-        journal = {Royal Society Open Science}
-    }
+    Reference:
+        \verbatim
+            Roenby, J., Bredmose, H. and Jasak, H. (2016).
+            A computational method for sharp interface advection
+            Royal Society Open Science, 3
+            doi 10.1098/rsos.160405
+        \endverbatim
 
-Author
-    Johan Roenby, DHI, all rights reserved.
+    Original code supplied by Johan Roenby, DHI (2016)
 
 SourceFiles
     isoCutCell.C
@@ -49,11 +51,8 @@ SourceFiles
 #define isoCutCell_H
 
 #include "fvMesh.H"
-#include "volFields.H"
-#include "surfaceFields.H"
-#include "OFstream.H"
+#include "volFieldsFwd.H"
 #include "isoCutFace.H"
-#include "scalarMatrices.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -153,22 +152,25 @@ public:
         //  Length of scalarField should equal number of mesh points
         isoCutCell(const fvMesh&, scalarField&);
 
+    // Static data
+
+        static int debug;
 
     // Member functions
 
         label calcSubCell(const label celli, const scalar isoValue);
 
-        point subCellCentre();
+        const point& subCellCentre();
 
         scalar subCellVolume();
 
-        DynamicList<point> isoFacePoints();
+        const DynamicList<point>& isoFacePoints();
 
-        point isoFaceCentre();
+        const point& isoFaceCentre();
 
-        vector isoFaceArea();
+        const vector& isoFaceArea();
 
-        scalar VolumeOfFluid();
+        scalar volumeOfFluid();
 
         scalar isoValue() const;
 
@@ -182,7 +184,7 @@ public:
             const label maxIter
         );
 
-        void VolumeOfFluid(volScalarField& alpha1, const scalar f0);
+        void volumeOfFluid(volScalarField& alpha1, const scalar f0);
 };
 
 
