@@ -1026,8 +1026,8 @@ void Foam::isoAdvection::advect()
 
     advectionTime_ += (mesh_.time().elapsedCpuTime() - advectionStartTime);
     Info << "isoAdvection: time consumption = "
-        << label(100*advectionTime_/mesh_.time().elapsedCpuTime())  << "%."
-        << endl;
+        << label(100*advectionTime_/(mesh_.time().elapsedCpuTime() + SMALL))
+        << "%" << endl;
 }
 
 
