@@ -628,19 +628,20 @@ void Foam::isoAdvection::limitFluxes()
     // Get time step size
     const scalar dt = mesh_.time().deltaT().value();
 
-//    scalarField alphaNew = alpha1In_ - fvc::surfaceIntegrate(dVf_);
+    volScalarField alphaNew = alpha1_ - fvc::surfaceIntegrate(dVf_);
     const scalar aTol = 1.0e-12;          // Note: tolerances
-    const scalar maxAlphaMinus1 = 1;      // max(alphaNew - 1);
-    const scalar minAlpha = -1;           // min(alphaNew);
+    scalar maxAlphaMinus1 = gMax(alphaNew) - 1;      // max(alphaNew - 1);
+    scalar minAlpha = gMin(alphaNew);           // min(alphaNew);
     const label nUndershoots = 20;        // sum(neg(alphaNew + aTol));
     const label nOvershoots = 20;         // sum(pos(alphaNew - 1 - aTol));
     cellIsBounded_ = false;
 
+    Info << "isoAdvection: Before conservative bounding: min(alpha) = "
+        << minAlpha << ", max(alpha) = 1 + " << maxAlphaMinus1 << endl;
+
     // Loop number of bounding steps
     for (label n = 0; n < nAlphaBounds_; n++)
     {
-        Info<< "isoAdvection: bounding iteration " << n + 1 << endl;
-
         if (maxAlphaMinus1 > aTol) // Note: tolerances
         {
             DebugInfo << "Bound from above... " << endl;
@@ -1009,6 +1010,11 @@ void Foam::isoAdvection::advect()
     // Advect the free surface
     alpha1_ -= fvc::surfaceIntegrate(dVf_);
     alpha1_.correctBoundaryConditions();
+
+    scalar maxAlphaMinus1 = gMax(alpha1In_) - 1;
+    scalar minAlpha = gMin(alpha1In_);
+    Info << "isoAdvection: After conservative bounding: min(alpha) = "
+        << minAlpha << ", max(alpha) = 1 + " << maxAlphaMinus1 << endl;
 
     // Apply non-conservative bounding mechanisms (clipping and snapping)
     // Note: We should be able to write out alpha before this is done!
