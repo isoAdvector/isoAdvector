@@ -138,12 +138,12 @@ work with newer versions. It does not contain the latest code developments.
           
           nAlphaBounds 3;
 
-          //If snapAlphaTol > 0 then after advection and volume preserving 
-          //bounding all remaining alpha's closer to 0 than snapAlphaTol will be 
-          //set to 0 and all alpha's closer to 1 than snapAlphaTol will be set 
+          //If snapTol > 0 then after advection and volume preserving 
+          //bounding all remaining alpha's closer to 0 than snapTol will be 
+          //set to 0 and all alpha's closer to 1 than snapTol will be set 
           //to 1. Default value is 1e-12.
           
-          snapAlphaTol 1e-12; //Previously called clipAlphaTol
+          snapTol 1e-12; //Previously called clipAlphaTol (and snapAlphaTol)
 
           //If clip is set to true/yes/1 then after advection and volume 
           //preserving bounding any alpha < 0 will be set to 0 and any alpha > 1 
