@@ -238,7 +238,7 @@ work with newer versions. It does not contain the latest code developments.
 
 ## Contributors:
 
-* Johan Roenby <johan.roenby@gmail.com> (Inventor and main developer)
+* Johan Roenby <johan@stromning.com> (Inventor and main developer)
 * Hrvoje Jasak (General coding guidance, consistent treatment of boundary faces 
   including processor boundaries, parallelisation, code clean up, provided 
   algebraic schemes, CICSAM, HRIC etc.)
