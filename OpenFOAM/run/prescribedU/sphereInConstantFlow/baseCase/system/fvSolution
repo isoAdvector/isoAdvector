@@ -22,7 +22,7 @@ solvers
         interfaceMethod "isoAdvector";
         isoFaceTol	    1e-8;
         surfCellTol	    1e-8;
-        snapAlphaTol    0;
+        snapTol    0;
         nAlphaBounds    4;
         clip            false;
 

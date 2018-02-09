@@ -18,51 +18,80 @@ echo
 echo "Changing code in $targetDir to old API."
 echo
 
+echo "Changing API in $targetDir"
+echo ".ref() -> .internalField()"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".ref()" $targetDir | xargs sed -i 's/\.ref()/\.internalField()/g'
+echo ".primitiveField() -> .internalField()"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".primitiveField()" $targetDir | xargs sed -i 's/.primitiveField()/.internalField()/g'
+echo ".primitiveFieldRef() -> .internalField()"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".primitiveFieldRef()" $targetDir | xargs sed -i 's/.primitiveFieldRef()/.internalField()/g'
+echo ".boundaryFieldRef() -> .boundaryField()"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".boundaryFieldRef()" $targetDir | xargs sed -i 's/\.boundaryFieldRef()/\.boundaryField()/g'
+echo "::Boundary -> ::GeometricBoundaryField"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Boundary" $targetDir | xargs sed -i 's/::Boundary/::GeometricBoundaryField/g'
+echo "::Internal -> ::DimensionedInternalField"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Internal" $targetDir | xargs sed -i 's/::Internal/::DimensionedInternalField/g'
 
+echo "Changing API in ${targetDir}/../run"
+echo ".primitiveFieldRef() -> .internalField()"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".primitiveFieldRef()" ${targetDir}/../run | xargs sed -i 's/.primitiveFieldRef()/.internalField()/g'
+echo ".boundaryFieldRef() -> .boundaryField()"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".boundaryFieldRef()" ${targetDir}/../run | xargs sed -i 's/\.boundaryFieldRef()/\.boundaryField()/g'
+echo "::Boundary -> ::GeometricBoundaryField"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Boundary" ${targetDir}/../run | xargs sed -i 's/::Boundary/::GeometricBoundaryField/g'
+echo "::Internal -> ::DimensionedInternalField"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Internal" ${targetDir}/../run | xargs sed -i 's/::Internal/::DimensionedInternalField/g'
 
+echo "Pstream::commsTypes::nonBlocking -> Pstream::nonBlocking in $targetDir"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "Pstream::commsTypes::nonBlocking" $targetDir | xargs sed -i 's/Pstream::commsTypes::nonBlocking/Pstream::nonBlocking/g'
+echo "writeTime -> outputTime in $targerDir"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "writeTime" $targetDir | xargs sed -i 's/writeTime/outputTime/g'
+echo ".primitiveField() -> .internalField() in ${targetDir}/../applications"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ".primitiveField()" ${targetDir}/../applications | xargs sed -i 's/.primitiveField()/.internalField()/g'
 
 if [ "$WM_PROJECT_VERSION" != "v1606+" ];
 then
+    echo "Because WM_PROJECT_VERSION is not v1606+:"
+    echo "tLimiter.internalField() -> tLimiter()"
     grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tLimiter.internalField()" $targetDir | xargs sed -i 's/tLimiter\.internalField()/tLimiter()/g'
+    echo "tWeightingFactors\.internalField() -> tWeightingFactors()"
     grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tWeightingFactors.internalField()" $targetDir | xargs sed -i 's/tWeightingFactors\.internalField()/tWeightingFactors()/g'
 else
+    echo "Because WM_PROJECT_VERSION is v1606+:"
+    echo "tLimiter.internalField() -> tLimiter.ref()"
     grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tLimiter.internalField()" $targetDir | xargs sed -i 's/tLimiter\.internalField()/tLimiter.ref()/g'
+    echo "tWeightingFactors\.internalField() -> tWeightingFactors.ref()"
     grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "tWeightingFactors.internalField()" $targetDir | xargs sed -i 's/tWeightingFactors\.internalField()/tWeightingFactors.ref()/g'
 fi
 
+echo "FatalErrorInFunction -> FatalErrorIn(__FUNCTION__)"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "FatalErrorInFunction" $targetDir | xargs sed -i 's/FatalErrorInFunction/FatalErrorIn(__FUNCTION__)/g'
 #Removed all DebugInFunction since they were not essential and I found  no obivous replacement in previous OF versions
 #    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "DebugInFunction" $targetDir | xargs sed -i 's/DebugInFunction/DebugIn(__FUNCTION__)/g'
+echo "WarningInFunction -> WarningIn(__FUNCTION__)"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "WarningInFunction" $targetDir | xargs sed -i 's/WarningInFunction/WarningIn(__FUNCTION__)/g'
 
 #Changing alpha.water to alpha1 and transportProperties syntax if WM_PROJECT_VERSION
 #older than 2.3.0 (incl. 2.2.x)
 majorVersion=$(echo $WM_PROJECT_VERSION | cut -c1)
+echo "majorVersion = $majorVersion"
 minorVersion=$(echo $WM_PROJECT_VERSION | cut -c3)
+echo "minorVersion = $minorVersion"
 
 if [[ "$majorVersion" =~ ^[0-9]+$ ]] && [[ "$minorVersion" =~ ^[0-9]+$ ]];
 then
-    if [ "$majorVersion" -le "2" ] && [ "$minorVersion" -le "2" ];
+    if [ "$majorVersion" -le "2" ] && [ "$minorVersion" -le "3" ];
     then
-
+        echo "Changes because majorVersion <= 2 and minorVersion <= 3:"
+        echo "Argument list for os.write(...) in isoAdvection.C"
         sed -i 's/os.write(f, facePts, false)/os.write(f, pointField(facePts), false)/g' ../OpenFOAM-${WM_PROJECT_VERSION}/src/isoAdvection/isoAdvection.C
 
+        echo "!pimple.firstIter() -> false in alphaEqn.H"
         sed -i 's/!pimple.firstIter()/false/g' ../OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/interFlow/alphaEqn.H
+        echo "Delete alpha2 = ... in alphaEqn.H"
         sed -i '/alpha2/d' ../OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/interFlow/alphaEqn.H
 
+        echo "Removing applications/test/isoCutTester because not important"
         rm -rf ../OpenFOAM-${WM_PROJECT_VERSION}/applications/test/isoCutTester
 
         targetDir=../OpenFOAM-${WM_PROJECT_VERSION}/run
@@ -71,7 +100,14 @@ then
         echo "Changing code in $targetDir to OpenFOAM-${WM_PROJECT_VERSION} syntax."
         echo
 
-        #Changing alpha.water to alpha1
+    fi
+
+    #Changing alpha.water to alpha1 and transportProperties syntax if WM_PROJECT_VERSION
+    #older than 2.3.0 (incl. 2.2.x)
+    if [ "$majorVersion" -le "2" ] && [ "$minorVersion" -le "2" ];
+    then
+        echo "Changes because majorVersion <= 2 and minorVersion <= 2"
+        echo "Changing alpha.water to alpha1"
         grep -rl "alpha.water" $targetDir | xargs sed -i 's/alpha.water/alpha1/g'
         grep -rl "alpha.*" $targetDir | xargs sed -i 's/"alpha.*"/alpha1/g'
         for n in $( find $targetDir -name "alpha.water" );
@@ -81,6 +117,7 @@ then
         done
 
         #Modifying transportProperties
+        echo "Changing constant/transportProperties to old syntax"
         for transFile in $( find $targetDir -name "transportProperties" );
         do
             sed -i 's/phases/\/\/phases/g' $transFile

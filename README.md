@@ -31,17 +31,18 @@ The isoAdvector code is developed and maintained for the newest OpenFOAM
 releases but the script isoAdvector/bin/generateCodeForOldVersion copies the 
 code in isoAdvector/OpenFOAM to isoAdvector/OpenFOAM-[oldLoadedOFversion] and 
 attempts to modify this code to become compatible with an older sourced OpenFOAM 
-version. The code should work with OpenFOAM-5.x, 4.1, 4.0, 3.0.1, 2.3.0, 2.2.0,
-v1606+ and v1612+. For some reason it does not work with 2.2.2.
+version. The code should work with OpenFOAM-5.x, 4.1, 4.0, 3.0.1, 2.2.0,
+v1606+ and v1612+. There are known to be issues with 2.2.2, 2.3.0, 2.3.1 and
+2.4.0, so using these versions is not recommended.
 
-OpenFOAM-v1706 contains an integration of the isoAdvector code with the interFlow 
-solver named interIsoFoam. For more info on the v1706 integration see:
+OpenFOAM-v1706 and v1712 contain an integration of the isoAdvector code with the 
+interFlow solver named interIsoFoam. For more info on the v1706 integration see:
 
 https://www.openfoam.com/releases/openfoam-v1706/numerics.php#numerics-isoadvector
 
-Note that compiling the github.com/isoAdvector code with v1706 may lead to 
-problems because the finiteVolume library of v1706 already contains classes named 
-isoAvection, isoCutCell and isoCutFace.
+Note that compiling the github.com/isoAdvector code with v1706 and v1712 may lead
+to problems because the finiteVolume library of v1706 already contains classes 
+named isoAvection, isoCutCell and isoCutFace.
 
 A foam-extend version of the code is also available in isoAdvector/foam-extend. 
 This was developed for foam-extend-32 and will most likely need modifications to 
