@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
         //Clip and snap alpha1 to ensure strict boundedness to machine precision
         if ( clipAlphaTol > 0.0 )
         {
-            alpha1 = alpha1*pos(alpha1-clipAlphaTol)*neg(alpha1-(1.0-clipAlphaTol)) + pos(alpha1-(1.0-clipAlphaTol));
+            alpha1 = alpha1*pos0(alpha1-clipAlphaTol)*neg0(alpha1-(1.0-clipAlphaTol)) + pos0(alpha1-(1.0-clipAlphaTol));
         }
         if ( snapAlpha )
         {

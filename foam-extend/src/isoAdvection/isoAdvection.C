@@ -583,7 +583,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedArea
 
         // If all face cuttings were in the past and cell is filling up (Un0>0)
         // then face must be full during whole time interval
-        tIntArea = magSf*dt*pos(Un0);
+        tIntArea = magSf*dt*pos0(Un0);
         return tIntArea;
     }
 
@@ -597,7 +597,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedArea
         // If all cuttings are in the future but non of them within [0, dt] then
         // if cell is filling up (Un0 > 0) face must be empty during whole time
         // interval
-        tIntArea = magSf*dt*(1-pos(Un0));
+        tIntArea = magSf*dt*(1-pos0(Un0));
         return tIntArea;
     }
 
@@ -641,8 +641,8 @@ Foam::scalar Foam::isoAdvection::timeIntegratedArea
     {
         // If Un0 > 0 cell is filling up - hence if face is cut at a later time
         // but not initially it must be initially empty
-        tIntArea = magSf*(t[nt + 1] - t[nt])*(1.0 - pos(Un0));
-        initialArea = magSf*(1.0 - pos(Un0));
+        tIntArea = magSf*(t[nt + 1] - t[nt])*(1.0 - pos0(Un0));
+        initialArea = magSf*(1.0 - pos0(Un0));
         isoDebug
         (
             Info<< "faceUncutInFirstInterval, so special treatment for"
@@ -704,7 +704,7 @@ Foam::scalar Foam::isoAdvection::timeIntegratedArea
         // If face is cut at some intermediate time but not at last time, then
         // if Un0 > 0 (cell filling up) face must be filled at last time
         // interval.
-        tIntArea += magSf*(t[nt + 1] - t[nt])*pos(Un0);
+        tIntArea += magSf*(t[nt + 1] - t[nt])*pos0(Un0);
     }
 
     return tIntArea;
@@ -914,8 +914,8 @@ void Foam::isoAdvection::limitFluxes()
     scalar aTol = 1.0e-12; // Note: tolerances
     scalar maxAlphaMinus1 = 1; // max(alphaNew - 1);
     scalar minAlpha = -1; // min(alphaNew);
-    label nUndershoots = 20; // sum(neg(alphaNew + aTol));
-    label nOvershoots = 20; // sum(pos(alphaNew - 1 - aTol));
+    label nUndershoots = 20; // sum(neg0(alphaNew + aTol));
+    label nOvershoots = 20; // sum(pos0(alphaNew - 1 - aTol));
     cellIsBounded_ = false;
 
     // Loop number of bounding steps
@@ -981,8 +981,8 @@ void Foam::isoAdvection::limitFluxes()
 //        alphaNew = alpha1In_ - fvc::surfaceIntegrate(dVf);
 //        maxAlphaMinus1 = max(alphaNew-1);
 //        minAlpha = min(alphaNew);
-//        nUndershoots = sum(neg(alphaNew+aTol));
-//        nOvershoots = sum(pos(alphaNew-1-aTol));
+//        nUndershoots = sum(neg0(alphaNew+aTol));
+//        nOvershoots = sum(pos0(alphaNew-1-aTol));
 //        Info<< "After bounding number " << n + 1 << " of time "
 //            << mesh_.time().value() << ":" << endl;
 //        Info<< "nOvershoots = " << nOvershoots << " with max(alphaNew-1) = "
@@ -1095,7 +1095,7 @@ void Foam::isoAdvection::boundFromAbove
                         mag(phi[fi]*dt)/dVftot;
 
                     nFacesToPassFluidThrough +=
-                        pos(dVfmax[fi] - fluidToPassThroughFace);
+                        pos0(dVfmax[fi] - fluidToPassThroughFace);
 
                     fluidToPassThroughFace =
                         min(fluidToPassThroughFace, dVfmax[fi]);

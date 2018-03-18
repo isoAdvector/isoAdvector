@@ -358,7 +358,7 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
     {
         // If all face cuttings were in the past and cell is filling up (Un0>0)
         // then face must be full during whole time interval
-        tIntArea = magSf*dt*pos(Un0);
+        tIntArea = magSf*dt*pos0(Un0);
         return tIntArea;
     }
 
@@ -369,7 +369,7 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
         // If all cuttings are in the future but non of them within [0,dt] then
         // if cell is filling up (Un0 > 0) face must be empty during whole time
         // interval
-        tIntArea = magSf*dt*(1 - pos(Un0));
+        tIntArea = magSf*dt*(1 - pos0(Un0));
         return tIntArea;
     }
 
@@ -394,7 +394,7 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
         // If Un0 > 0 cell is filling up and it must initially be empty.
         // If Un0 < 0 cell must initially be full(y immersed in fluid A).
         time = firstTime;
-        initialArea = magSf*(1.0 - pos(Un0));
+        initialArea = magSf*(1.0 - pos0(Un0));
         tIntArea = initialArea*time;
         cutPoints(fPts, pTimes, time, FIIL);
     }
@@ -466,7 +466,7 @@ Foam::scalar Foam::isoCutFace::timeIntegratedArea
     {
         // FIIL will leave the face at lastTime and face will be fully in fluid
         // A or fluid B in the time interval from lastTime to dt.
-        tIntArea += magSf*(dt - lastTime)*pos(Un0);
+        tIntArea += magSf*(dt - lastTime)*pos0(Un0);
     }
 
     return tIntArea;

@@ -31,6 +31,14 @@ echo "::Boundary -> ::GeometricBoundaryField"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Boundary" $targetDir | xargs sed -i 's/::Boundary/::GeometricBoundaryField/g'
 echo "::Internal -> ::DimensionedInternalField"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Internal" $targetDir | xargs sed -i 's/::Internal/::DimensionedInternalField/g'
+echo "If pos0 and neg0 (introduced June 2017) do not exist changing to pos and neg."
+#Commit 7bdbab7f4eb7698f5967984186e342cac66a8e04 in Foundation version
+pos0=$(find $FOAM_SRC -type f -name  "Scalar.H" | xargs grep "pos0")
+if [[ -z  $pos0  ]];
+then
+    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "pos0(" $targetDir | xargs sed -i 's/pos0(/pos(/g'
+    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "neg0(" $targetDir | xargs sed -i 's/neg0(/neg(/g'
+fi
 
 echo "Changing API in ${targetDir}/../run"
 echo ".primitiveFieldRef() -> .internalField()"

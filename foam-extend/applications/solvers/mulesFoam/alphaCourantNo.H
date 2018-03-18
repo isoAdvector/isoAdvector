@@ -37,7 +37,7 @@ if (mesh.nInternalFaces())
 {
     scalarField sumPhi
     (
-        pos(alpha1 - 0.01)*pos(0.99 - alpha1)
+        pos0(alpha1 - 0.01)*pos0(0.99 - alpha1)
        *fvc::surfaceSum(mag(phi))().internalField()
     );
 

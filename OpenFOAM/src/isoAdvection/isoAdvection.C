@@ -628,8 +628,8 @@ void Foam::isoAdvection::limitFluxes()
     const scalar aTol = 1.0e-12;          // Note: tolerances
     scalar maxAlphaMinus1 = gMax(alphaNew) - 1;      // max(alphaNew - 1);
     scalar minAlpha = gMin(alphaNew);           // min(alphaNew);
-    const label nUndershoots = 20;        // sum(neg(alphaNew + aTol));
-    const label nOvershoots = 20;         // sum(pos(alphaNew - 1 - aTol));
+    const label nUndershoots = 20;        // sum(neg0(alphaNew + aTol));
+    const label nOvershoots = 20;         // sum(pos0(alphaNew - 1 - aTol));
     cellIsBounded_ = false;
 
     Info << "isoAdvection: Before conservative bounding: min(alpha) = "
@@ -696,8 +696,8 @@ void Foam::isoAdvection::limitFluxes()
             scalarField alphaNew(alpha1In_ - fvc::surfaceIntegrate(dVf_)());
             label maxAlphaMinus1 = max(alphaNew - 1);
             scalar minAlpha = min(alphaNew);
-            label nUndershoots = sum(neg(alphaNew + aTol));
-            label nOvershoots = sum(pos(alphaNew - 1 - aTol));
+            label nUndershoots = sum(neg0(alphaNew + aTol));
+            label nOvershoots = sum(pos0(alphaNew - 1 - aTol));
             Info<< "After bounding number " << n + 1 << " of time "
                 << mesh_.time().value() << ":" << endl;
             Info<< "nOvershoots = " << nOvershoots << " with max(alphaNew-1) = "
@@ -806,7 +806,7 @@ void Foam::isoAdvection::boundFromAbove
                         fluidToPassOn*mag(phi[fi]*dt)/dVftot;
 
                     nFacesToPassFluidThrough +=
-                        pos(dVfmax[fi] - fluidToPassThroughFace);
+                        pos0(dVfmax[fi] - fluidToPassThroughFace);
 
                     fluidToPassThroughFace =
                         min(fluidToPassThroughFace, dVfmax[fi]);
@@ -1036,9 +1036,9 @@ void Foam::isoAdvection::applyBruteForceBounding()
     {
         alpha1_ =
             alpha1_
-           *pos(alpha1_ - snapAlphaTol)
-           *neg(alpha1_ - (1.0 - snapAlphaTol))
-          + pos(alpha1_ - (1.0 - snapAlphaTol));
+           *pos0(alpha1_ - snapAlphaTol)
+           *neg0(alpha1_ - (1.0 - snapAlphaTol))
+          + pos0(alpha1_ - (1.0 - snapAlphaTol));
 
         alpha1Changed = true;
     }

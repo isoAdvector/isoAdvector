@@ -278,7 +278,7 @@ Foam::scalar Foam::mHRIC::weight
     );
 
     // Set hric weight to upwind
-    scalar upwindWeight = pos(faceFlux);
+    scalar upwindWeight = pos0(faceFlux);
     scalar hricWeight = upwindWeight;
 
     // Larger small for complex arithmetic accuracy
