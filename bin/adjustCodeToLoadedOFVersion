@@ -1,0 +1,127 @@
+#!/bin/bash
+cd ${0%/*} || exit 1   # run from this directory
+
+targetDir=../OpenFOAM-${WM_PROJECT_VERSION}
+
+echo
+echo "Attempting to adjust isoAdvector code to currently loaded OpenFOAM version"
+echo "Adjusted source placed in $targetDir."
+echo
+
+#cp -nr ../OpenFOAM/* $targetDir
+
+#rm -rf $targetDir
+
+#cp -r ../OpenFOAM/ $targetDir
+
+function filesContaining {
+    grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ${1} \
+    $targetDir
+}
+
+
+#convertToOldStyle argumemts:
+#   1: OFSourceFileOrFolderToCheckForString
+#   2: stringToCheckForInOFSource
+#   3: stringToLookForInIsoAdvectorSourceFiles
+#   4: stringToBeReplacedInIsoAdvectorSourceFiles
+#   5: replacementStringForIsoAdvectorSourceFiles
+function convertToOldStyle {
+    OFSrcFile=${1} # e.g. GeometricField
+    OFSrchStr=${2} # e.g. "::ref()"
+    srchStr=${3} # e.g. ".ref()"
+    oldStr=${4} # e.g. "\.ref()"
+    newStr=${5} # e.g. "\.internalField()"
+    str=$(grep -r ${OFSrchStr} ${OFSrcFile})
+    if [[ -z  $str  ]];
+    then
+        echo "$OFSrcFile"
+        echo "does not contain the string ${OFSrchStr}"
+        echo "Therefore replacing all occurences of ${oldStr} with ${newStr}"
+        echo "in isoAdvector source files containing ${srchStr}"
+        filesContaining ${srchStr} | xargs sed -i "s/${oldStr}/${newStr}/g"
+    else
+        echo "$OFSrcFile"
+        echo "contains the string ${OFSrchStr}"
+        echo "Therefore NOT replacing occurences of ${oldStr} with ${newStr}"
+        echo "in isoAdvector source files containing ${srchStr}"
+    fi
+}
+
+GeometricField=\
+$FOAM_SRC/OpenFOAM/fields/GeometricFields/GeometricField
+
+convertToOldStyle $GeometricField "::ref()" ".ref()" "\.ref()" "\.internalField()"
+
+convertToOldStyle $GeometricField "::primitiveField()" ".primitiveField()" "\.primitiveField()" "\.internalField()"
+
+convertToOldStyle $GeometricField "::primitiveFieldRef()" ".primitiveFieldRef()" "\.primitiveFieldRef()" "\.internalField()"
+
+convertToOldStyle $GeometricField "::Boundary::" "::Boundary" "::Boundary" "::GeometricBoundaryField"
+
+convertToOldStyle $GeometricField "::boundaryFieldRef()" ".boundaryFieldRef()" "\.boundaryFieldRef()" "\.boundaryField()"
+
+convertToOldStyle $GeometricField "::Internal::" "::Internal" "::Internal" "::DimensionedInternalField"
+
+#Commit 7bdbab7f4eb7698f5967984186e342cac66a8e04 in Foundation version
+convertToOldStyle $FOAM_SRC "::pos0" "pos0(" "pos0(" "pos("
+convertToOldStyle $FOAM_SRC "::neg0" "neg0(" "neg0(" "neg("
+
+#Commit cc4d4433b80f947006a18e584cee2d011057a3dc in Foundation version
+convertToOldStyle $FOAM_SRC "writeInfoHeader" "writeInfoHeader" "writeInfoHeader = false" "Foam::argList::noBanner()"
+
+convertToOldStyle $FOAM_SRC "Pstream::commsTypes::nonBlocking" "Pstream::commsTypes::nonBlocking" "Pstream::commsTypes::nonBlocking" "Pstream::nonBlocking"
+
+convertToOldStyle $FOAM_SRC/OpenFOAM/db/Time "::writeTime()" ".writeTime()" "\.writeTime()" "\.outputTime()"
+
+convertToOldStyle $FOAM_SRC "FatalErrorInFunction" "FatalErrorInFunction" "FatalErrorInFunction" "FatalErrorIn(__FUNCTION__)"
+
+convertToOldStyle $FOAM_SRC "WarningInFunction" "WarningInFunction" "WarningInFunction" "WarningIn(__FUNCTION__)"
+
+#Change code below to work by inspection of loaded OpenFOAM source code and tutorial cases
+majorVersion=$(echo $WM_PROJECT_VERSION | cut -c1)
+echo "majorVersion = $majorVersion"
+minorVersion=$(echo $WM_PROJECT_VERSION | cut -c3)
+echo "minorVersion = $minorVersion"
+
+if [[ "$majorVersion" =~ ^[0-9]+$ ]] && [[ "$minorVersion" =~ ^[0-9]+$ ]];
+then
+    if [ "$majorVersion" -le "2" ] && [ "$minorVersion" -le "3" ];
+    then
+        echo "Changes because majorVersion <= 2 and minorVersion <= 3:"
+        echo "Argument list for os.write(...) in isoAdvection.C"
+        sed -i 's/os.write(f, facePts, false)/os.write(f, pointField(facePts), false)/g' $targetDir/src/isoAdvection/isoAdvection.C
+
+        echo "!pimple.firstIter() -> false in alphaEqn.H"
+        sed -i 's/!pimple.firstIter()/false/g' $targetDir/applications/solvers/interFlow/alphaEqn.H
+        echo "Delete alpha2 = ... in alphaEqn.H"
+        sed -i '/alpha2/d' $targetDir/applications/solvers/interFlow/alphaEqn.H
+
+        echo "Removing applications/test/isoCutTester because not important"
+        rm -rf $targetDir/applications/test/isoCutTester
+    fi
+
+    #Changing alpha.water to alpha1 and transportProperties syntax if WM_PROJECT_VERSION
+    #older than 2.3.0 (incl. 2.2.x)
+    if [ "$majorVersion" -le "2" ] && [ "$minorVersion" -le "2" ];
+    then
+        echo "Changes because majorVersion <= 2 and minorVersion <= 2"
+        echo "Changing alpha.water to alpha1"
+        grep -rl "alpha.water" $targetDir/run | xargs sed -i 's/alpha.water/alpha1/g'
+        grep -rl "alpha.*" $targetDir/run | xargs sed -i 's/"alpha.*"/alpha1/g'
+        for n in $( find $targetDir/run -name "alpha.water" );
+        do
+            alphaDir=$(dirname $n)
+            mv $alphaDir/alpha.water $alphaDir/alpha1
+        done
+
+        #Modifying transportProperties
+        echo "Changing constant/transportProperties to old syntax"
+        for transFile in $( find $targetDir/run -name "transportProperties" );
+        do
+            sed -i 's/phases/\/\/phases/g' $transFile
+            sed -i 's/water/phase1/g' $transFile
+            sed -i 's/air/phase2/g' $transFile
+        done
+    fi
+fi

@@ -13,6 +13,12 @@ then
     echo " "
 elif [ "$WM_PROJECT" == "foam" ];
 then
+    echo " "
+    echo "Warning: The foam-extend version of isoAdvector has"
+    echo "not been updated for a long time."
+    echo "You should therefore expect it to be buggy and I will"
+    echo "NOT recommend doing any real work with it in its"
+    echo "current state."
     sourceDir=foam-extend-$WM_PROJECT_VERSION
 elif [ "$WM_PROJECT" == "OpenFOAM" ];
 then
@@ -20,8 +26,8 @@ then
 
     echo "Copying non-existing files from OpenFOAM to $sourceDir..."
 
-    mkdir -p $sourceDir
-    cp -nr OpenFOAM/* $sourceDir/
+    rm -rf $sourceDir
+    cp -r OpenFOAM $sourceDir
 
     #Generate interFlow solver from interFoam solver of the loaded OF version
     cd bin
@@ -29,17 +35,9 @@ then
     cd -
 
     #Only convert src if not one of the newest OF versions
-    if [[ "$WM_PROJECT_VERSION" != "4."* ]] && \
-       [[ "$WM_PROJECT_VERSION" != "5."* ]] && \
-       [ "$WM_PROJECT_VERSION" != "v1612+" ] && \
-       [ "$WM_PROJECT_VERSION" != "v1706" ] && \
-       [ "$WM_PROJECT_VERSION" != "plus" ];
-    then
-       #Transform code to old API
-       cd bin
-       ./generateCodeForOldVersion $WM_PROJECT_VERSION
-       cd -
-    fi
+    cd bin
+    ./adjustCodeToLoadedOFVersion
+    cd -
 fi
 
 #Compile the correct isoAdvector version

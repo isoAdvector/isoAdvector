@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 {
     timeSelector::addOptions();
 
-    Foam::argList::noBanner();
+    writeInfoHeader = false;
     #include "setRootCase.H"
 
     // Reading user specified time(s)

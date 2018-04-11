@@ -33,12 +33,24 @@ echo "::Internal -> ::DimensionedInternalField"
 grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "::Internal" $targetDir | xargs sed -i 's/::Internal/::DimensionedInternalField/g'
 echo "If pos0 and neg0 (introduced June 2017) do not exist changing to pos and neg."
 #Commit 7bdbab7f4eb7698f5967984186e342cac66a8e04 in Foundation version
+#Changed pos and neg to pos0 and neg0
 pos0=$(find $FOAM_SRC -type f -name  "Scalar.H" | xargs grep "pos0")
 if [[ -z  $pos0  ]];
 then
     grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "pos0(" $targetDir | xargs sed -i 's/pos0(/pos(/g'
     grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* "neg0(" $targetDir | xargs sed -i 's/neg0(/neg(/g'
 fi
+
+
+echo "Checking if writeInfoHeader exists in sourced OF version. If not replacing with the old noBanner."
+#Commit cc4d4433b80f947006a18e584cee2d011057a3dc in Foundation version
+#Replaced noBanner with writeInfoHeader
+writeInfoHeader=$(find $FOAM_SRC -type f -name  "argList.C" | xargs grep "writeInfoHeader")
+if [[ -z  $writeInfoHeader  ]];
+then
+    grep -rl --include \*.C --exclude-dir \*Include\* "writeInfoHeader" $targetDir/../applications | xargs sed -i 's/writeInfoHeader = false/Foam::argList::noBanner()/g'
+fi
+
 
 echo "Changing API in ${targetDir}/../run"
 echo ".primitiveFieldRef() -> .internalField()"

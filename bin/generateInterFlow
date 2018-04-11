@@ -46,7 +46,7 @@ if [ ! -f "${targetDir}/dontRebuild" ]; then
     #Replacing header
     source dhiFoamTools
     replaceHeader  ${targetDir}/interFlow.C
-    echo "Delete this file to make Allwmake regenerate ${newSolverName} from the interFoam.C solver. \nNOTE THAT THIS WILL DELETE ALL YOU CHANGES TO THE SOLVER!" >> ${targetDir}/dontRebuild
+    echo "Delete this file to make Allwmake regenerate interFlow from the interFoam.C solver. \nNOTE THAT THIS WILL DELETE ALL YOU CHANGES TO THE SOLVER!" >> ${targetDir}/dontRebuild
 else
 
     echo
