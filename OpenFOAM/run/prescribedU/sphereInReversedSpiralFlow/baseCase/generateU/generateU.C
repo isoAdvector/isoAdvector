@@ -1,35 +1,35 @@
 /*---------------------------------------------------------------------------*\
-  =========                 |
-  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
-     \\/     M anipulation  |
+              Original work | Copyright (C) 2016-2017 DHI
+              Modified work | Copyright (C) 2016-2017 OpenCFD Ltd.
+              Modified work | Copyright (C) 2017-2018 Johan Roenby
 -------------------------------------------------------------------------------
-License
-    This file is not part of OpenFOAM.
 
-    OpenFOAM is free software: you can redistribute it and/or modify it
+License
+    This file is part of IsoAdvector, which is an unofficial extension to
+    OpenFOAM.
+
+    IsoAdvector is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+    IsoAdvector is distributed in the hope that it will be useful, but WITHOUT
     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
     for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+    along with IsoAdvector. If not, see <http://www.gnu.org/licenses/>.
 
 Application
     generateU
-    
+
 Description
-    Generates velocity field for the classical test case with a sphere 
+    Generates velocity field for the classical test case with a sphere
     deformed into a spiralling sheet and back again.
 
 Author
-    Johan Roenby, DHI, all rights reserved.
+    Johan Roenby, STROMNING, all rights reserved.
 
 \*---------------------------------------------------------------------------*/
 
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     #include "createMesh.H"
 
     Info<< "Reading field U\n" << endl;
-        
+
     volVectorField U
     (
         IOobject
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     const scalarField r(sqrt(sqr(x - 0.5) + sqr(y - 0.5)));
 
     vectorField& Uc = U.primitiveFieldRef();
-    
+
     Uc.replace(vector::X, sin(2*pi*y)*sqr(sin(pi*x)));
     Uc.replace(vector::Y, -sin(2*pi*x)*sqr(sin(pi*y)));
     Uc.replace(vector::Z, sqr(1.0 - 2.0*r));
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     Uf.replace(0, sin(2*pi*Yf)*sqr(sin(pi*Xf)));
     Uf.replace(1, -sin(2*pi*Xf)*sqr(sin(pi*Yf)));
     Uf.replace(2, sqr(1.0 - 2.0*Rf));
-    
+
     scalarField& phic = phi.primitiveFieldRef();
     const vectorField& Sfc = mesh.Sf().primitiveField();
     phic = Uf & Sfc;
@@ -128,89 +128,11 @@ int main(int argc, char *argv[])
         phif = Uf & Sff;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-/*    
-    
-    
-    
-    
-    
-    
-    
-    
-    {
-        scalarField X = mesh.C().component(0);
-        scalarField Y = mesh.C().component(1);
-        scalarField Z = mesh.C().component(2);
-        scalarField u = sin(2*M_PI*Y)*pow(sin(M_PI*X),2);
-        scalarField v = -sin(2.0*M_PI*X)*pow(sin(M_PI*Y),2);
-        scalarField r = sqrt(pow(X-0.5,2) + pow(Y-0.5,2));
-        scalarField w = pow((1-r/0.5),2);
-
-        forAll(U,ci)
-        {
-            U[ci] = u[ci]*vector(1.0,0.0,0.0) + v[ci]*vector(0.0,1.0,0.0) 
-                + w[ci]*vector(0.0,0.0,1.0);
-        }
-    }
-    
-    Info<< "Reading/calculating face flux field phi\n" << endl;
-
-    surfaceScalarField phi
-    (
-        IOobject
-        (
-            "phi",
-            runTime.timeName(),
-            mesh,
-            IOobject::READ_IF_PRESENT,
-            IOobject::NO_WRITE
-        ),
-        linearInterpolate(U) & mesh.Sf()
-    );
-
-    {
-        scalarField Xf = mesh.Cf().component(0);
-        scalarField Yf = mesh.Cf().component(1);
-        scalarField Zf = mesh.Cf().component(2);
-        scalarField uf = sin(2*M_PI*Yf)*pow(sin(M_PI*Xf),2);
-        scalarField vf = -sin(2.0*M_PI*Xf)*pow(sin(M_PI*Yf),2);
-        scalarField rf = sqrt(pow(Xf-0.5,2) + pow(Yf-0.5,2));
-        scalarField wf = pow((1-rf/0.5),2);
-        forAll(phi,fi)
-        {
-            vector Uf = uf[fi]*vector(1.0,0.0,0.0) + vf[fi]*vector(0.0,1.0,0.0) 
-                + wf[fi]*vector(0.0,0.0,1.0);
-            phi[fi] = (Uf & (mesh.Sf()[fi]));
-        }
-    }
-
-    scalarField sumPhi = fvc::surfaceIntegrate(phi);    
-    scalar maxMagSumPhi(0.0);
-    label maxLabel(0);
-    forAll(sumPhi,ci)
-    {
-        scalar msp = mag(sumPhi[ci]);
-        if (msp > maxMagSumPhi )
-        {
-            maxMagSumPhi = msp;
-            maxLabel = ci;
-        }
-    }
-    Info << "maxMagSumPhi/cellVol = " << maxMagSumPhi/mesh.V()[maxLabel] << endl;
-  */  
-	ISstream::defaultPrecision(18);
+    ISstream::defaultPrecision(18);
 
     U.write();
     phi.write();
-    
+
     Info<< "End\n" << endl;
 
     return 0;

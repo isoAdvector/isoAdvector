@@ -1,25 +1,25 @@
 /*---------------------------------------------------------------------------*\
-  =========                 |
-  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
-     \\/     M anipulation  |
+              Original work | Copyright (C) 2016-2017 DHI
+              Modified work | Copyright (C) 2016-2017 OpenCFD Ltd.
+              Modified work | Copyright (C) 2017-2018 Johan Roenby
 -------------------------------------------------------------------------------
-License
-    This file is not part of OpenFOAM.
 
-    OpenFOAM is free software: you can redistribute it and/or modify it
+License
+    This file is part of IsoAdvector, which is an unofficial extension to
+    OpenFOAM.
+
+    IsoAdvector is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+    IsoAdvector is distributed in the hope that it will be useful, but WITHOUT
     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
     for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+    along with IsoAdvector. If not, see <http://www.gnu.org/licenses/>.
 
 Application
     generateU
@@ -29,7 +29,7 @@ Description
     in a rigid body rotation flow.
 
 Author
-    Johan Roenby, DHI, all rights reserved.
+    Johan Roenby, STROMNING, all rights reserved.
 
 \*---------------------------------------------------------------------------*/
 
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
     Uf.replace(0, -2*pi*(Zf - 0.5));
     Uf.replace(1, 0);
     Uf.replace(2, 2*pi*(Xf - 0.5));
-    
+
     scalarField& phic = phi.primitiveFieldRef();
     const vectorField& Sfc = mesh.Sf().primitiveField();
     phic = Uf & Sfc;
@@ -120,124 +120,6 @@ int main(int argc, char *argv[])
         Uf.replace(2, 2*pi*(xf - 0.5));
         phif = Uf & Sff;
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-/*    
-    
-    
-    Info<< "Calculating field U\n" << endl;
-    {
-        const volVectorField& C = mesh.C();
-        forAll(U, ci)
-        {
-            scalar X = C[ci].component(vector::X);
-            scalar Z = C[ci].component(vector::Z);
-            scalar u = -2*M_PI*(Z-.5);
-            scalar w = 2*M_PI*(X-.5);
-            U[ci] =  u*vector(1,0,0) + w*vector(0,0,1);
-        }
-    }
-
-    Info<< "Reading field phi\n" << endl;
-
-    surfaceScalarField phi
-    (
-        IOobject
-        (
-            "phi",
-            runTime.timeName(),
-            mesh,
-            IOobject::READ_IF_PRESENT,
-            IOobject::AUTO_WRITE
-        ),
-        0*(linearInterpolate(U) & mesh.Sf())
-    );
-
-    Info<< "Calculating field phi\n" << endl;
-
-    const surfaceVectorField& Cf = mesh.Cf();
-    const surfaceVectorField& Sf = mesh.Sf();
-    forAll(phi, fi)
-    {
-        scalar X = Cf[fi].component(vector::X);
-        scalar Z = Cf[fi].component(vector::Z);
-        scalar u = -2*M_PI*(Z-.5);
-        scalar w = 2*M_PI*(X-.5);
-        vector Uf =  u*vector(1,0,0) + w*vector(0,0,1);
-        phi[fi] = Uf & Sf[fi];
-    }
-
-    
-    
-*/    
-    
-    
-    
-   
-//Since surface does not touch boundary at any point we do not bother setting
-//boundary values of U and phi properly.
-/*    
-//    surfaceScalarField::GeometricBoundaryField& phip = phi.boundaryField();
-//    surfaceScalarField::Boundary& phip = phi.boundaryFieldRef();
-
-    forAll(mesh.boundary(), patchi)
-    {
-        const polyPatch& pp = mesh.boundaryMesh()[patchi];
-        if
-        (
-            !isA<processorPolyPatch>(pp)
-         && !isA<emptyPolyPatch>(pp)
-        )
-        {
-            fvsPatchScalarField& phib = phi.boundaryFieldRef()[patchi];
-            const fvsPatchVectorField& Cf = mesh.Cf().boundaryField()[patchi];
-            const fvsPatchVectorField& Sf = mesh.Sf().boundaryField()[patchi];
-
-            forAll(phib, fi)
-            {
-                scalar X = Cf[fi].component(vector::X);
-                scalar Z = Cf[fi].component(vector::Z);
-                scalar u = -2*M_PI*(Z-.5);
-                scalar w = 2*M_PI*(X-.5);
-                vector Uf =  u*vector(1,0,0) + w*vector(0,0,1);
-                phib[fi] = Uf & Sf[fi];
-            }
-        }
-    }
-    
-    
-    //Checking that phi's of a cell sum to zero
-    //For the polygonal meshes there are some strange continuity errors but 
-    //these only seem to appear at the boundary and are therefore irrelevant 
-    //for this test case.
-    volScalarField sumPhiByV
-    (
-        IOobject
-        (
-            "sumPhiByV",
-            runTime.timeName(),
-            mesh,
-            IOobject::READ_IF_PRESENT,
-            IOobject::AUTO_WRITE
-        ),
-        fvc::surfaceIntegrate(phi)
-    );
-
-    sumPhiByV = fvc::surfaceIntegrate(phi);
-    Info << "max(sum(phi)/V) = " << max(sumPhiByV) << endl;
-    sumPhiByV.write();
-*/
 
     Info<< "Writing U and phi\n" << endl;
     phi.write();

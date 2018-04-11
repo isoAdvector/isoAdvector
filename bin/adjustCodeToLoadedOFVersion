@@ -78,50 +78,72 @@ convertToOldStyle $FOAM_SRC "FatalErrorInFunction" "FatalErrorInFunction" "Fatal
 
 convertToOldStyle $FOAM_SRC "WarningInFunction" "WarningInFunction" "WarningInFunction" "WarningIn(__FUNCTION__)"
 
-#Change code below to work by inspection of loaded OpenFOAM source code and tutorial cases
-majorVersion=$(echo $WM_PROJECT_VERSION | cut -c1)
-echo "majorVersion = $majorVersion"
-minorVersion=$(echo $WM_PROJECT_VERSION | cut -c3)
-echo "minorVersion = $minorVersion"
+#Changing alpha.water to alpha1 if needed (versions older than 2.3.0 incl. 2.2.x)
+str=$(find $FOAM_TUTORIALS/multiphase/ -name alpha.water*)
+if [[ -z  $str  ]];
+then
+    echo "Changing alpha.water to alpha1"
+    grep -rl "alpha.water" $targetDir/run | xargs sed -i 's/alpha.water/alpha1/g'
+    grep -rl "alpha.*" $targetDir/run | xargs sed -i 's/"alpha.*"/alpha1/g'
+    for n in $( find $targetDir/run -name "alpha.water" );
+    do
+        alphaDir=$(dirname $n)
+        mv $alphaDir/alpha.water $alphaDir/alpha1
+    done
+fi
 
+#Changing transportProperties syntax if needed (versions older than 2.3.0 incl. 2.2.x)
+str=$(grep -r "phases" --include=transportProperties $FOAM_TUTORIALS/multiphase/interFoam)
+if [[ -z  $str  ]];
+then
+    echo "Changing constant/transportProperties to old syntax"
+    for transFile in $( find ${targetDir}/run -name "transportProperties" );
+    do
+        sed -i 's/phases/\/\/phases/g' $transFile
+        sed -i 's/water/phase1/g' $transFile
+        sed -i 's/air/phase2/g' $transFile
+    done
+fi
+
+#Removing pimple.firstIter() from interFlow/alphaEqn.H for older OF versions
+str=$(grep -r "pimpleControl::firstIter()" $FOAM_SRC)
+if [[ -z  $str  ]];
+then
+    echo "pimple::firstIter() undefined for loaded OF version." 
+    echo "Removing from interFlow/alphaEqn.H"
+    sed -i 's/!pimple.firstIter()/false/g' $targetDir/applications/solvers/interFlow/alphaEqn.H
+fi
+
+#Removing pimple.firstIter() from interFlow/alphaEqn.H for older OF versions
+str=$(grep -r "pimpleControl::firstIter()" $FOAM_SRC)
+if [[ -z  $str  ]];
+then
+    echo "pimple::firstIter() undefined for loaded OF version." 
+    echo "Removing from interFlow/alphaEqn.H"
+    sed -i 's/!pimple.firstIter()/false/g' $targetDir/applications/solvers/interFlow/alphaEqn.H
+fi
+
+#Removing alpha2 from interFlow/alphaEqn.H for older OF versions
+str=$(grep "alpha2" $targetDir/applications/solvers/interFlow/alphaEqnMULES.H)
+if [[ -z  $str  ]];
+then
+    echo "Deleting alpha2 = ... in interFlow/alphaEqn.H"
+    sed -i '/alpha2/d' $targetDir/applications/solvers/interFlow/alphaEqn.H
+fi
+
+#Extracting loaded OF version info
+majorVersion=$(echo $WM_PROJECT_VERSION | cut -c1)
+minorVersion=$(echo $WM_PROJECT_VERSION | cut -c3)
 if [[ "$majorVersion" =~ ^[0-9]+$ ]] && [[ "$minorVersion" =~ ^[0-9]+$ ]];
 then
     if [ "$majorVersion" -le "2" ] && [ "$minorVersion" -le "3" ];
     then
-        echo "Changes because majorVersion <= 2 and minorVersion <= 3:"
+        echo "Changes because version <= 2.3:"
         echo "Argument list for os.write(...) in isoAdvection.C"
         sed -i 's/os.write(f, facePts, false)/os.write(f, pointField(facePts), false)/g' $targetDir/src/isoAdvection/isoAdvection.C
-
-        echo "!pimple.firstIter() -> false in alphaEqn.H"
-        sed -i 's/!pimple.firstIter()/false/g' $targetDir/applications/solvers/interFlow/alphaEqn.H
-        echo "Delete alpha2 = ... in alphaEqn.H"
-        sed -i '/alpha2/d' $targetDir/applications/solvers/interFlow/alphaEqn.H
 
         echo "Removing applications/test/isoCutTester because not important"
         rm -rf $targetDir/applications/test/isoCutTester
     fi
 
-    #Changing alpha.water to alpha1 and transportProperties syntax if WM_PROJECT_VERSION
-    #older than 2.3.0 (incl. 2.2.x)
-    if [ "$majorVersion" -le "2" ] && [ "$minorVersion" -le "2" ];
-    then
-        echo "Changes because majorVersion <= 2 and minorVersion <= 2"
-        echo "Changing alpha.water to alpha1"
-        grep -rl "alpha.water" $targetDir/run | xargs sed -i 's/alpha.water/alpha1/g'
-        grep -rl "alpha.*" $targetDir/run | xargs sed -i 's/"alpha.*"/alpha1/g'
-        for n in $( find $targetDir/run -name "alpha.water" );
-        do
-            alphaDir=$(dirname $n)
-            mv $alphaDir/alpha.water $alphaDir/alpha1
-        done
-
-        #Modifying transportProperties
-        echo "Changing constant/transportProperties to old syntax"
-        for transFile in $( find $targetDir/run -name "transportProperties" );
-        do
-            sed -i 's/phases/\/\/phases/g' $transFile
-            sed -i 's/water/phase1/g' $transFile
-            sed -i 's/air/phase2/g' $transFile
-        done
-    fi
 fi

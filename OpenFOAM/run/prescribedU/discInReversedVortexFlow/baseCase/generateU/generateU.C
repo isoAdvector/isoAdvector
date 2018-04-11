@@ -1,35 +1,35 @@
 /*---------------------------------------------------------------------------*\
-  =========                 |
-  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
-   \\    /   O peration     |
-    \\  /    A nd           | Copyright (C) 2011-2013 OpenFOAM Foundation
-     \\/     M anipulation  |
+              Original work | Copyright (C) 2016-2017 DHI
+              Modified work | Copyright (C) 2016-2017 OpenCFD Ltd.
+              Modified work | Copyright (C) 2017-2018 Johan Roenby
 -------------------------------------------------------------------------------
-License
-    This file is not part of OpenFOAM.
 
-    OpenFOAM is free software: you can redistribute it and/or modify it
+License
+    This file is part of IsoAdvector, which is an unofficial extension to
+    OpenFOAM.
+
+    IsoAdvector is free software: you can redistribute it and/or modify it
     under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    OpenFOAM is distributed in the hope that it will be useful, but WITHOUT
+    IsoAdvector is distributed in the hope that it will be useful, but WITHOUT
     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
     FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
     for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
+    along with IsoAdvector. If not, see <http://www.gnu.org/licenses/>.
 
 Application
     generateU
-    
+
 Description
-    Generates velocity field for the classical test case with a sphere 
-    deformed into a shape with long tongues and back again.
+    Generates velocity field for the classical test case with a disc
+    stretched into a spiral by a vortex.
 
 Author
-    Johan Roenby, DHI, all rights reserved.
+    Johan Roenby, STROMNING, all rights reserved.
 
 \*---------------------------------------------------------------------------*/
 
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     #include "createMesh.H"
 
     Info<< "Reading field U\n" << endl;
-        
+
     volVectorField U
     (
         IOobject
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
         ),
         linearInterpolate(U) & mesh.Sf()
     );
-    
+
     // Calculating incompressible flux based on stream function
     const scalarField xp(mesh.points().component(0));
     const scalarField yp(mesh.points().component(1));
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 
     U.write();
     phi.write();
-    
+
     Info<< "End\n" << endl;
 
     return 0;

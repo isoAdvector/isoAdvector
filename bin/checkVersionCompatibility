@@ -1,0 +1,28 @@
+#!/bin/bash
+cd ${0%/*} || exit 1   # run from this directory
+
+cd ..
+
+for ofver in 2.2.0 2.2.2 2.3.1 3.0.1 4.0 4.1 5.x dev v1606+ v1612+; do
+#for ofver in 2.2.0 2.2.2; do
+    source ~/OpenFOAM/OpenFOAM-$ofver/etc/bashrc
+    ./Allwmake > ${ofver}.log 2>&1
+    str=$(grep "Error " ${ofver}.log)
+    if [[ -z  $str  ]];
+    then
+        echo "isoAdvector compiles without errors with OpenFOAM-${ofver}"
+        echo "Running damBreak case..."
+        cd OpenFOAM-${ofver}/run/interFlow/damBreak
+        ./Allrun
+        str=$(grep "^Time = 2$" logs/interFlow.log)
+        if [[ -z  $str  ]];
+        then
+            echo "damBreak case did NOT run to the end with OpenFOAM-${ofver}"
+        else
+            echo "damBreak case ran to the end with OpenFOAM-${ofver}"
+        fi
+        cd -
+    else
+        echo "isoAdvector did not compile with OpenFOAM-${ofver}"
+    fi
+done
