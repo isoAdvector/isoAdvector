@@ -1,0 +1,5 @@
+#!/bin/bash
+
+rm -rf [0-9] *.[0-9]* [0-9][0-9] [0-9][0-9].[0-9]* 
+rm -rf log* proc*
+rm -rf constant/polyMesh/{neighbour,owner,faces,points,boundary,sets,*Zones}

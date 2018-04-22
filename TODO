@@ -1,0 +1,3 @@
+- Make isoCutCell::vofCutCell that takes the cells vertices and vertex values as arguments, i.e. not using ap_
+- Make isoCutCell::vofCutCell that takes a interface normal direction as input
+- Investigate behaviour with cyclic BC

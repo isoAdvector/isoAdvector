@@ -120,9 +120,6 @@ class isoAdvection
 
         // Point interpolation data
 
-////            //- Interpolation object from cell centres to points
-////            volPointInterpolation vpi_;
-
             //- VOF field interpolated to mesh points
             scalarField ap_;
 
@@ -209,22 +206,6 @@ class isoAdvection
 
             //- For each face calculate volumetric face transport during dt
             void timeIntegratedFlux();
-
-/*
-            //- Calculate volumetric face transport during dt given the isoFace
-            //  data provided as input for face facei
-            scalar timeIntegratedFaceFlux
-            (
-                const label facei,
-                const vector& x0,
-                const vector& n0,
-                const scalar Un0,
-                const scalar f0,
-                const scalar dt,
-                const scalar phi,
-                const scalar magSf
-            );
-*/
 
             //- Function used to normalise and smoothen grad(alpha) in case
             //  gradAlphaBasedNormal_ is true.
