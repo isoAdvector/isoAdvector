@@ -57,12 +57,6 @@ SourceFiles
 #include "isoCutCell.H"
 #include "isoCutFace.H"
 
-//#include "volFields.H"
-//#include "OFstream.H"
-//#include "interpolationCellPoint.H"
-//#include "cellSet.H"
-//#include "fvcGrad.H"
-
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
@@ -82,19 +76,7 @@ class isoAdvection
 
         //- Reference to mesh
         const fvMesh& mesh_;
-/*//
-        //- Reference to face owners
-        const labelList& owner_;
 
-        //- Reference to face neighbours
-        const labelList& neighbour_;
-
-        //- Reference to cells
-        const cellList& cells_;
-
-        //- Reference to cell volumes
-        const scalarField& cellVolumes_;
-*///
         //- Dictionary for isoAdvection controls
         const dictionary dict_;
 
@@ -119,9 +101,6 @@ class isoAdvection
 
 
         // Point interpolation data
-
-////            //- Interpolation object from cell centres to points
-////            volPointInterpolation vpi_;
 
             //- VOF field interpolated to mesh points
             scalarField ap_;
@@ -180,10 +159,6 @@ class isoAdvection
 
             //- Storage for boundary surface iso value
             DynamicScalarList bsf0_;
-
-////            //- Smallest face area
-////            scalar minMagSf_;
-////
 
         // Additional data for parallel runs
 
@@ -271,6 +246,16 @@ class isoAdvection
                 bsn0_.clear();
                 bsUn0_.clear();
                 bsf0_.clear();
+                
+                if (mesh_.topoChanging())
+                {
+                    // Introduced resizing to cope with changing meshes
+                    checkBounding_.resize(mesh_.nCells());
+                    cellIsBounded_.resize(mesh_.nCells());
+                }
+                checkBounding_ = false;
+                cellIsBounded_ = false;
+
             }
 
         // Face value functions needed for random face access where the face

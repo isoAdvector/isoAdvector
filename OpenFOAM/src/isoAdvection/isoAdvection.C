@@ -175,7 +175,6 @@ void Foam::isoAdvection::timeIntegratedFlux()
     // Clear out the data for re-use and reset list containing information
     // whether cells could possibly need bounding
     clearIsoFaceData();
-    checkBounding_ = false;
 
     // Get necessary references
     const scalarField& phiIn = phi_.primitiveField();
@@ -1125,8 +1124,8 @@ void Foam::isoAdvection::writeIsoFaces
     const string fName
     (
         "isoFaces_" + Foam::name(mesh_.time().timeIndex())
-// Changed because only OF+ has two parameter version of Foam::name
-//        "isoFaces_" + Foam::name("%012d", mesh_.time().timeIndex())
+        // Changed because only OF+ has two parameter version of Foam::name
+        // "isoFaces_" + Foam::name("%012d", mesh_.time().timeIndex())
     );
 
     if (Pstream::parRun())
