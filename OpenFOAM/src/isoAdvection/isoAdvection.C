@@ -375,11 +375,6 @@ void Foam::isoAdvection::timeIntegratedFlux()
         }
     }
 
-    if (writeIsoFacesToFile_ && mesh_.time().writeTime())
-    {
-        writeIsoFaces(isoFacePts);
-    }
-
     // Get references to boundary fields
     const polyBoundaryMesh& boundaryMesh = mesh_.boundaryMesh();
     const surfaceScalarField::Boundary& phib = phi_.boundaryField();
@@ -422,6 +417,8 @@ void Foam::isoAdvection::timeIntegratedFlux()
             }
         }
     }
+
+    writeIsoFaces(isoFacePts);
 
     Info<< "Number of isoAdvector surface cells = "
         << returnReduce(nSurfaceCells, sumOp<label>()) << endl;
@@ -1058,6 +1055,8 @@ void Foam::isoAdvection::applyBruteForceBounding()
 
 void Foam::isoAdvection::writeSurfaceCells() const
 {
+    if (!mesh_.time().writeTime()) return;
+
     if (dict_.lookupOrDefault<bool>("writeSurfCells", false))
     {
         cellSet cSet
@@ -1083,6 +1082,8 @@ void Foam::isoAdvection::writeSurfaceCells() const
 
 void Foam::isoAdvection::writeBoundedCells() const
 {
+    if (!mesh_.time().writeTime()) return;
+
     if (dict_.lookupOrDefault<bool>("writeBoundedCells", false))
     {
         cellSet cSet
@@ -1114,6 +1115,8 @@ void Foam::isoAdvection::writeIsoFaces
     const DynamicList<List<point> >& faces
 ) const
 {
+    if (!writeIsoFacesToFile_ || !mesh_.time().writeTime()) return;
+
     // Writing isofaces to obj file for inspection, e.g. in paraview
     const fileName dirName
     (

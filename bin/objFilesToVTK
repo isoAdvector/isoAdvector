@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#Uses objToVTK to genrate vtk files from all *.obj files
+#in a directory with a specified prefix
+
+prefix=${1:-isoFaces/isoFaces_}
+#prefix=isoFaces/isoFaces_
+
+for file in $(ls ${prefix}*.obj);
+do
+    objSuffix=.obj
+    tIndex=${file#$prefix}
+    tIndex=${tIndex%$objSuffix}
+    objToVTK $file ${prefix}${tIndex}.vtk
+done

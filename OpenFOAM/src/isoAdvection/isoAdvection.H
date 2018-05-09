@@ -140,10 +140,10 @@ class isoAdvection
             isoCutFace isoCutFace_;
 
             //- Bool list for cells that have been touched by the bounding step
-            boolList cellIsBounded_;
+            DynamicList<bool> cellIsBounded_;
 
             //- True for all surface cells and their neighbours
-            boolList checkBounding_;
+            DynamicList<bool> checkBounding_;
 
             //- Storage for boundary faces downwind to a surface cell
             DynamicLabelList bsFaces_;
@@ -252,6 +252,7 @@ class isoAdvection
                     // Introduced resizing to cope with changing meshes
                     checkBounding_.resize(mesh_.nCells());
                     cellIsBounded_.resize(mesh_.nCells());
+                    ap_.resize(mesh_.nPoints());
                 }
                 checkBounding_ = false;
                 cellIsBounded_ = false;
