@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#Uses foamToVTK to genrate vtk files from a cellSet in the time directories.
+#The resulting vtk files can be viewed as an animation in paraview.
+#
+# Johan Roenby, STROMNING
+
+cellSetName=${1:-surfCells}
+
+for dir in $(foamListTimes);
+do
+    echo $dir
+    mkdir -p $dir/polyMesh/sets
+    cp $dir/$cellSetName $dir/polyMesh/sets
+    foamToVTK -cellSet $cellSetName -time $dir -fields '()' -poly -allPatches
+    rm -rf $dir/polyMesh/sets/$cellSetName
+    rm -rf VTK/allPathces
+done

@@ -175,7 +175,6 @@ void Foam::isoAdvection::timeIntegratedFlux()
     // Clear out the data for re-use and reset list containing information
     // whether cells could possibly need bounding
     clearIsoFaceData();
-    checkBounding_ = false;
 
     // Get necessary references
     const scalarField& phiIn = phi_.primitiveField();
@@ -930,6 +929,8 @@ void Foam::isoAdvection::applyBruteForceBounding()
 
 void Foam::isoAdvection::writeSurfaceCells() const
 {
+    if (!mesh_.time().writeTime()) return;
+
     if (dict_.lookupOrDefault<bool>("writeSurfCells", false))
     {
         cellSet cSet
@@ -955,6 +956,8 @@ void Foam::isoAdvection::writeSurfaceCells() const
 
 void Foam::isoAdvection::writeBoundedCells() const
 {
+    if (!mesh_.time().writeTime()) return;
+
     if (dict_.lookupOrDefault<bool>("writeBoundedCells", false))
     {
         cellSet cSet
@@ -986,58 +989,31 @@ void Foam::isoAdvection::writeIsoFaces
     const DynamicList<List<point> >& faces
 ) const
 {
-    if (writeIsoFacesToFile_ && mesh_.time().writeTime())
+
+    if (!writeIsoFacesToFile_ || !mesh_.time().writeTime()) return;
+
+    // Writing isofaces to obj file for inspection, e.g. in paraview
+    const fileName dirName
+    (
+        Pstream::parRun() ?
+            mesh_.time().path()/".."/"isoFaces"
+          : mesh_.time().path()/"isoFaces"
+    );
+    const string fName
+    (
+        "isoFaces_" + Foam::name(mesh_.time().timeIndex())
+        // Changed because only OF+ has two parameter version of Foam::name
+        // "isoFaces_" + Foam::name("%012d", mesh_.time().timeIndex())
+    );
+
+    if (Pstream::parRun())
     {
+        // Collect points from all the processors
+        List<DynamicList<List<point> > > allProcFaces(Pstream::nProcs());
+        allProcFaces[Pstream::myProcNo()] = faces;
+        Pstream::gatherList(allProcFaces);
 
-        // Writing isofaces to obj file for inspection, e.g. in paraview
-        const fileName dirName
-        (
-            Pstream::parRun() ?
-                mesh_.time().path()/".."/"isoFaces"
-              : mesh_.time().path()/"isoFaces"
-        );
-        const string fName
-        (
-            "isoFaces_" + Foam::name(mesh_.time().timeIndex())
-    // Changed because only OF+ has two parameter version of Foam::name
-    //        "isoFaces_" + Foam::name("%012d", mesh_.time().timeIndex())
-        );
-
-        if (Pstream::parRun())
-        {
-            // Collect points from all the processors
-            List<DynamicList<List<point> > > allProcFaces(Pstream::nProcs());
-            allProcFaces[Pstream::myProcNo()] = faces;
-            Pstream::gatherList(allProcFaces);
-
-            if (Pstream::master())
-            {
-                mkDir(dirName);
-                OBJstream os(dirName/fName + ".obj");
-                Info<< nl << "isoAdvection: writing iso faces to file: "
-                    << os.name() << nl << endl;
-
-                face f;
-                forAll(allProcFaces, proci)
-                {
-                    const DynamicList<List<point> >& procFacePts =
-                        allProcFaces[proci];
-
-                    forAll(procFacePts, i)
-                    {
-                        const List<point>& facePts = procFacePts[i];
-
-                        if (facePts.size() != f.size())
-                        {
-                            f = face(identity(facePts.size()));
-                        }
-
-                        os.write(f, facePts, false);
-                    }
-                }
-            }
-        }
-        else
+        if (Pstream::master())
         {
             mkDir(dirName);
             OBJstream os(dirName/fName + ".obj");
@@ -1045,17 +1021,43 @@ void Foam::isoAdvection::writeIsoFaces
                 << os.name() << nl << endl;
 
             face f;
-            forAll(faces, i)
+            forAll(allProcFaces, proci)
             {
-                const List<point>& facePts = faces[i];
+                const DynamicList<List<point> >& procFacePts =
+                    allProcFaces[proci];
 
-                if (facePts.size() != f.size())
+                forAll(procFacePts, i)
                 {
-                    f = face(identity(facePts.size()));
-                }
+                    const List<point>& facePts = procFacePts[i];
 
-                os.write(f, facePts, false);
+                    if (facePts.size() != f.size())
+                    {
+                        f = face(identity(facePts.size()));
+                    }
+
+                    os.write(f, facePts, false);
+                }
             }
+        }
+    }
+    else
+    {
+        mkDir(dirName);
+        OBJstream os(dirName/fName + ".obj");
+        Info<< nl << "isoAdvection: writing iso faces to file: "
+            << os.name() << nl << endl;
+
+        face f;
+        forAll(faces, i)
+        {
+            const List<point>& facePts = faces[i];
+
+            if (facePts.size() != f.size())
+            {
+                f = face(identity(facePts.size()));
+            }
+
+            os.write(f, facePts, false);
         }
     }
 }
