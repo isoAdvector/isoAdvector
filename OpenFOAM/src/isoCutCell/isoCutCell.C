@@ -320,6 +320,7 @@ void Foam::isoCutCell::calcIsoFacePointsFromEdges()
     {
         if
         (
+            // Note: Hardcoded tolerance
             mag
             (
                 unsortedIsoFacePointAngles[order[pi]]

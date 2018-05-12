@@ -207,6 +207,14 @@ class isoAdvection
             //- For each face calculate volumetric face transport during dt
             void timeIntegratedFlux();
 
+            //- Set ap_ values of celli's vertices in accordance with the
+            //  unit normal of celli as obtained from cellNoramlsIn.
+            void setCellVertexValues
+            (
+                const label celli,
+                const vectorField& cellNormalsIn
+            );
+
             //- Function used to normalise and smoothen grad(alpha) in case
             //  gradAlphaBasedNormal_ is true.
             void normaliseAndSmooth

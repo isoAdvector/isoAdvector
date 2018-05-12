@@ -413,8 +413,7 @@ Foam::scalar Foam::isoCutFace::timeIntegratedFaceFlux
 
         if (nShifts == 2)
         {
-            dVf =
-                phi/magSf*timeIntegratedArea(fPts, pTimes, dt, magSf, Un0);
+            dVf = phi/magSf*timeIntegratedArea(fPts, pTimes, dt, magSf, Un0);
         }
         else if (nShifts > 2)
         {

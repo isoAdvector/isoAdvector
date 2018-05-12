@@ -188,21 +188,22 @@ void Foam::isoAdvection::timeIntegratedFlux()
     const labelList& nei = mesh_.faceNeighbour();
     const labelListList& cellCells = mesh_.cellCells();
 
+    // Calculate alpha vertex values, ap_, or cell normals (used to get
+    // interface-vertex distance function if gradAlphaBasedNormal_)
+    volVectorField cellNormals("cellN", fvc::grad(alpha1_));
+    if (gradAlphaBasedNormal_)
+    {
+        // Calculate gradient of alpha1 and normalise and smoothen it.
+        normaliseAndSmooth(cellNormals);
+    }
+    else
+    {
+        // Interpolating alpha1 cell centre values to mesh points (vertices)
+        ap_ = volPointInterpolation::New(mesh_).interpolate(alpha1_);
+    }
+
     // Storage for isoFace points. Only used if writeIsoFacesToFile_
     DynamicList<List<point> > isoFacePts;
-
-    // Interpolating alpha1 cell centre values to mesh points (vertices)
-    // Note: Values overwritten if gradAlphaBasedNormal_ is true.
-    ap_ = volPointInterpolation::New(mesh_).interpolate(alpha1_);
-
-    // Calculate gradient of alpha1 and normalise it.
-    // Note: Only used if gradAlphaBasedNormal_ is true
-    volVectorField cellN("cellN", fvc::grad(alpha1_));
-    vectorField& cellNIn = cellN.primitiveFieldRef();
-    if (gradAlphaBasedNormal_) normaliseAndSmooth(cellN);
-    const labelListList& cellPoints = mesh_.cellPoints();
-    const vectorField& cellCentres = mesh_.cellCentres();
-    const pointField& points = mesh_.points();
 
     // Loop through all cells
     forAll(alpha1In_, celli)
@@ -223,17 +224,10 @@ void Foam::isoAdvection::timeIntegratedFlux()
             << 1.0 - alpha1In_[celli] << " ------------"
             << endl;
 
-        // Optionally overwrite interpolated alpha values in ap_ with distance
-        // along (a smoothed) grad(alpha)
         if (gradAlphaBasedNormal_)
         {
-            const labelList& cp = cellPoints[celli];
-            const point& cellCentre = cellCentres[celli];
-            forAll(cp, vi)
-            {
-                const point& vertex = points[cp[vi]];
-                ap_[cp[vi]] = (vertex - cellCentre) & cellNIn[celli];
-            }
+            vectorField& cellNormalsIn = cellNormals.primitiveFieldRef();
+            setCellVertexValues(celli, cellNormalsIn);
         }
 
         // Calculate isoFace centre x0, normal n0 at time t
@@ -405,6 +399,25 @@ void Foam::isoAdvection::timeIntegratedFlux()
 
     Info<< "Number of isoAdvector surface cells = "
         << returnReduce(nSurfaceCells, sumOp<label>()) << endl;
+}
+
+
+void Foam::isoAdvection::setCellVertexValues
+(
+    const label celli,
+    const vectorField& cellNormalsIn
+)
+{
+    const labelListList& cellPoints = mesh_.cellPoints();
+    const vectorField& cellCentres = mesh_.cellCentres();
+    const pointField& points = mesh_.points();
+    const labelList& cp = cellPoints[celli];
+    const point& cellCentre = cellCentres[celli];
+    forAll(cp, vi)
+    {
+        const point& vertex = points[cp[vi]];
+        ap_[cp[vi]] = (vertex - cellCentre) & cellNormalsIn[celli];
+    }
 }
 
 

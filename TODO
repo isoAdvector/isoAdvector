@@ -1,3 +1,9 @@
 - Make isoCutCell::vofCutCell that takes the cells vertices and vertex values as arguments, i.e. not using ap_
 - Make isoCutCell::vofCutCell that takes a interface normal direction as input
 - Investigate behaviour with cyclic BC
+- Make a test application and case that sweeps a cell with a given interface normal or ap_.
+- Implement consistent handling of isolated interface cells
+- Implement new idea for interface normal orientation
+- Implement handling of porous media where only a fraction of the cell volume and face area is available for fluid
+- Handling of multiple interfaces in same cell
+- Reduce the number of arguments of timeIntegratedFaceFlux by exploiting proportionality to dt, phi and by calculating pTimes on a cell basis prior to calling it
