@@ -109,7 +109,7 @@ work with newer versions. It does not contain the latest code developments.
       controlDict to interFlow and add the following to the dicitonary
       fvSolution.solvers."alpha.water.*":
 
-      `"alpha.water.*"
+      ```"alpha.water.*"
       {
           //interfaceMethod can be set to "MULES" (default), or "isoAdvector".
 
@@ -160,7 +160,7 @@ work with newer versions. It does not contain the latest code developments.
           //This method is activated by changing this to true:
 
           gradAlphaNormal false;
-      }
+      }```
 
       To use the functionality of a prescribed flow you can set 
       momentumCorrector to no and nCorrectors to -1 in the fvSolution.PIMPLE 
