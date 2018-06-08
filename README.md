@@ -241,7 +241,7 @@ work with newer versions. It does not contain the latest code developments.
 
 ## Contributors:
 
-* Johan Roenby, STROMNING <johan@stromning.com> (Inventor and main developer)
+* Johan Roenby, STROMNING, <johan@stromning.com> (Inventor and main developer)
 * Hrvoje Jasak, University of Zagreb (General coding guidance, consistent treatment 
   of boundary faces including processor boundaries, parallelisation, code clean up, 
   provided algebraic schemes, CICSAM, HRIC etc.)
