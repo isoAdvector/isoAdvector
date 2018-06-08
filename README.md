@@ -98,8 +98,9 @@ work with newer versions. It does not contain the latest code developments.
     - `isoAdvection`
   These are compiled into a library named `libIsoAdvection`. 
 * For comparison we also include the CICSAM, HRIC and mHRIC algebraic VOF 
-  schemes in `finiteVolume` directory. These are compiled into a library called
-  `libVOFInterpolationSchemes`.
+  schemes in `finiteVolume` directory. These were previously compiled into a 
+  library called `libVOFInterpolationSchemes` but are currently not compiled
+  and are only included as legacy code.
 
 `applications/` 
 
@@ -168,6 +169,7 @@ work with newer versions. It does not contain the latest code developments.
       momentumCorrector to no and nCorrectors to -1 in the fvSolution.PIMPLE 
       directory and add the following to the dicitonary fvSolution.solvers.U:
 
+      ```
       U
       {
           //If prescribedU and PIMPLE.nCorrectors is set to -1, then the velocty
@@ -186,7 +188,8 @@ work with newer versions. It does not contain the latest code developments.
           //velocity field when a when the time reverseTime is reached:
 
           reverseTime 0;
-      }`
+      }
+      ```
 
           
       Please see cases in OpenFOAM/run for examples of usage. Note that the 
