@@ -109,11 +109,9 @@ work with newer versions. It does not contain the latest code developments.
       controlDict to interFlow and add the following to the dicitonary
       fvSolution.solvers."alpha.water.*":
 
-      "alpha.water.*"
+      `"alpha.water.*"
       {
-          //interfaceMethod can be set to "MULES" (default), "isoAdvector" or 
-          //"fvSchemes". Use the latter option to use the HRIC, CICSAM or 
-          //vofCompression schemes.
+          //interfaceMethod can be set to "MULES" (default), or "isoAdvector".
 
           interfaceMethod "isoAdvector";
           
@@ -186,7 +184,7 @@ work with newer versions. It does not contain the latest code developments.
           //velocity field when a when the time reverseTime is reached:
 
           reverseTime 0;
-      }
+      }`
 
           
       Please see cases in OpenFOAM/run for examples of usage. Note that the 
@@ -238,11 +236,12 @@ work with newer versions. It does not contain the latest code developments.
 
 ## Contributors:
 
-* Johan Roenby <johan@stromning.com> (Inventor and main developer)
-* Hrvoje Jasak (General coding guidance, consistent treatment of boundary faces 
-  including processor boundaries, parallelisation, code clean up, provided 
-  algebraic schemes, CICSAM, HRIC etc.)
-* Henrik Bredmose (Participated in conceptual development)
-* Vuko Vukcevic (Code review, profiling, porting to foam-extend, bug fixing, 
-  testing)
-* Andrew Heather (Code clean up, porting to OpenFOAM+)
+* Johan Roenby, STROMNING <johan@stromning.com> (Inventor and main developer)
+* Hrvoje Jasak, University of Zagreb (General coding guidance, consistent treatment 
+  of boundary faces including processor boundaries, parallelisation, code clean up, 
+  provided algebraic schemes, CICSAM, HRIC etc.)
+* Henrik Bredmose, DTU Wind Energy (Participated in conceptual development)
+* Vuko Vukcevic, University of Zagreb (Code review, profiling, porting to 
+  foam-extend, bug fixing, testing)
+* Andrew Heather, OpenCFD (Code clean up, porting to OpenFOAM+)
+* Henning Scheufler, DLR (Extensive validation, gmsh based mesh generation)
