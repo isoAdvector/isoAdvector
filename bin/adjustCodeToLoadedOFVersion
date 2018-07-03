@@ -109,18 +109,37 @@ fi
 str=$(grep -r "pimpleControl::firstIter()" $FOAM_SRC)
 if [[ -z  $str  ]];
 then
-    echo "pimple::firstIter() undefined for loaded OF version." 
+    echo "pimple::firstIter() undefined for loaded OF version."
     echo "Removing from interFlow/alphaEqn.H"
     sed -i 's/!pimple.firstIter()/false/g' $targetDir/applications/solvers/interFlow/alphaEqn.H
+    sed -i 's/pimple.firstIter()/false/g' $targetDir/applications/solvers/interFlow/alphaEqn.H
 fi
 
-#Removing pimple.firstIter() from interFlow/alphaEqn.H for older OF versions
-str=$(grep -r "pimpleControl::firstIter()" $FOAM_SRC)
+#Renaming pimple.nCorrPIMPLE() to pimple.nCorrPimple() if necessary (OpenFOAM-dev)
+str=$(grep -r "::nCorrPimple()" $FOAM_SRC)
+if [[ -n  $str  ]];
+then
+    echo "Renaming nCorrPIMPLE to nCorrPimple in interFlow/alphaEqn.H"
+    echo "in accordance with loaded OF version."
+    sed -i 's/pimple.nCorrPIMPLE/pimple.nCorrPimple/g' $targetDir/applications/solvers/interFlow/alphaEqn.H
+fi
+
+#Removing topoChanging() if necessary (OpenFOAM-2.2.0)
+str=$(grep -r "topoChanging()" $FOAM_SRC)
 if [[ -z  $str  ]];
 then
-    echo "pimple::firstIter() undefined for loaded OF version." 
-    echo "Removing from interFlow/alphaEqn.H"
-    sed -i 's/!pimple.firstIter()/false/g' $targetDir/applications/solvers/interFlow/alphaEqn.H
+    echo "Removing topoChanging() check in isoAdvection.H"
+    echo "in accordance with loaded OF version."
+    sed -i 's/mesh_.topoChanging()/false/g' $targetDir/src/isoAdvection/isoAdvection.H
+fi
+
+#Removing mixture.correct() if necessary (OpenFOAM-2.2.0)
+str=$(grep "mixture\." $targetDir/applications/solvers/interFlow/createFields.H)
+if [[ -z  $str  ]];
+then
+    echo "Removing mixture.correct() in alphaEqn.H"
+    echo "in accordance with loaded OF version."
+    sed -i 's/mixture\.correct();//g' $targetDir/applications/solvers/interFlow/alphaEqn.H
 fi
 
 #Removing alpha2 from interFlow/alphaEqn.H for older OF versions

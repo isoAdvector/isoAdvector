@@ -3,7 +3,7 @@ const dictionary& alpha1Dict(mesh.solverDict(alpha1.name()));
 
 word interfaceMethod
 (
-    alpha1Dict.lookupOrDefault<word>("interfaceMethod", "MULES")
+    alpha1Dict.lookupOrDefault<word>("interfaceMethod", "isoAdvector")
 );
 
 // Advancing alpah1 field
@@ -13,35 +13,50 @@ if (interfaceMethod == "MULES")
 }
 else if (interfaceMethod == "isoAdvector")
 {
-    // If there are more than one outer corrector, we use a mixture of old and
-    // new U and phi for propagating alpha1 in all but the first outer iteration
-    if (!pimple.firstIter())
+    if (pimple.nCorrPIMPLE() > 1)
     {
-        // We are recalculating alpha1 from the its old time value
-        alpha1 = alpha1.oldTime();
-        // Temporarily storing new U and phi values in prevIter storage
-        U.storePrevIter();
-        phi.storePrevIter();
-
-        // Overwriting new U and phi values with mixture of old and new values
-        phi = 0.5*(phi + phi.oldTime());
-        U = 0.5*(U + U.oldTime());
+        // If nOuterCorrectors > 1 then for all but the first loop the advection
+        // of alpha is done using an average, 0.5*phi+0.5*phiNew where phi is
+        // the flux at the beginning of the time step and phiNew is the flux
+        // estimate at the end of the time step from the previous outer
+        // iteration. Similarly we use 0.5*U + 0.5*UNew in later iterations.
+        if (pimple.firstIter())
+        {
+            // To recalculate the alpha1 update in subsequent iterations, we
+            // must store its current value before overwriting with the new
+            // value
+            alpha1.prevIter();
+            // Storing initial phi and U for use in later outer iterations.
+            phi.storePrevIter();
+            U.storePrevIter();
+        }
+        else
+        {
+            // Resetting alpha1 to value before advection in first PIMPLE
+            // iteration.
+            alpha1 = alpha1.prevIter();
+            // Setting U and phi with which to advect interface.
+            U = 0.5*U.prevIter() + 0.5*U;
+            phi = 0.5*phi.prevIter() + 0.5*phi;
+        }
     }
 
-    // Update alpha1
+    // Updating alpha1
     advector.advect();
 
-    // Update rhoPhi
-    rhoPhi = advector.getRhoPhi(rho1, rho2);
-
-    alpha2 = 1.0 - alpha1;
+    const dimensionedScalar& rho1f(rho1);
+    const dimensionedScalar& rho2f(rho2);
+    rhoPhi = advector.getRhoPhi(rho1f, rho2f);
 
     if (!pimple.firstIter())
     {
-        // Restoring new U and phi values temporarily saved in prevIter() above
-        U = U.prevIter();
-        phi = phi.prevIter();
+        // Resetting U and phi to value at latest iteration.
+        U = 2.0*U - U.prevIter();
+        phi = 2.0*phi - phi.prevIter();
     }
+
+    alpha2 = 1.0 - alpha1;
+    mixture.correct();
 
     Info<< "Phase-1 volume fraction = "
         << alpha1.weightedAverage(mesh.Vsc()).value()

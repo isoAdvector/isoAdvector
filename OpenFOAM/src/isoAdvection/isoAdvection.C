@@ -93,7 +93,7 @@ Foam::isoAdvection::isoAdvection
 
     // Tolerances and solution controls
     nAlphaBounds_(dict_.lookupOrDefault<label>("nAlphaBounds", 3)),
-    isoFaceTol_(dict_.lookupOrDefault<scalar>("isoFaceTol", 1e-8)),
+    isoFaceTol_(dict_.lookupOrDefault<scalar>("isoFaceTol", 1e-10)),
     surfCellTol_(dict_.lookupOrDefault<scalar>("surfCellTol", 1e-8)),
     gradAlphaBasedNormal_
     (
@@ -108,8 +108,8 @@ Foam::isoAdvection::isoAdvection
     surfCells_(label(0.2*mesh_.nCells())),
     isoCutCell_(mesh_, ap_),
     isoCutFace_(mesh_, ap_),
-    cellIsBounded_(mesh_.nCells(), false),
-    checkBounding_(mesh_.nCells(), false),
+    cellIsBounded_(mesh_.nCells()),
+    checkBounding_(mesh_.nCells()),
     bsFaces_(label(0.2*(mesh_.nFaces() - mesh_.nInternalFaces()))),
     bsx0_(bsFaces_.size()),
     bsn0_(bsFaces_.size()),
@@ -325,8 +325,8 @@ void Foam::isoAdvection::timeIntegratedFlux()
                 // Note: We will like all point neighbours to interface cells to
                 // be checked. Especially if the interface leaves a cell during
                 // a time step, it may enter a point neighbour which should also
-                // be treated like a surface cell. Its interface normal should 
-                // somehow be inherrited from its upwind cells from which it 
+                // be treated like a surface cell. Its interface normal should
+                // somehow be inherrited from its upwind cells from which it
                 // receives the interface.
                 const labelList& nNeighbourCells = cellCells[otherCell];
                 forAll(nNeighbourCells, ni)

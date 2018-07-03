@@ -57,7 +57,7 @@ Foam::isoCutCell::isoCutCell(const fvMesh& mesh, scalarField& f)
     cellI_(-1),
     f_(f),
     isoValue_(0),
-    isoCutFace_(isoCutFace(mesh_,f_)),
+    isoCutFace_(isoCutFace(mesh_, f_)),
     isoCutFaces_(10),
     isoCutFacePoints_(10),
     isoCutFaceCentres_(10),
