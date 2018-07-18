@@ -8,12 +8,6 @@ echo "Attempting to adjust isoAdvector code to currently loaded OpenFOAM version
 echo "Adjusted source placed in $targetDir."
 echo
 
-#cp -nr ../OpenFOAM/* $targetDir
-
-#rm -rf $targetDir
-
-#cp -r ../OpenFOAM/ $targetDir
-
 function filesContaining {
     grep -rl --include \*.C --include \*.H --exclude-dir \*Include\* ${1} \
     $targetDir
@@ -78,6 +72,32 @@ convertToOldStyle $FOAM_SRC "FatalErrorInFunction" "FatalErrorInFunction" "Fatal
 
 convertToOldStyle $FOAM_SRC "WarningInFunction" "WarningInFunction" "WarningInFunction" "WarningIn(__FUNCTION__)"
 
+#Removing topoChanging() if necessary (OpenFOAM-2.2.0)
+str=$(grep -r "topoChanging()" $FOAM_SRC)
+if [[ -z  $str  ]];
+then
+    echo "Removing topoChanging() check in isoAdvection.H"
+    echo "in accordance with loaded OF version."
+    sed -i 's/mesh_.topoChanging()/false/g' $targetDir/src/isoAdvection/isoAdvection.H
+fi
+
+#Extracting loaded OF version info
+majorVersion=$(echo $WM_PROJECT_VERSION | cut -c1)
+minorVersion=$(echo $WM_PROJECT_VERSION | cut -c3)
+if [[ "$majorVersion" =~ ^[0-9]+$ ]] && [[ "$minorVersion" =~ ^[0-9]+$ ]];
+then
+    if [ "$majorVersion" -le "2" ] && [ "$minorVersion" -le "3" ];
+    then
+        echo "Changes because version <= 2.3:"
+        echo "Argument list for os.write(...) in isoAdvection.C"
+        sed -i 's/os.write(f, facePts, false)/os.write(f, pointField(facePts), false)/g' $targetDir/src/isoAdvection/isoAdvection.C
+
+        echo "Removing applications/test/isoCutTester because not important"
+        rm -rf $targetDir/applications/test/isoCutTester
+    fi
+
+fi
+
 #Changing alpha.water to alpha1 if needed (versions older than 2.3.0 incl. 2.2.x)
 str=$(find $FOAM_TUTORIALS/multiphase/ -name alpha.water*)
 if [[ -z  $str  ]];
@@ -105,8 +125,17 @@ then
     done
 fi
 
+#Removing mixture.correct() if necessary (OpenFOAM-2.2.0)
+str=$(grep "mixture\." $targetDir/applications/solvers/interFlow/createFields.H)
+if [[ -z  $str  ]];
+then
+    echo "Removing mixture.correct() in alphaEqn.H"
+    echo "in accordance with loaded OF version."
+    sed -i 's/mixture\.correct();//g' $targetDir/applications/solvers/interFlow/alphaEqn.H
+fi
+
 #Removing pimple.firstIter() from interFlow/alphaEqn.H for older OF versions
-str=$(grep -r "pimpleControl::firstIter()" $FOAM_SRC)
+str=$(grep -r "::firstIter()" $FOAM_SRC --include=pimple*)
 if [[ -z  $str  ]];
 then
     echo "pimple::firstIter() undefined for loaded OF version."
@@ -124,45 +153,10 @@ then
     sed -i 's/pimple.nCorrPIMPLE/pimple.nCorrPimple/g' $targetDir/applications/solvers/interFlow/alphaEqn.H
 fi
 
-#Removing topoChanging() if necessary (OpenFOAM-2.2.0)
-str=$(grep -r "topoChanging()" $FOAM_SRC)
-if [[ -z  $str  ]];
-then
-    echo "Removing topoChanging() check in isoAdvection.H"
-    echo "in accordance with loaded OF version."
-    sed -i 's/mesh_.topoChanging()/false/g' $targetDir/src/isoAdvection/isoAdvection.H
-fi
-
-#Removing mixture.correct() if necessary (OpenFOAM-2.2.0)
-str=$(grep "mixture\." $targetDir/applications/solvers/interFlow/createFields.H)
-if [[ -z  $str  ]];
-then
-    echo "Removing mixture.correct() in alphaEqn.H"
-    echo "in accordance with loaded OF version."
-    sed -i 's/mixture\.correct();//g' $targetDir/applications/solvers/interFlow/alphaEqn.H
-fi
-
 #Removing alpha2 from interFlow/alphaEqn.H for older OF versions
 str=$(grep "alpha2" $targetDir/applications/solvers/interFlow/alphaEqnMULES.H)
 if [[ -z  $str  ]];
 then
     echo "Deleting alpha2 = ... in interFlow/alphaEqn.H"
     sed -i '/alpha2/d' $targetDir/applications/solvers/interFlow/alphaEqn.H
-fi
-
-#Extracting loaded OF version info
-majorVersion=$(echo $WM_PROJECT_VERSION | cut -c1)
-minorVersion=$(echo $WM_PROJECT_VERSION | cut -c3)
-if [[ "$majorVersion" =~ ^[0-9]+$ ]] && [[ "$minorVersion" =~ ^[0-9]+$ ]];
-then
-    if [ "$majorVersion" -le "2" ] && [ "$minorVersion" -le "3" ];
-    then
-        echo "Changes because version <= 2.3:"
-        echo "Argument list for os.write(...) in isoAdvection.C"
-        sed -i 's/os.write(f, facePts, false)/os.write(f, pointField(facePts), false)/g' $targetDir/src/isoAdvection/isoAdvection.C
-
-        echo "Removing applications/test/isoCutTester because not important"
-        rm -rf $targetDir/applications/test/isoCutTester
-    fi
-
 fi

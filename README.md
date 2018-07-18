@@ -6,7 +6,7 @@ IsoAdvector is a geometric Volume-of-Fluid method for advection of a sharp
 interface between two incompressible fluids. It works on both structured and 
 unstructured meshes with no requirements on cell shapes. IsoAdvector is meant as 
 a replacement for the interface compression with the MULES limiter implemented 
-in the interFoam family of solvers.
+in the interFoam family of OpenFOAM solvers.
 
 The isoAdvector concept and code was developed at DHI and was funded by a Sapere
 Aude postdoc grant to Johan Roenby from The Danish Council for Independent
@@ -35,14 +35,20 @@ version. The code should work with OpenFOAM-5.x, 4.1, 4.0, 3.0.1, 2.2.0,
 v1606+ and v1612+. There are known to be issues with 2.2.2, 2.3.0, 2.3.1 and
 2.4.0, so using these versions is not recommended.
 
-OpenFOAM-v1706 and v1712 contain an integration of the isoAdvector code with the 
-interFlow solver named interIsoFoam. For more info on the v1706 integration see:
+OpenFOAM-v1706 and later vXXYY version contain an integration of the isoAdvector 
+code with the interFlow solver named interIsoFoam. 
+For more info on the v1706 integration see:
 
 https://www.openfoam.com/releases/openfoam-v1706/numerics.php#numerics-isoadvector
 
-Note that compiling the github.com/isoAdvector code with v1706 and v1712 may lead
-to problems because the finiteVolume library of v1706 already contains classes 
-named isoAvection, isoCutCell and isoCutFace.
+Note that compiling the github.com/isoAdvector code with v1706 and later vXXYY 
+versions may lead to problems because the OpenFOAM finiteVolume library already 
+contains classes named isoAvection, isoCutCell and isoCutFace.
+
+Compatibility with OpenFOAM-dev is regularly checked, but the developers tend to
+frequently introduce minor API changes breaking the compatibility of isoAdvector
+with the OpenFOAM-dev. If you experience compilation errors with dev, please 
+notify me at the e-mail address below, and I'll fix it as soon as possible.
 
 A foam-extend version of the code is also available in isoAdvector/foam-extend. 
 This was developed for foam-extend-32 and will most likely need modifications to 
@@ -52,7 +58,7 @@ work with newer versions. It does not contain the latest code developments.
 
 0.  Source your OpenFOAM environment, e.g.: 
 
-        source /home/$USER/OpenFOAM/OpenFOAM-4.1/etc/bashrc
+        source /home/$USER/OpenFOAM/OpenFOAM-5.x/etc/bashrc
 
 1.  In a linux terminal download the package with git by typing:
 
@@ -64,11 +70,16 @@ work with newer versions. It does not contain the latest code developments.
         ./Allwmake
 
     Applications will be compiled to your FOAM_USER_APPBIN and libraries will be
-    compiled to your FOAM_USER_LIBBIN.
+    compiled to your FOAM_USER_LIBBIN (You can check where e.g. the environmental 
+    variable FOAM_USER_APPBIN point to by typing 
+
+        echo $FOAM_USER_APPBIN
+
+    in the terminal).
     
 3.  Test installation with a simple test case by typing (finishes in secs):
 
-        cp -r OpenFOAM-4.1/run/prescribedU/discInConstantFlow/baseCase ~
+        cp -r OpenFOAM-5.x/run/prescribedU/discInConstantFlow/baseCase ~
         cd ~/baseCase
         ./Allrun
 	
@@ -87,6 +98,9 @@ work with newer versions. It does not contain the latest code developments.
 
     The downloaded meshes.tar.gz file should be extracted to the isoAdvector 
     root directory.
+
+    Unstrictured meshes can also be generated with the scripts generateTetUnitCube
+    and generateTriUnitSquare in the bin folder. This requires gmsh (see headers).
     
 ## Code structure:
 

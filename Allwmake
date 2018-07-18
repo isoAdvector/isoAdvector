@@ -24,20 +24,26 @@ elif [ "$WM_PROJECT" == "OpenFOAM" ];
 then
     sourceDir=OpenFOAM-${WM_PROJECT_VERSION}
 
+    #Check if sourceDir already exists
+    sourceDirAlreadyExists=false
+    [ -d $sourceDir ] && sourceDirAlreadyExists=true
+
     echo "Copying non-existing files from OpenFOAM to $sourceDir..."
+    cp -rn OpenFOAM $sourceDir
 
-    rm -rf $sourceDir
-    cp -r OpenFOAM $sourceDir
+    #Only manipulate sourceDir if it did not already exist
+    if [ "$sourceDirAlreadyExists" = false ] ; then
+        #Generate interFlow solver from interFoam of the loaded OF version
+        cd bin
+        ./generateInterFlow
+        cd -
 
-    #Generate interFlow solver from interFoam solver of the loaded OF version
-    cd bin
-    ./generateInterFlow
-    cd -
+        #Adjust source files to API of currently loaded OpenFOAM version
+        cd bin
+        ./adjustCodeToLoadedOFVersion
+        cd -
+    fi
 
-    #Only convert src if not one of the newest OF versions
-    cd bin
-    ./adjustCodeToLoadedOFVersion
-    cd -
 fi
 
 #Compile the correct isoAdvector version

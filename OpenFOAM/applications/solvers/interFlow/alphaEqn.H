@@ -25,7 +25,7 @@ else if (interfaceMethod == "isoAdvector")
             // To recalculate the alpha1 update in subsequent iterations, we
             // must store its current value before overwriting with the new
             // value
-            alpha1.prevIter();
+            alpha1.storePrevIter();
             // Storing initial phi and U for use in later outer iterations.
             phi.storePrevIter();
             U.storePrevIter();
