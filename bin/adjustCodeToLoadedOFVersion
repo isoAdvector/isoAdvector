@@ -146,7 +146,8 @@ fi
 
 #Renaming pimple.nCorrPIMPLE() to pimple.nCorrPimple() if necessary (OpenFOAM-dev)
 str=$(grep -r "::nCorrPimple()" $FOAM_SRC)
-if [[ -n  $str  ]];
+str2=$(grep "pimple.nCorrPIMPLE" $targetDir/applications/solvers/interFlow/alphaEqn.H)
+if [[ -n  $str  && -n $str2 ]];
 then
     echo "Renaming nCorrPIMPLE to nCorrPimple in interFlow/alphaEqn.H"
     echo "in accordance with loaded OF version."

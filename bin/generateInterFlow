@@ -9,25 +9,29 @@ echo
 
 #Find interFoam in $FOAM_SOLVERS and copy to targetDir
 sourceDir=$(dirname $(find "$FOAM_SOLVERS" -name "interFoam.C"))
-mkdir -p $targetDir
-cp -r $sourceDir/{*.C,*.H,Make} $targetDir
+mkdir -p $targetDir/Make
+cp -n $sourceDir/Make/{files,options} $targetDir/Make/
+cp -n $sourceDir/{*.C,*.H} $targetDir/
 #Make sure you have write permission in the new solver dir
 chmod -R u+w $targetDir
 #From v1706/5.x VoF source is moved to separate directory which we copy to interFlow dir here
 if [ -d "${FOAM_SOLVERS}/multiphase/VoF" ]; then
     echo "Copying files from ${FOAM_SOLVERS}/multiphase/VoF to $targetDir"
-    cp ${FOAM_SOLVERS}/multiphase/VoF/* $targetDir
+    cp -n ${FOAM_SOLVERS}/multiphase/VoF/* $targetDir/
+    cp -n ${FOAM_SOLVERS}/multiphase/VoF/alphaEqn.H $targetDir/alphaEqnMULES.H
+else
+    cp -n ${FOAM_SOLVERS}/multiphase/interFoam/alphaEqn.H $targetDir/alphaEqnMULES.H
 fi
 
-#Rename alphaEqn.H to alphaEqnMULES.H and add isoAdvection files
-mv $targetDir/alphaEqn.H $targetDir/alphaEqnMULES.H
-cp ../OpenFOAM/applications/solvers/interFlow/{createIsoAdvection.H,alphaEqn.H} $targetDir
-
 #Append createIsoAdvection.H to createFields.H
-echo '#include "createIsoAdvection.H"' >> ${targetDir}/createFields.H
+if [[ -z $(grep "createIsoAdvection.H" ${targetDir}/createFields.H) ]]; then
+    echo "Adding #include createIsoAdvection.H to createFields.H"
+    echo '#include "createIsoAdvection.H"' >> ${targetDir}/createFields.H
+fi
 
 #Rename interFoam to interFlow
-mv ${targetDir}/interFoam.C ${targetDir}/interFlow.C
+mv -n ${targetDir}/interFoam.C ${targetDir}/interFlow.C
+rm ${targetDir}/interFoam.C
 grep -rl --exclude \*.dep --exclude-dir \*Include\* "interFoam" $targetDir | xargs sed -i "s/interFoam/interFlow/g"
 
 #Change FOAM_APPBIN and FOAM_LIBBIN to FOAM_USER_APPBIN and FOAM_USER_LIBBIN
@@ -35,14 +39,31 @@ grep -rl --exclude \*.dep --exclude-dir \*Include\* "FOAM_APPBIN" $targetDir | x
 grep -rl --exclude \*.dep --exclude-dir \*Include\* "FOAM_LIBBIN" $targetDir | xargs sed -i 's/FOAM_LIBBIN/FOAM_USER_LIBBIN/g'
 
 #Insert isoAdvection.H as first header file in new solver
-sed -i '0,/#include.*$/s//#include "isoAdvection.H"\n&/' ${targetDir}/interFlow.C
+if [[ -z $(grep "isoAdvection.H" ${targetDir}/interFlow.C) ]]; then
+    echo "Adding #include isoAdvection.H to interFlow.C"
+    sed -i '0,/#include.*$/s//#include "isoAdvection.H"\n&/' ${targetDir}/interFlow.C
+fi
 
 #Modify Make/options to include isoAdvector stuff
-sed -i '0,/EXE_INC.*$/s//&\n    -I$\(ISOADVECTION\)\/lnInclude \\/' ${targetDir}/Make/options
-sed -i '0,/EXE_LIB.*$/s//&\n    -lisoAdvection \\/' ${targetDir}/Make/options
-sed -i '0,/EXE_LIB.*$/s//&\n    -L$\(FOAM_USER_LIBBIN\) \\/' ${targetDir}/Make/options
+if [[ -z $(grep "ISOADVECTION" ${targetDir}/Make/options) ]]; then
+    echo "Adding ISOADVECTION to Make/options"
+    sed -i '0,/EXE_INC.*$/s//&\n    -I$\(ISOADVECTION\)\/lnInclude \\/' ${targetDir}/Make/options
+fi
+if [[ -z $(grep "lisoAdvection" ${targetDir}/Make/options) ]]; then
+    echo "Adding -lisoAdvection to Make/options"
+    sed -i '0,/EXE_LIB.*$/s//&\n    -lisoAdvection \\/' ${targetDir}/Make/options
+fi
+if [[ -z $(grep "FOAM_USER_LIBBIN" ${targetDir}/Make/options) ]]; then
+    echo "Adding FOAM_USER_LIBBIN to Make/options"
+    sed -i '0,/EXE_LIB.*$/s//&\n    -L$\(FOAM_USER_LIBBIN\) \\/' ${targetDir}/Make/options
+fi
 
 #Replacing header
 source dhiFoamTools
-replaceHeader  ${targetDir}/interFlow.C
+head -$(wc -l header | cut -f1 -d" ") $targetDir/interFlow.C > originalInterFlowHeader
+if [[ ! -z $(diff header originalInterFlowHeader) ]] ; then
+    echo "Replacing header in interFlow.C"
+    replaceHeader  ${targetDir}/interFlow.C
+fi
+rm originalInterFlowHeader
 rm ${targetDir}/whereOnEarthIsTheSolverCode
