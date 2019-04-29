@@ -112,12 +112,12 @@ do
                     foamParmSet nx "$nx" $caseDir/constant/polyMesh/blockMeshDict
                     foamParmSet ny "$ny" $caseDir/constant/polyMesh/blockMeshDict
                     foamParmSet nz "$nz" $caseDir/constant/polyMesh/blockMeshDict
-                    foamParmSet 'internalField' "uniform (1 0.2 0.1)" $caseDir/0.org/U
+                    foamParmSet 'internalField' "uniform (1 0.2 0.1)" $caseDir/0.orig/U
                     foamParmSet 'centre' "(0.5 0.5 0.3)" $caseDir/system/isoSurfDict
-                    cp -r $caseDir/0.org $caseDir/0
+                    cp -r $caseDir/0.orig $caseDir/0
                 else
                     cp $tetMeshDir/polyMesh_${NzList[$n]}/* $caseDir/constant/polyMesh/
-                    cp -r $caseDir/0.org $caseDir/0
+                    cp -r $caseDir/0.orig $caseDir/0
                     if [ "$meshType" = "poly" ];
                     then
                         mkdir $caseDir/logs

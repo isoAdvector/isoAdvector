@@ -113,10 +113,10 @@ do
                     foamParmSet H "$H" $caseDir/constant/polyMesh/blockMeshDict
                     foamParmSet nx "$nx" $caseDir/constant/polyMesh/blockMeshDict
                     foamParmSet nz "$nz" $caseDir/constant/polyMesh/blockMeshDict
-                    cp -r $caseDir/0.org $caseDir/0
+                    cp -r $caseDir/0.orig $caseDir/0
                 else
                     cp $triMeshDir/polyMesh_${NzList[$n]}/* $caseDir/constant/polyMesh/
-                    cp -r $caseDir/0.org $caseDir/0
+                    cp -r $caseDir/0.orig $caseDir/0
                     if [ "$meshType" = "poly" ];
                     then
                         mkdir $caseDir/logs

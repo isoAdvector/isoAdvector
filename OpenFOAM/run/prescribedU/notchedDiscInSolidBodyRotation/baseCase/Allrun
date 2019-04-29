@@ -11,7 +11,7 @@ else
 fi
 
 if [ ! -d "0" ]; then
-    cp -r 0.org 0
+    cp -r 0.orig 0
 fi
 
 if [ ! -f "constant/polyMesh/points" ]; then

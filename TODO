@@ -7,3 +7,4 @@
 - Implement handling of porous media where only a fraction of the cell volume and face area is available for fluid
 - Handling of multiple interfaces in same cell
 - Reduce the number of arguments of timeIntegratedFaceFlux by exploiting proportionality to dt, phi and by calculating pTimes on a cell basis prior to calling it
+- Fix problem with absolute phi values in conditional statements in code (will cause ill behaviour for very small cells)

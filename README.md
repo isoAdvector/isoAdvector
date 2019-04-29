@@ -8,10 +8,11 @@ unstructured meshes with no requirements on cell shapes. IsoAdvector is meant as
 a replacement for the interface compression with the MULES limiter implemented 
 in the interFoam family of OpenFOAM solvers.
 
-The isoAdvector concept and code was developed at DHI and was funded by a Sapere
-Aude postdoc grant to Johan Roenby from The Danish Council for Independent
-Research | Technology and Production Sciences (Grant-ID: DFF - 1337-00118B - FTP).
-Co-funding is also provided by the GTS grant to DHI from the Danish Agency for
+The isoAdvector concept and code was originally developed at DHI and was funded 
+by a Sapere Aude postdoc grant to Johan Roenby from The Danish Council for 
+Independent Research | Technology and Production Sciences 
+(Grant-ID: DFF - 1337-00118B - FTP).
+Co-funding was also provided by the GTS grant to DHI from the Danish Agency for
 Science, Technology and Innovation.
 
 The ideas behind and performance of the isoAdvector scheme is documented in:
@@ -31,9 +32,9 @@ The isoAdvector code is developed and maintained for the newest OpenFOAM
 releases but the script isoAdvector/bin/generateCodeForOldVersion copies the 
 code in isoAdvector/OpenFOAM to isoAdvector/OpenFOAM-[oldLoadedOFversion] and 
 attempts to modify this code to become compatible with an older sourced OpenFOAM 
-version. The code should work with OpenFOAM-5.x, 4.1, 4.0, 3.0.1, 2.2.0,
-v1606+ and v1612+. There are known to be issues with 2.2.2, 2.3.0, 2.3.1 and
-2.4.0, so using these versions is not recommended.
+version. The code should work with OpenFOAM-6, dev, 5.x, 4.x, 3.0.1, 2.2.2, 2.2.0. 
+There are known to be issues with 2.3.0, 2.3.1 and 2.4.0, so using these versions 
+is not recommended.
 
 OpenFOAM-v1706 and later vXXYY version contain an integration of the isoAdvector 
 code with the interFlow solver named interIsoFoam. 
@@ -58,7 +59,7 @@ work with newer versions. It does not contain the latest code developments.
 
 0.  Source your OpenFOAM environment, e.g.: 
 
-        source /home/$USER/OpenFOAM/OpenFOAM-5.x/etc/bashrc
+        source /home/$USER/OpenFOAM/OpenFOAM-6/etc/bashrc
 
 1.  In a linux terminal download the package with git by typing:
 
@@ -79,7 +80,7 @@ work with newer versions. It does not contain the latest code developments.
     
 3.  Test installation with a simple test case by typing (finishes in secs):
 
-        cp -r OpenFOAM-5.x/run/prescribedU/discInConstantFlow/baseCase ~
+        cp -r OpenFOAM-6/run/prescribedU/discInConstantFlow/baseCase ~
         cd ~/baseCase
         ./Allrun
 	
@@ -99,7 +100,7 @@ work with newer versions. It does not contain the latest code developments.
     The downloaded meshes.tar.gz file should be extracted to the isoAdvector 
     root directory.
 
-    Unstrictured meshes can also be generated with the scripts generateTetUnitCube
+    Unstructured meshes can also be generated with the scripts generateTetUnitCube
     and generateTriUnitSquare in the bin folder. This requires gmsh (see headers).
     
 ## Code structure:
@@ -263,4 +264,5 @@ work with newer versions. It does not contain the latest code developments.
 * Vuko Vukcevic, University of Zagreb (Code review, profiling, porting to 
   foam-extend, bug fixing, testing)
 * Andrew Heather, OpenCFD (Code clean up, porting to OpenFOAM+)
-* Henning Scheufler, DLR (Extensive validation, gmsh based mesh generation)
+* Henning Scheufler, DLR (Extensive validation and bug fixing, gmsh based mesh 
+  generation)

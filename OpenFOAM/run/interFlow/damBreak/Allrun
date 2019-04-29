@@ -2,7 +2,7 @@
 
 application=$(sed -E -n "s%^application[[:space:]]+([^[:space:]]+);%\1%p" system/controlDict)
 
-cp -r 0.org 0
+cp -r 0.orig 0
 
 mkdir logs
 

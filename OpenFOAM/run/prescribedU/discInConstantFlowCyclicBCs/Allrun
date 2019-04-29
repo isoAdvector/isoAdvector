@@ -6,7 +6,7 @@ jobStart=$(date +"%Y%m%d%H%M")
 
 if [ ! -d "logs" ]; then
 
-    cp -r 0.org 0
+    cp -r 0.orig 0
     mkdir logs
     blockMesh > logs/blockMesh.log 2>&1
 

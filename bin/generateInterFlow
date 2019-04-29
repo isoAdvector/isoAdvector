@@ -29,6 +29,20 @@ if [[ -z $(grep "createIsoAdvection.H" ${targetDir}/createFields.H) ]]; then
     echo '#include "createIsoAdvection.H"' >> ${targetDir}/createFields.H
 fi
 
+#Appending nOuterCorrector implementation to alphaEqnSubCycle.H
+#Only doing it for later versions where alphaEqnSubCycle.H is inside pimple loop
+alphLinNum=$(grep -n 'alphaEqnSubCycle.H' ${targetDir}/interFoam.C | cut -d: -f1)
+pimpLinNum=$(grep -n 'pimple.loop()' ${targetDir}/interFoam.C | cut -d: -f1)
+if [[ -z $(grep "outerCorr already added" ${targetDir}/alphaEqnSubCycle.H) ]] && [[ "$alphLinNum" -gt "$pimpLinNum" ]]; then
+    echo "Adding outerCorr treatment to alphaEqnSubCycle.H"
+    cat ${targetDir}/alphaEqnSubCycle.H >> ${targetDir}/alphaEqnSubCycleStart.H
+    cat ${targetDir}/alphaEqnSubCycleEnd.H >> ${targetDir}/alphaEqnSubCycleStart.H
+    mv ${targetDir}/alphaEqnSubCycleStart.H ${targetDir}/alphaEqnSubCycle.H
+    rm ${targetDir}/alphaEqnSubCycleEnd.H
+else
+    rm ${targetDir}/alphaEqnSubCycleStart.H ${targetDir}/alphaEqnSubCycleEnd.H
+fi
+
 #Rename interFoam to interFlow
 mv -n ${targetDir}/interFoam.C ${targetDir}/interFlow.C
 rm ${targetDir}/interFoam.C

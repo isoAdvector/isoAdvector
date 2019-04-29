@@ -15,5 +15,10 @@ scalar reverseTime(UDict.lookupOrDefault<scalar>("reverseTime", 0));
 
 //Creating copies of initial U and phi for periodic flows
 //Rewrite to  avoid these extra fields when predcribedU = false
-const volVectorField U0(U);
-const surfaceScalarField phi0(phi);
+if (prescribedU)
+{
+//const volVectorField U0(U);
+//const surfaceScalarField phi0(phi);
+    U.storePrevIter();
+    phi.storePrevIter();
+}

@@ -4,7 +4,7 @@ application=$(sed -E -n "s%^application[[:space:]]+([^[:space:]]+);%\1%p" system
 
 mkdir -p logs
 
-[ -d "0" ] || cp -r 0.org 0
+[ -d "0" ] || cp -r 0.orig 0
 
 [ -f "constant/polyMesh/owner" ] \
     || blockMesh > logs/blockMesh.log 2>&1

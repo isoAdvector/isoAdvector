@@ -20,7 +20,7 @@ do
         res=${resolutions[$nr]}
         caseDir=$solver/$mesh/N${res}Co${Co}
         mv $caseDir/0/U $caseDir/0/U0
-        cp $caseDir/0.org/U $caseDir/0/
+        cp $caseDir/0.orig/U $caseDir/0/
 
         for nt in ${!times[*]}
         do

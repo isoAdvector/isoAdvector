@@ -134,24 +134,37 @@ then
     sed -i 's/mixture\.correct();//g' $targetDir/applications/solvers/interFlow/alphaEqn.H
 fi
 
-#Removing pimple.firstIter() from interFlow/alphaEqn.H for older OF versions
-str=$(grep -r "::firstIter()" $FOAM_SRC --include=pimple*)
+#Renaming pimple.firstPimpleIter() to pimple.firstIter() in interFlow/alphaEqnSubCycle.H 
+#if firstPimpleIter() does not exist  in OF source (dev)
+#If pimple.firstIter() does not exist either (older OF version) then simply replacing by false
+str=$(grep -r "::firstPimpleIter()" $FOAM_SRC --include=pimple*)
 if [[ -z  $str  ]];
 then
-    echo "pimple::firstIter() undefined for loaded OF version."
-    echo "Removing from interFlow/alphaEqn.H"
-    sed -i 's/!pimple.firstIter()/false/g' $targetDir/applications/solvers/interFlow/alphaEqn.H
-    sed -i 's/pimple.firstIter()/false/g' $targetDir/applications/solvers/interFlow/alphaEqn.H
+    str=$(grep -r "::firstIter()" $FOAM_SRC --include=pimple*)
+    if [[ -z  $str  ]];
+    then
+        echo "pimple::firstIter() undefined for loaded OF version."
+        echo "Removing from interFlow/alphaEqnSubCycle.H"
+        sed -i 's/!pimple.firstIter()/false/g' $targetDir/applications/solvers/interFlow/alphaEqnSubCycle.H
+        sed -i 's/pimple.firstIter()/false/g' $targetDir/applications/solvers/interFlow/alphaEqnSubCycle.H
+    else
+        echo "No firstPimpleIter() in FOAM_SRC but pimple::firstIter() exists."
+        echo "Replacing in interFlow/alphaEqnSubCycle.H"
+        sed -i 's/!pimple.firstPimpleIter()/!pimple.firstIter()/g' $targetDir/applications/solvers/interFlow/alphaEqnSubCycle.H
+        sed -i 's/pimple.firstPimpleIter()/pimple.firstIter()/g' $targetDir/applications/solvers/interFlow/alphaEqnSubCycle.H
+    fi
 fi
+
+
 
 #Renaming pimple.nCorrPIMPLE() to pimple.nCorrPimple() if necessary (OpenFOAM-dev)
 str=$(grep -r "::nCorrPimple()" $FOAM_SRC)
-str2=$(grep "pimple.nCorrPIMPLE" $targetDir/applications/solvers/interFlow/alphaEqn.H)
+str2=$(grep "pimple.nCorrPIMPLE" $targetDir/applications/solvers/interFlow/alphaEqnSubCycle.H)
 if [[ -n  $str  && -n $str2 ]];
 then
-    echo "Renaming nCorrPIMPLE to nCorrPimple in interFlow/alphaEqn.H"
+    echo "Renaming nCorrPIMPLE to nCorrPimple in interFlow/alphaEqnSubCycle.H"
     echo "in accordance with loaded OF version."
-    sed -i 's/pimple.nCorrPIMPLE/pimple.nCorrPimple/g' $targetDir/applications/solvers/interFlow/alphaEqn.H
+    sed -i 's/pimple.nCorrPIMPLE/pimple.nCorrPimple/g' $targetDir/applications/solvers/interFlow/alphaEqnSubCycle.H
 fi
 
 #Removing alpha2 from interFlow/alphaEqn.H for older OF versions

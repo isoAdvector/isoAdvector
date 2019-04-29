@@ -12,7 +12,7 @@ cd ..
 
 if [ ! -d "logs" ]; then
     mkdir logs
-    cp -r 0.org 0
+    cp -r 0.orig 0
     blockMesh > logs/blockMesh.log 2>&1
     generateU/generateU > logs/generateU.log 2>&1
     setAlphaField > logs/setAlphaField.log 2>&1

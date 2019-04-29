@@ -27,7 +27,7 @@ solvers
         clip            true;
 
         nAlphaCorr      2;
-        nAlphaSubCycles 1;
+        nAlphaSubCycles 2;
         cAlpha          1;
 
         MULESCorr       yes;
@@ -85,7 +85,7 @@ PIMPLE
 {
     momentumPredictor no;
     nCorrectors     3;
-    nOuterCorrectors    1;
+    nOuterCorrectors    2;
     nNonOrthogonalCorrectors 0;
     nAlphaCorr      1;
     nAlphaSubCycles 1;
