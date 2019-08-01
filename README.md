@@ -32,12 +32,18 @@ The isoAdvector code is developed and maintained for the newest OpenFOAM
 releases but the script isoAdvector/bin/generateCodeForOldVersion copies the 
 code in isoAdvector/OpenFOAM to isoAdvector/OpenFOAM-[oldLoadedOFversion] and 
 attempts to modify this code to become compatible with an older sourced OpenFOAM 
-version. The code should work with OpenFOAM-6, dev, 5.x, 4.x, 3.0.1, 2.2.2, 2.2.0. 
-There are known to be issues with 2.3.0, 2.3.1 and 2.4.0, so using these versions 
-is not recommended.
+version. The code should work with the following OpenFOAM versions:
+
+7, 6, 5.x, 4.x, 3.0.1, 2.2.2, 2.2.0
+
+There are known to be issues with the following versions:
+
+2.3.0, 2.3.1, 2.4.0  
+
+so using isoAdvector with these versions is not recommended.
 
 OpenFOAM-v1706 and later vXXYY version contain an integration of the isoAdvector 
-code with the interFlow solver named interIsoFoam. 
+code with the interFlow solver named interIsoFoam.
 For more info on the v1706 integration see:
 
 https://www.openfoam.com/releases/openfoam-v1706/numerics.php#numerics-isoadvector
@@ -128,7 +134,7 @@ work with newer versions. It does not contain the latest code developments.
       ```
       "alpha.water.*"
       {
-          //interfaceMethod can be set to "MULES" (default), or "isoAdvector".
+          //interfaceMethod can be set to "MULES", or "isoAdvector" (default).
 
           interfaceMethod "isoAdvector";
           
@@ -144,6 +150,10 @@ work with newer versions. It does not contain the latest code developments.
           //
           //a cell will be treated with isoAdvector. Typically between between 
           //1e-6 and 1e-8 (default).
+          //Important note: From experience p_rghFinal should be 10-100 times
+          //smaller than surfCellTol or unphyiscal bubbles may be created by
+          //isoAdvector in the water column because it interprets the continuity
+          //errors in cells as presense of a fluid interface.
 
           surfCellTol 1e-8;
           

@@ -1,11 +1,3 @@
-// Looking up which alpha1 solver to use
-const dictionary& alpha1Dict(mesh.solverDict(alpha1.name()));
-
-word interfaceMethod
-(
-    alpha1Dict.lookupOrDefault<word>("interfaceMethod", "isoAdvector")
-);
-
 // Advancing alpah1 field
 if (interfaceMethod == "MULES")
 {
@@ -13,9 +5,21 @@ if (interfaceMethod == "MULES")
 }
 else if (interfaceMethod == "isoAdvector")
 {
+    // Temporarily making U relative to mesh motion
+    if (mesh.moving())
+    {
+        U -= fvc::reconstruct(mesh.phi());
+    }
+
     // Updating alpha1
     advector.advect();
-
+    
+    // Making U absolute again after advection step
+    if (mesh.moving())
+    {
+        U += fvc::reconstruct(mesh.phi());
+    }
+    
     const dimensionedScalar& rho1f(rho1);
     const dimensionedScalar& rho2f(rho2);
     rhoPhi = advector.getRhoPhi(rho1f, rho2f);

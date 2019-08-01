@@ -860,7 +860,7 @@ void Foam::isoAdvection::checkIfOnProcPatch(const label facei)
 void Foam::isoAdvection::advect()
 {
     DebugInFunction << endl;
-
+    
     scalar advectionStartTime = mesh_.time().elapsedCpuTime();
 
     // Initialising dVf with upwind values
@@ -869,6 +869,12 @@ void Foam::isoAdvection::advect()
 
     // Do the isoAdvection on surface cells
     timeIntegratedFlux();
+
+    // Adjust alpha for mesh motion
+    if (mesh_.moving())
+    {
+        alpha1In_ *= (mesh_.Vsc0()/mesh_.Vsc());
+    }
 
     // Adjust dVf for unbounded cells
     limitFluxes();

@@ -56,6 +56,7 @@ SourceFiles
 #include "className.H"
 #include "isoCutCell.H"
 #include "isoCutFace.H"
+#include "fvc.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

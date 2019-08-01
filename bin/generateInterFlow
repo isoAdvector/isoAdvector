@@ -36,11 +36,12 @@ pimpLinNum=$(grep -n 'pimple.loop()' ${targetDir}/interFoam.C | cut -d: -f1)
 if [[ -z $(grep "outerCorr already added" ${targetDir}/alphaEqnSubCycle.H) ]] && [[ "$alphLinNum" -gt "$pimpLinNum" ]]; then
     echo "Adding outerCorr treatment to alphaEqnSubCycle.H"
     cat ${targetDir}/alphaEqnSubCycle.H >> ${targetDir}/alphaEqnSubCycleStart.H
-    cat ${targetDir}/alphaEqnSubCycleEnd.H >> ${targetDir}/alphaEqnSubCycleStart.H
+#    cat ${targetDir}/alphaEqnSubCycleEnd.H >> ${targetDir}/alphaEqnSubCycleStart.H
     mv ${targetDir}/alphaEqnSubCycleStart.H ${targetDir}/alphaEqnSubCycle.H
-    rm ${targetDir}/alphaEqnSubCycleEnd.H
+#    rm ${targetDir}/alphaEqnSubCycleEnd.H
 else
-    rm ${targetDir}/alphaEqnSubCycleStart.H ${targetDir}/alphaEqnSubCycleEnd.H
+#    rm ${targetDir}/alphaEqnSubCycleStart.H ${targetDir}/alphaEqnSubCycleEnd.H
+    rm ${targetDir}/alphaEqnSubCycleStart.H
 fi
 
 #Rename interFoam to interFlow

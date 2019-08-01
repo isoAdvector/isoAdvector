@@ -1,0 +1,105 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1906                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+    "alpha.water.*"
+    {
+        interfaceMethod "isoAdvector";
+        isoFaceTol      1e-6;
+        surfCellTol     1e-6;
+        snapTol         1e-12;
+        nAlphaBounds    3;
+        clip            true;
+
+        nAlphaCorr      2;
+        nAlphaSubCycles 1;
+        cAlpha          1;
+
+        MULESCorr       yes;
+        nLimiterIter    3;
+
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
+        tolerance       1e-8;
+        relTol          0;
+    }
+
+    "pcorr.*"
+    {
+        solver          PCG;
+        preconditioner
+        {
+            preconditioner  GAMG;
+            tolerance       1e-5;
+            relTol          0;
+            smoother        GaussSeidel;
+        }
+        tolerance       1e-5;
+        relTol          0;
+        maxIter         50;
+    }
+
+    p_rgh
+    {
+        solver           GAMG;
+        tolerance        5e-9;
+        relTol           0.01;
+
+        smoother         GaussSeidel;
+
+
+
+        maxIter          50;
+    };
+
+    p_rghFinal
+    {
+        $p_rgh;
+        tolerance       5e-9;
+        relTol          0;
+    }
+
+    "(U|k|omega|s).*"
+    {
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
+        nSweeps         1;
+        tolerance       1e-6;
+        relTol          0.1;
+    };
+}
+
+PIMPLE
+{
+    momentumPredictor no;
+    nCorrectors     2;
+    nNonOrthogonalCorrectors 0;
+    pRefCell        0;
+    pRefValue       0;
+}
+
+relaxationFactors
+{
+    equations
+    {
+        ".*" 1;
+    }
+}
+
+
+// ************************************************************************* //

@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  2.2.0                                 |
-|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|  \\    /   O peration     | Version:  v1906                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -11,45 +11,36 @@ FoamFile
     format      ascii;
     class       dictionary;
     location    "system";
-    object      controlDict;
+    object      setFieldsDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     interFlow;
+defaultFieldValues
+(
+    volScalarFieldValue alpha.water 0
+);
 
-startFrom       latestTime;
+regions
+(
+    boxToCell
+    {
+        box (-1e10 -1e10 -1e10) (1e10 1e10 0.45);
+        fieldValues
+        (
+            volScalarFieldValue alpha.water 1
+        );
+    }
 
-startTime       0;
+    boxToCell
+    {
+        box (-1e10 -1e10 -1e10) (-.2 1e10 1e10);
+        fieldValues
+        (
+            volScalarFieldValue alpha.water 1
+        );
+    }
 
-stopAt          endTime;
+);
 
-endTime         2;
-
-deltaT          0.001;
-
-writeControl    adjustableRunTime;
-
-writeInterval   0.01;
-
-purgeWrite      0;
-
-writeFormat     ascii;
-
-writePrecision  6;
-
-writeCompression uncompressed;
-
-timeFormat      general;
-
-timePrecision   6;
-
-runTimeModifiable yes;
-
-adjustTimeStep  yes;
-
-maxCo           0.5;
-maxAlphaCo      0.5;
-
-maxDeltaT       1;
 
 // ************************************************************************* //
