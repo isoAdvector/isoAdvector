@@ -26,12 +26,14 @@ then
 
     echo "Copying non-existing files from OpenFOAM to $sourceDir..."
     mkdir $sourceDir
-    cp -rn OpenFOAM/* ${sourceDir}/
+    cp -ru OpenFOAM/* ${sourceDir}/
 
     #Generate interFlow solver from interFoam of the loaded OF version
-    cd bin
-    ./generateInterFlow
-    cd -
+    if [ ! -f "$sourceDir/applications/solvers/interFlow/interFlow.C" ]; then
+        cd bin
+        ./generateInterFlow
+        cd -
+    fi
 
     #Adjust source files to API of currently loaded OpenFOAM version
     cd bin

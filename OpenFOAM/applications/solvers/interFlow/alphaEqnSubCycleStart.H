@@ -22,4 +22,3 @@ if (interfaceMethod == "isoAdvector" && pimple.nCorrPIMPLE() > 1)
         alpha1 = alpha1.oldTime();
     }
 }
-

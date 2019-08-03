@@ -1,6 +1,21 @@
 #!/bin/bash
 cd ${0%/*} || exit 1   # run from this directory
 
+# Minimal code modifications to generate interFlow solver from interFoam code:
+#
+# 1. Rename interFoam/alphaEqn.H to alphaEqnMULES.H
+# 2. Put alphaEqn.H, alphaEqnSubCycleStart.H and createIsoAdvection.H in interFoam/
+# 3. Add #include "createIsoAdvection.H" to bottom of createFields.H
+# 4. Add #include "alphaEqnSubCycleStart.H" to alphaEqnSubCycle.H
+# 5. Add #include "isoAdvection.H" to top of interFoam.C
+# 6. Add -I$\(ISOADVECTION\)\/lnInclude under EXE_INC in Make/options
+# 7. Add -L$\(FOAM_USER_LIBBIN) / under EXE_LIB in Make/options
+# 8. Add -lisoAdvection under EXE_LIB in Make/options
+# 9. Change $(FOAM_APPBIN)/interFoam to $(FOAM_USER_APPBIN)/interFlow in Make/files
+#
+# This is essentially what this script is doing (with a copy of interFoam to not
+# overwrite it).
+
 targetDir=../OpenFOAM-${WM_PROJECT_VERSION}/applications/solvers/interFlow
 
 echo
@@ -23,6 +38,14 @@ else
     cp -n ${FOAM_SOLVERS}/multiphase/interFoam/alphaEqn.H $targetDir/alphaEqnMULES.H
 fi
 
+#Rename interFoam to interFlow
+mv -n ${targetDir}/interFoam.C ${targetDir}/interFlow.C
+grep -rl --exclude \*.dep --exclude-dir \*Include\* "interFoam" $targetDir | xargs sed -i "s/interFoam/interFlow/g"
+
+#Change FOAM_APPBIN and FOAM_LIBBIN to FOAM_USER_APPBIN and FOAM_USER_LIBBIN
+grep -rl --exclude \*.dep --exclude-dir \*Include\* "FOAM_APPBIN" $targetDir | xargs sed -i 's/FOAM_APPBIN/FOAM_USER_APPBIN/g'
+grep -rl --exclude \*.dep --exclude-dir \*Include\* "FOAM_LIBBIN" $targetDir | xargs sed -i 's/FOAM_LIBBIN/FOAM_USER_LIBBIN/g'
+
 #Append createIsoAdvection.H to createFields.H
 if [[ -z $(grep "createIsoAdvection.H" ${targetDir}/createFields.H) ]]; then
     echo "Adding #include createIsoAdvection.H to createFields.H"
@@ -31,29 +54,19 @@ fi
 
 #Appending nOuterCorrector implementation to alphaEqnSubCycle.H
 #Only doing it for later versions where alphaEqnSubCycle.H is inside pimple loop
-alphLinNum=$(grep -n 'alphaEqnSubCycle.H' ${targetDir}/interFoam.C | cut -d: -f1)
-pimpLinNum=$(grep -n 'pimple.loop()' ${targetDir}/interFoam.C | cut -d: -f1)
-if [[ -z $(grep "outerCorr already added" ${targetDir}/alphaEqnSubCycle.H) ]] && [[ "$alphLinNum" -gt "$pimpLinNum" ]]; then
-    echo "Adding outerCorr treatment to alphaEqnSubCycle.H"
-    cat ${targetDir}/alphaEqnSubCycle.H >> ${targetDir}/alphaEqnSubCycleStart.H
-#    cat ${targetDir}/alphaEqnSubCycleEnd.H >> ${targetDir}/alphaEqnSubCycleStart.H
-    mv ${targetDir}/alphaEqnSubCycleStart.H ${targetDir}/alphaEqnSubCycle.H
-#    rm ${targetDir}/alphaEqnSubCycleEnd.H
+alphLinNum=$(grep -n 'alphaEqnSubCycle.H' ${targetDir}/interFlow.C | cut -d: -f1)
+pimpLinNum=$(grep -n 'pimple.loop()' ${targetDir}/interFlow.C | cut -d: -f1)
+if [[ "$alphLinNum" -gt "$pimpLinNum" ]]; then
+    if [[ -z $(grep "alphaEqnSubCycleStart.H" ${targetDir}/alphaEqnSubCycle.H) ]]; then
+        echo "Adding #include alphaEqnSubCycleStart.H to alphaEqnSubCycle.H"
+        sed -i '1s/^/#include "alphaEqnSubCycleStart.H"\n\n/' ${targetDir}/alphaEqnSubCycle.H
+#        sed -i '0,/#include.*$/s//#include "alphaEqnSubCycleStart.H"\n&/' ${targetDir}/alphaEqnSubCycle.H
+    fi
 else
-#    rm ${targetDir}/alphaEqnSubCycleStart.H ${targetDir}/alphaEqnSubCycleEnd.H
-    rm ${targetDir}/alphaEqnSubCycleStart.H
+    rm -f ${targetDir}/alphaEqnSubCycleStart.H
 fi
 
-#Rename interFoam to interFlow
-mv -n ${targetDir}/interFoam.C ${targetDir}/interFlow.C
-rm ${targetDir}/interFoam.C
-grep -rl --exclude \*.dep --exclude-dir \*Include\* "interFoam" $targetDir | xargs sed -i "s/interFoam/interFlow/g"
-
-#Change FOAM_APPBIN and FOAM_LIBBIN to FOAM_USER_APPBIN and FOAM_USER_LIBBIN
-grep -rl --exclude \*.dep --exclude-dir \*Include\* "FOAM_APPBIN" $targetDir | xargs sed -i 's/FOAM_APPBIN/FOAM_USER_APPBIN/g'
-grep -rl --exclude \*.dep --exclude-dir \*Include\* "FOAM_LIBBIN" $targetDir | xargs sed -i 's/FOAM_LIBBIN/FOAM_USER_LIBBIN/g'
-
-#Insert isoAdvection.H as first header file in new solver
+#Insert isoAdvection.H as first header file in interFlow.C
 if [[ -z $(grep "isoAdvection.H" ${targetDir}/interFlow.C) ]]; then
     echo "Adding #include isoAdvection.H to interFlow.C"
     sed -i '0,/#include.*$/s//#include "isoAdvection.H"\n&/' ${targetDir}/interFlow.C
@@ -81,4 +94,3 @@ if [[ ! -z $(diff header originalInterFlowHeader) ]] ; then
     replaceHeader  ${targetDir}/interFlow.C
 fi
 rm originalInterFlowHeader
-rm ${targetDir}/whereOnEarthIsTheSolverCode

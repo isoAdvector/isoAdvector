@@ -13,13 +13,13 @@ else if (interfaceMethod == "isoAdvector")
 
     // Updating alpha1
     advector.advect();
-    
+
     // Making U absolute again after advection step
     if (mesh.moving())
     {
         U += fvc::reconstruct(mesh.phi());
     }
-    
+
     const dimensionedScalar& rho1f(rho1);
     const dimensionedScalar& rho2f(rho2);
     rhoPhi = advector.getRhoPhi(rho1f, rho2f);
