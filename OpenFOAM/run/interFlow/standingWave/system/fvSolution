@@ -23,8 +23,8 @@ solvers
         interfaceMethod "isoAdvector";
         isoFaceTol      1e-6;
         surfCellTol     1e-6;
-        snapTol    1e-10;
-        nAlphaBounds    2;
+        snapTol         1e-10;
+        nAlphaBounds    3;
         clip            true;
 
         nAlphaCorr      2;
@@ -59,7 +59,7 @@ solvers
     "(p_rghFinal|pdFinal)"
     {
         $p_rgh;
-        tolerance       1e-07;
+        tolerance       1e-08;
         relTol          0;
     }
 

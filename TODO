@@ -8,3 +8,4 @@
 - Handling of multiple interfaces in same cell
 - Reduce the number of arguments of timeIntegratedFaceFlux by exploiting proportionality to dt, phi and by calculating pTimes on a cell basis prior to calling it
 - Fix problem with absolute phi values in conditional statements in code (will cause ill behaviour for very small cells)
+- Make isoAdvector more robust to slightly divergent phi fields (problem with bubble creation when p_rghFinal tol > surfCellTol).
