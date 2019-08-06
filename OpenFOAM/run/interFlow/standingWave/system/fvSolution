@@ -21,11 +21,13 @@ solvers
     "alpha.water.*"
     {
         interfaceMethod "isoAdvector";
-        isoFaceTol      1e-6;
-        surfCellTol     1e-6;
-        snapTol         1e-10;
+        isoFaceTol      1e-8;
+        surfCellTol     1e-8;
+        snapTol         1e-8;
         nAlphaBounds    3;
         clip            true;
+        writeIsoFaces   true;
+        writeBoundedCells true;
 
         nAlphaCorr      2;
         nAlphaSubCycles 1;
@@ -59,7 +61,7 @@ solvers
     "(p_rghFinal|pdFinal)"
     {
         $p_rgh;
-        tolerance       1e-08;
+        tolerance       1e-5;
         relTol          0;
     }
 

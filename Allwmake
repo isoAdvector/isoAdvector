@@ -59,7 +59,7 @@ then
     else
        echo
        echo "The directory $ISOADVECTION does not exist"
-       echo "If you are compiling isoAdvector with and older OF"
+       echo "If you are compiling isoAdvector with an older OF"
        echo "you might need to run bin/generateCodeForOldVersion"
        echo "before compiling."
        echo

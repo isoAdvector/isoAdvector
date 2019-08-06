@@ -860,7 +860,7 @@ void Foam::isoAdvection::checkIfOnProcPatch(const label facei)
 void Foam::isoAdvection::advect()
 {
     DebugInFunction << endl;
-    
+
     scalar advectionStartTime = mesh_.time().elapsedCpuTime();
 
     // Initialising dVf with upwind values
@@ -879,8 +879,48 @@ void Foam::isoAdvection::advect()
     // Adjust dVf for unbounded cells
     limitFluxes();
 
+    // If a cell is not cut itself and non of its neighbours are cut
+    // during the time step, then its alpha value should not change.
+    // So farquick and dirty and not parallelized.
+    boolList cellIsCut(alpha1In_.size(), false);
+    forAll(surfCells_, celli)
+    {
+            cellIsCut[surfCells_[celli]] = true;
+    }
+
+    const labelListList& cellCells = mesh_.cellCells();
+    boolList dontChangeAlpha(alpha1In_.size(), false);
+    forAll(alpha1In_, celli)
+    {
+        if (!cellIsCut[celli])
+        {
+            bool hasCutNeiCells(false);
+            const labelList& neiCells = cellCells[celli];
+            forAll(neiCells, neiCelli)
+            {
+                if (cellIsCut[neiCells[neiCelli]])
+                {
+                    hasCutNeiCells = true;
+                }
+            
+            }
+            if (!hasCutNeiCells)
+            {
+                dontChangeAlpha[celli] = true;
+            }
+        }
+    }
+
+    scalarField alphaOld(alpha1_);
     // Advect the free surface
     alpha1_ -= fvc::surfaceIntegrate(dVf_);
+    forAll(alpha1_,celli)
+    {
+        if (dontChangeAlpha[celli])
+        {
+            alpha1_[celli] = alphaOld[celli];
+        }
+    }
     alpha1_.correctBoundaryConditions();
 
     scalar maxAlphaMinus1 = gMax(alpha1In_) - 1;

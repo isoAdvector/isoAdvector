@@ -59,3 +59,5 @@ else
     echo "Can not get application to run. Exiting."
     echo
 fi
+
+./objFilesToVTK
