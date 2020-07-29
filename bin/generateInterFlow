@@ -34,6 +34,10 @@ if [ -d "${FOAM_SOLVERS}/multiphase/VoF" ]; then
     echo "Copying files from ${FOAM_SOLVERS}/multiphase/VoF to $targetDir"
     cp -n ${FOAM_SOLVERS}/multiphase/VoF/* $targetDir/
     cp -n ${FOAM_SOLVERS}/multiphase/VoF/alphaEqn.H $targetDir/alphaEqnMULES.H
+elif [ -d "${FOAM_SRC}/twoPhaseModels/twoPhaseMixture/VoF" ]; then
+    echo "Copying files from ${FOAM_SRC}/twoPhaseModels/twoPhaseMixture/VoF to $targetDir"
+    cp -n ${FOAM_SRC}/twoPhaseModels/twoPhaseMixture/VoF/* $targetDir/
+    cp -n ${FOAM_SRC}/twoPhaseModels/twoPhaseMixture/VoF/alphaEqn.H $targetDir/alphaEqnMULES.H
 else
     cp -n ${FOAM_SOLVERS}/multiphase/interFoam/alphaEqn.H $targetDir/alphaEqnMULES.H
 fi
