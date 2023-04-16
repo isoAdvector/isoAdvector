@@ -26,7 +26,22 @@ can be found in this youtube channel:
 
 https://www.youtube.com/channel/UCt6Idpv4C8TTgz1iUX0prAA
 
-## Compatibility:
+## Important notice
+
+Due to rapid and extensive api changes in the OpenFOAM Foundation (openfoam.org) version, the current repo is no longer kept up to date with the 
+latest releases of that OpenFOAM version. 
+The isoAdvector maintenance and development is now taking place in the OpenCFD version (openfoam.com) of OpenFOAM.
+In that code, the solver using isoAdvector is called interIsoFoam. 
+The source code can be found here:
+
+IsoAdvector library:\
+https://develop.openfoam.com/Development/openfoam/-/tree/master/src/transportModels/geometricVoF \
+InterIsoFoam application:\
+https://develop.openfoam.com/Development/openfoam/-/tree/master/applications/solvers/multiphase/interIsoFoam \
+setAlphaField application:\
+https://develop.openfoam.com/Development/openfoam/-/tree/master/applications/utilities/preProcessing/setAlphaField \
+
+## Compatibility
 
 The isoAdvector code is developed and maintained for the newest OpenFOAM 
 releases but the script isoAdvector/bin/generateCodeForOldVersion copies the 
@@ -46,7 +61,7 @@ OpenFOAM-v1706 and later vXXYY version contain an integration of the isoAdvector
 code with the interFlow solver named interIsoFoam.
 For more info on the v1706 integration see:
 
-https://www.openfoam.com/releases/openfoam-v1706/numerics.php#numerics-isoadvector
+https://www.openfoam.com/news/main-news/openfoam-v1706/numerics#numerics-isoadvector
 
 Note that compiling the github.com/isoAdvector code with v1706 and later vXXYY 
 versions may lead to problems because the OpenFOAM finiteVolume library already 
@@ -61,7 +76,7 @@ A foam-extend version of the code is also available in isoAdvector/foam-extend.
 This was developed for foam-extend-32 and will most likely need modifications to 
 work with newer versions. It does not contain the latest code developments.
 
-## Installation:
+## Installation
 
 0.  Source your OpenFOAM environment, e.g.: 
 
@@ -109,7 +124,7 @@ work with newer versions. It does not contain the latest code developments.
     Unstructured meshes can also be generated with the scripts generateTetUnitCube
     and generateTriUnitSquare in the bin folder. This requires gmsh (see headers).
     
-## Code structure:
+## Code structure
 
 `src/` 
 
@@ -264,7 +279,7 @@ work with newer versions. It does not contain the latest code developments.
 - Calculates the submerged face area given an isovalue and alpha values 
   interpolated to the face vertices.
 
-## Contributors:
+## Contributors
 
 * Johan Roenby, STROMNING, <johan@stromning.com> (Inventor and main developer)
 * Hrvoje Jasak, University of Zagreb (General coding guidance, consistent treatment 
